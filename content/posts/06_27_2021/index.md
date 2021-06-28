@@ -6,7 +6,7 @@ slug: hugo_move
 summary: My comments on how Hugo compares to Pelican for static site generation
 ---
 
-I've move my blog to Hugo for one main reason: I want to start posting work about Julia here, and Pluto.jl only exports in HTML, and Hugo supports that kind of content. In the process of moving, however, I've noticed that Hugo is much nicer to work with than Pelican. Hugo is written in Go, which I have no experience with, but it was very easy to install and use. Pelican, on the other hand, is written in python so I had to create a virtual environment and go through the normal annoyances with dependencies.
+I've moved my blog to Hugo for one main reason: I want to start posting work about Julia here, but Pluto.jl only exports in HTML, and Hugo supports that kind of content. In the process of moving, however, I've noticed that Hugo is much nicer to work with than Pelican. Hugo is written in Go, which I have no experience with, but it was very easy to install and use. Pelican, on the other hand, is written in python so I had to create a virtual environment and go through the normal annoyances with dependencies.
 
 Hugo also includes a built in local server so you can work on your site and know what you're getting. It works very smoothly. Writing posts and managing content is also far easier and more organized in Hugo. I can group my posts and their content together all in one folder so everything is nice and neat.
 
