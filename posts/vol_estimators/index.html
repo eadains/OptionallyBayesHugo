@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Comparison of Volatility Estimators | Optionally Bayes</title>
+<meta name="keywords" content="volatility, realized-volatility" />
+<meta name="description" content="Comparing Garman-Klass estimator to 5-minute Realized Volatility estimator.">
+<meta name="author" content="Erik Dains">
+<link rel="canonical" href="http://example.org/posts/vol_estimators/" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.35cd0f65a15cafa92372b8313deef5960aae04b90ad722f2bbf509eb0468137e.css" integrity="sha256-Nc0PZaFcr6kjcrgxPe71lgquBLkK1yLyu/UJ6wRoE34=" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.7680afc38aa6b15ddf158a4f3780b7b1f7dde7e91d26f073e6229bb7a0793c92.js" integrity="sha256-doCvw4qmsV3fFYpPN4C3sffd5&#43;kdJvBz5iKbt6B5PJI="
+    onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="http://example.org/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://example.org/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://example.org/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://example.org/apple-touch-icon.png">
+<link rel="mask-icon" href="http://example.org/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.84.0" />
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css"
+    integrity="sha384-Um5gpz1odJg5Z4HAmzPtgZKdTBHZdw8S29IecapCSB31ligYPhHQZMIlWLYQGVoc" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.js"
+    integrity="sha384-YNHdsYkH6gMx9y3mRkmcJ2mFUjTd0qNQQvY9VYZgQd7DcN7env35GzlmFaZ23JGp"
+    crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/auto-render.min.js"
+    integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous"
+    onload="renderMathInElement(document.body);"></script>
+<meta property="og:title" content="Comparison of Volatility Estimators" />
+<meta property="og:description" content="Comparing Garman-Klass estimator to 5-minute Realized Volatility estimator." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://example.org/posts/vol_estimators/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-03-07T00:00:00&#43;00:00" />
+<meta property="article:modified_time" content="2021-03-07T00:00:00&#43;00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Comparison of Volatility Estimators"/>
+<meta name="twitter:description" content="Comparing Garman-Klass estimator to 5-minute Realized Volatility estimator."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "http://example.org/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Comparison of Volatility Estimators",
+      "item": "http://example.org/posts/vol_estimators/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Comparison of Volatility Estimators",
+  "name": "Comparison of Volatility Estimators",
+  "description": "Comparing Garman-Klass estimator to 5-minute Realized Volatility estimator.",
+  "keywords": [
+    "volatility", "realized-volatility"
+  ],
+  "articleBody": "Today, I’m going to be discussing the difference between two volatility estimators.\nThe Data  I’m going to be using daily-resolution SPX data from Sharadar as well as minute-resolution SPX data from First Rate Data.\nimport pandas as pd import numpy as np import sqlite3 from matplotlib import pyplot as plt from scipy import stats # Set default figure size plt.rcParams[\"figure.figsize\"] = (15, 10) conn = sqlite3.Connection(\"data.db\") spx_daily = pd.read_sql(\"SELECT * FROM prices WHERE ticker='^GSPC'\", conn, index_col=\"date\", parse_dates=[\"date\"]) spx_minute = minute = pd.read_csv(\"SPX_1min.csv\", header=0,names=['datetime', 'open', 'high', 'low', 'close'], index_col='datetime', parse_dates=True) # A quick look at the data spx_daily.head()  .dataframe tbody tr th:only-of-type { vertical-align: middle; } .dataframe tbody tr th { vertical-align: top; } .dataframe thead th { text-align: right; }  \n  ticker open high low close volume dividends closeunadj lastupdated   date              1997-12-31 ^GSPC 970.84 975.02 967.41 970.43 467280000 0 970.43 2019-02-03   1998-01-02 ^GSPC 970.43 975.04 965.73 975.04 366730000 0 975.04 2019-02-03   1998-01-05 ^GSPC 975.04 982.63 969.00 977.07 628070000 0 977.07 2019-02-03   1998-01-06 ^GSPC 977.07 977.07 962.68 966.58 618360000 0 966.58 2019-02-03   1998-01-07 ^GSPC 966.58 966.58 952.67 964.00 667390000 0 964.00 2019-02-03     spx_minute.head()  .dataframe tbody tr th:only-of-type { vertical-align: middle; } .dataframe tbody tr th { vertical-align: top; } .dataframe thead th { text-align: right; }  \n  open high low close   datetime         2007-04-27 12:25:00 1492.39 1492.54 1492.39 1492.54   2007-04-27 12:26:00 1492.57 1492.57 1492.52 1492.56   2007-04-27 12:27:00 1492.58 1492.64 1492.58 1492.63   2007-04-27 12:28:00 1492.63 1492.73 1492.63 1492.73   2007-04-27 12:29:00 1492.91 1492.91 1492.87 1492.87     The Estimators  Now, what I want to do is compare volatility estimates from these two data sets. I would prefer to use the daily data if possible, because in my case it’s easier to get and updates more frequently.\nGarman-Klass Estimator This estimator has been around for a while and is deemed to be far more effcient than a traditional close-to-close volatility estimator (Garman and Klass, 1980).\nFrom equation 20 in the paper, a jump adjusted volatility estimator:\n$$f = 0.73$$ percentage of the day trading is closed based on NYSE hours of 9:30 to 4\n$$a = 0.12$$ as they suggest in the paper\n$$\\sigma^2_{unadj} = 0.511(u - d)^2 - 0.019(c(u+d) - 2ud) - 0.383c^2$$\n$$\\sigma^2_{adj} = 0.12\\frac{(O_{1} - C_{0})^2}{0.73} + 0.12\\frac{\\sigma^2_{unadj}}{0.27}$$\nWhere\n$$u = H_{1} - O_{1}$$ the normalized high\n$$d = L_{1} - O_{1}$$ the normalized low\n$$c = C_{1} - O_{1}$$ the normalized close and subscripts indicating time. They also indicate in the paper that these equations expect the log of the price series.\ndef gk_vol_calc(data): u = np.log(data['high']) - np.log(data['open']) d = np.log(data['low']) - np.log(data['open']) c = np.log(data['close']) - np.log(data['open']) vol_unadj = 0.511 * (u - d)**2 - 0.019 * (c * (u + d) - 2 * u * d) - 0.283 * c**2 jumps = np.log(data['open']) - np.log(data['close'].shift(1)) vol_adj = 0.12 * (jumps**2 / 0.73) + 0.12 * (vol_unadj / 0.27) return vol_adj # Let's take a look gk_vol = np.sqrt(gk_vol_calc(spx_daily)) gk_vol.plot()   As an aside, opening jumps have become more common and larger in recent years, maybe something to investigate. This is as a percentage, so it’s not a simple case of the index values becoming larger.\n(spx_daily['open'] / spx_daily['close'].shift(1) - 1).plot()   Realized Volatility Estimator This estimator is very simply and has become more prominent in the literature in the last few years because of increasing availability of higher-frequency data. Based on (Liu, Patton, and Sheppard, 2012), it’s hard to beat a 5-minute RV. Here, I’m going to use a 1-minute estimator, which is also shown to be effective.\n$$RV_{t} = \\sum_{k=1}^n r_{t,k}^2$$ where the t index is each day, and the k index represents each intraday return\nFor daily volatility, it’s simply a sum of squared returns from within that day. So in this case we calculate returns for each 1 minute period, square them, and they sum them for each day.\ndef rv_calc(data): results = {} for idx, data in data.groupby(data.index.date): returns = np.log(data['close']) - np.log(data['close'].shift(1)) results[idx] = np.sum(returns**2) return pd.Series(results) # Let's take a look at this one rv = np.sqrt(rv_calc(spx_minute)) rv.plot()   Comparisons  # Because the minute data has a shorter history, let's match them up gk_vol = gk_vol.reindex(rv.index) rv.plot() gk_vol.plot()   Here’s a plot of our two different volatility estimators with RV in blue and Garman-Klass in orange. The RV estimator is far less noisy, looking at each of their graphs above. The Garman-Klass estimator also seems to persistently return a lower result than RV. This is backed up by looking at a graph of their difference.\n(gk_vol - rv).plot()   Netx, let’s analyze how they do at normalizing the returns of the S\u0026P 500. According to (Molnár, 2015) normalizing a number of equity returns by their Garman-Klass estimated volatility does indeed make their distributions normal. Let’s see if we can replicate that result with either of our esimates on the S\u0026P 500.\n# Daily close-to-close returns of the S\u0026P 500 spx_returns = np.log(spx_daily['close']) - np.log(spx_daily['close'].shift(1)) spx_returns = spx_returns.reindex(rv.index) # Normalizing by our estimated volatilties gk_vol_norm = (spx_returns / gk_vol).dropna() rv_norm = (spx_returns / rv).dropna() # Here are the unadjusted returns _, _, _ = plt.hist(spx_returns, bins=50)   # Here's normalized by the Garman-Klass Estimator _, _, _ = plt.hist(gk_vol_norm, bins=50)   # And this is by the RV estimator _, _, _ = plt.hist(rv_norm, bins=50)   At first glance, the RV adjusted returns seem most like normal to me, let’s run some tests. These Scipy tests set the null hypothesis that the data comes from a corresponding normal distribution. So if the p-value is small we can reject that hypothesis and conclude the distribution is non-normal.\nprint(stats.skewtest(gk_vol_norm)) print(stats.skewtest(rv_norm)) Garman-Klass Skew: SkewtestResult(statistic=-0.3767923327324783, pvalue=0.7063279391177064) RV-5min Skew: SkewtestResult(statistic=5.251294175425576, pvalue=1.5103423951480544e-07) print(stats.kurtosistest(gk_vol_norm)) print(stats.kurtosistest(rv_norm)) KurtosistestResult(statistic=-13.088609427904334, pvalue=3.825472809774632e-39) KurtosistestResult(statistic=0.315320709120601, pvalue=0.7525181628202805) Looks like the Garman-Klass-normalized returns have normal skew, but non-normal kurtosis. The RV-normalized returns have non-normal skew but normal kurtosis! There’s no winning here! Both are non-normal in different ways. Either normalization does do better than the unadjusted returns though.\nprint(stats.skewtest(spx_returns.dropna())) print(stats.kurtosistest(spx_returns.dropna())) SkewtestResult(statistic=-12.386230904806132, pvalue=3.1028724633560147e-35) KurtosistestResult(statistic=26.470418979318143, pvalue=2.124045513612033e-154) Conclusion  While from a statistical point of view, neither option seems particularly favorable, my personal choice is going to be the RV estimator. I think the literature is clear on its efficacy and its less noisy and conceptually easier. It’s been said that when there are a bunch of competing theories, none of them are very good. So I’ll pick the simplest option and go with RV.\nReferences    Garman, M., \u0026 Klass, M. (1980). On the Estimation of Security Price Volatilities from Historical Data. The Journal of Business, 53(1), 67-78. Retrieved February 14, 2021, from http://www.jstor.org/stable/2352358\n  Liu, L., Patton, A., \u0026 Sheppard, K. (2012). Does Anything Beat 5-Minute RV? A Comparison of Realized Measures Across Multiple Asset Classes. SSRN. http://dx.doi.org/10.2139/ssrn.2214997\n  Molnár, P. (2015). Properties of Range-Based Volatility Estimators. SSRN. Retrieved from https://ssrn.com/abstract=2691435\n  ",
+  "wordCount" : "1106",
+  "inLanguage": "en",
+  "datePublished": "2021-03-07T00:00:00Z",
+  "dateModified": "2021-03-07T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "Erik Dains"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://example.org/posts/vol_estimators/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Optionally Bayes",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://example.org/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<noscript>
+    <style type="text/css">
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://example.org/" accesskey="h" title="Optionally Bayes (Alt + H)">Optionally Bayes</a>
+            <span class="logo-switches">
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://example.org/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://example.org/tags/" title="Tags">
+                    <span>Tags</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://example.org/archives/" title="Archive">
+                    <span>Archive</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://example.org/search/" title="Search (Alt &#43; /)" accesskey=/>
+                    <span>Search</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title">
+      Comparison of Volatility Estimators
+    </h1>
+    <div class="post-meta">March 7, 2021&nbsp;·&nbsp;Erik Dains
+</div>
+  </header> 
+  <div class="post-content"><p>Today, I&rsquo;m going to be discussing the difference between two volatility estimators.</p>
+<h1 id="the-data">The Data<a hidden class="anchor" aria-hidden="true" href="#the-data">#</a></h1>
+<hr>
+<p>I&rsquo;m going to be using daily-resolution SPX data from <a href="https://www.quandl.com/publishers/SHARADAR">Sharadar</a> as well as minute-resolution SPX data from <a href="https://firstratedata.com/">First Rate Data</a>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> pandas <span style="color:#66d9ef">as</span> pd
+<span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+<span style="color:#f92672">import</span> sqlite3
+<span style="color:#f92672">from</span> matplotlib <span style="color:#f92672">import</span> pyplot <span style="color:#66d9ef">as</span> plt
+<span style="color:#f92672">from</span> scipy <span style="color:#f92672">import</span> stats
+
+<span style="color:#75715e"># Set default figure size</span>
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#34;figure.figsize&#34;</span>] <span style="color:#f92672">=</span> (<span style="color:#ae81ff">15</span>, <span style="color:#ae81ff">10</span>)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">conn <span style="color:#f92672">=</span> sqlite3<span style="color:#f92672">.</span>Connection(<span style="color:#e6db74">&#34;data.db&#34;</span>)
+
+spx_daily <span style="color:#f92672">=</span> pd<span style="color:#f92672">.</span>read_sql(<span style="color:#e6db74">&#34;SELECT * FROM prices WHERE ticker=&#39;^GSPC&#39;&#34;</span>, conn, index_col<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;date&#34;</span>, parse_dates<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#34;date&#34;</span>])
+spx_minute <span style="color:#f92672">=</span> minute <span style="color:#f92672">=</span> pd<span style="color:#f92672">.</span>read_csv(<span style="color:#e6db74">&#34;SPX_1min.csv&#34;</span>, header<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>,names<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#39;datetime&#39;</span>, <span style="color:#e6db74">&#39;open&#39;</span>, <span style="color:#e6db74">&#39;high&#39;</span>, <span style="color:#e6db74">&#39;low&#39;</span>, <span style="color:#e6db74">&#39;close&#39;</span>],
+                                  index_col<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;datetime&#39;</span>, parse_dates<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># A quick look at the data</span>
+spx_daily<span style="color:#f92672">.</span>head()
+</code></pre></div><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+<pre><code>.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+</code></pre>
+<p></style></p>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ticker</th>
+      <th>open</th>
+      <th>high</th>
+      <th>low</th>
+      <th>close</th>
+      <th>volume</th>
+      <th>dividends</th>
+      <th>closeunadj</th>
+      <th>lastupdated</th>
+    </tr>
+    <tr>
+      <th>date</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1997-12-31</th>
+      <td>^GSPC</td>
+      <td>970.84</td>
+      <td>975.02</td>
+      <td>967.41</td>
+      <td>970.43</td>
+      <td>467280000</td>
+      <td>0</td>
+      <td>970.43</td>
+      <td>2019-02-03</td>
+    </tr>
+    <tr>
+      <th>1998-01-02</th>
+      <td>^GSPC</td>
+      <td>970.43</td>
+      <td>975.04</td>
+      <td>965.73</td>
+      <td>975.04</td>
+      <td>366730000</td>
+      <td>0</td>
+      <td>975.04</td>
+      <td>2019-02-03</td>
+    </tr>
+    <tr>
+      <th>1998-01-05</th>
+      <td>^GSPC</td>
+      <td>975.04</td>
+      <td>982.63</td>
+      <td>969.00</td>
+      <td>977.07</td>
+      <td>628070000</td>
+      <td>0</td>
+      <td>977.07</td>
+      <td>2019-02-03</td>
+    </tr>
+    <tr>
+      <th>1998-01-06</th>
+      <td>^GSPC</td>
+      <td>977.07</td>
+      <td>977.07</td>
+      <td>962.68</td>
+      <td>966.58</td>
+      <td>618360000</td>
+      <td>0</td>
+      <td>966.58</td>
+      <td>2019-02-03</td>
+    </tr>
+    <tr>
+      <th>1998-01-07</th>
+      <td>^GSPC</td>
+      <td>966.58</td>
+      <td>966.58</td>
+      <td>952.67</td>
+      <td>964.00</td>
+      <td>667390000</td>
+      <td>0</td>
+      <td>964.00</td>
+      <td>2019-02-03</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">spx_minute<span style="color:#f92672">.</span>head()
+</code></pre></div><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+<pre><code>.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+</code></pre>
+<p></style></p>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>open</th>
+      <th>high</th>
+      <th>low</th>
+      <th>close</th>
+    </tr>
+    <tr>
+      <th>datetime</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2007-04-27 12:25:00</th>
+      <td>1492.39</td>
+      <td>1492.54</td>
+      <td>1492.39</td>
+      <td>1492.54</td>
+    </tr>
+    <tr>
+      <th>2007-04-27 12:26:00</th>
+      <td>1492.57</td>
+      <td>1492.57</td>
+      <td>1492.52</td>
+      <td>1492.56</td>
+    </tr>
+    <tr>
+      <th>2007-04-27 12:27:00</th>
+      <td>1492.58</td>
+      <td>1492.64</td>
+      <td>1492.58</td>
+      <td>1492.63</td>
+    </tr>
+    <tr>
+      <th>2007-04-27 12:28:00</th>
+      <td>1492.63</td>
+      <td>1492.73</td>
+      <td>1492.63</td>
+      <td>1492.73</td>
+    </tr>
+    <tr>
+      <th>2007-04-27 12:29:00</th>
+      <td>1492.91</td>
+      <td>1492.91</td>
+      <td>1492.87</td>
+      <td>1492.87</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<h1 id="the-estimators">The Estimators<a hidden class="anchor" aria-hidden="true" href="#the-estimators">#</a></h1>
+<hr>
+<p>Now, what I want to do is compare volatility estimates from these two data sets. I would prefer to use the daily data if possible, because in my case it&rsquo;s easier to get and updates more frequently.</p>
+<h3 id="garman-klass-estimator">Garman-Klass Estimator<a hidden class="anchor" aria-hidden="true" href="#garman-klass-estimator">#</a></h3>
+<p>This estimator has been around for a while and is deemed to be far more effcient than a traditional close-to-close volatility estimator (Garman and Klass, 1980).</p>
+<p>From equation 20 in the paper, a jump adjusted volatility estimator:</p>
+<p>$$f = 0.73$$ percentage of the day trading is closed based on NYSE hours of 9:30 to 4</p>
+<p>$$a = 0.12$$ as they suggest in the paper</p>
+<p>$$\sigma^2_{unadj} = 0.511(u - d)^2 - 0.019(c(u+d) - 2ud) - 0.383c^2$$</p>
+<p>$$\sigma^2_{adj} = 0.12\frac{(O_{1} - C_{0})^2}{0.73} + 0.12\frac{\sigma^2_{unadj}}{0.27}$$</p>
+<p>Where</p>
+<p>$$u = H_{1} - O_{1}$$ the normalized high</p>
+<p>$$d = L_{1} - O_{1}$$ the normalized low</p>
+<p>$$c = C_{1} - O_{1}$$ the normalized close and subscripts indicating time. They also indicate in the paper that these equations expect the log of the price series.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">gk_vol_calc</span>(data):
+    u <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>log(data[<span style="color:#e6db74">&#39;high&#39;</span>]) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>log(data[<span style="color:#e6db74">&#39;open&#39;</span>])
+    d <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>log(data[<span style="color:#e6db74">&#39;low&#39;</span>]) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>log(data[<span style="color:#e6db74">&#39;open&#39;</span>])
+    c <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>log(data[<span style="color:#e6db74">&#39;close&#39;</span>]) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>log(data[<span style="color:#e6db74">&#39;open&#39;</span>])
+    vol_unadj <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.511</span> <span style="color:#f92672">*</span> (u <span style="color:#f92672">-</span> d)<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">0.019</span> <span style="color:#f92672">*</span> (c <span style="color:#f92672">*</span> (u <span style="color:#f92672">+</span> d) <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> u <span style="color:#f92672">*</span> d) <span style="color:#f92672">-</span> <span style="color:#ae81ff">0.283</span> <span style="color:#f92672">*</span> c<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>
+    
+    jumps <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>log(data[<span style="color:#e6db74">&#39;open&#39;</span>]) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>log(data[<span style="color:#e6db74">&#39;close&#39;</span>]<span style="color:#f92672">.</span>shift(<span style="color:#ae81ff">1</span>))
+    vol_adj <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.12</span> <span style="color:#f92672">*</span> (jumps<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span> <span style="color:#f92672">/</span> <span style="color:#ae81ff">0.73</span>) <span style="color:#f92672">+</span> <span style="color:#ae81ff">0.12</span> <span style="color:#f92672">*</span> (vol_unadj <span style="color:#f92672">/</span> <span style="color:#ae81ff">0.27</span>)
+    
+    <span style="color:#66d9ef">return</span> vol_adj
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Let&#39;s take a look</span>
+gk_vol <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt(gk_vol_calc(spx_daily))
+gk_vol<span style="color:#f92672">.</span>plot()
+</code></pre></div><figure>
+    <img loading="lazy" src="./output_11_1.png"/> 
+</figure>
+
+<p>As an aside, opening jumps have become more common and larger in recent years, maybe something to investigate. This is as a percentage, so it&rsquo;s not a simple case of the index values becoming larger.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">(spx_daily[<span style="color:#e6db74">&#39;open&#39;</span>] <span style="color:#f92672">/</span> spx_daily[<span style="color:#e6db74">&#39;close&#39;</span>]<span style="color:#f92672">.</span>shift(<span style="color:#ae81ff">1</span>) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>plot()
+</code></pre></div><figure>
+    <img loading="lazy" src="./output_13_1.png"/> 
+</figure>
+
+<h3 id="realized-volatility-estimator">Realized Volatility Estimator<a hidden class="anchor" aria-hidden="true" href="#realized-volatility-estimator">#</a></h3>
+<p>This estimator is very simply and has become more prominent in the literature in the last few years because of increasing availability of higher-frequency data. Based on (Liu, Patton, and Sheppard, 2012), it&rsquo;s hard to beat a 5-minute RV. Here, I&rsquo;m going to use a 1-minute estimator, which is also shown to be effective.</p>
+<p>$$RV_{t} = \sum_{k=1}^n r_{t,k}^2$$ where the t index is each day, and the k index represents each intraday return</p>
+<p>For daily volatility, it&rsquo;s simply a sum of squared returns from within that day. So in this case we calculate returns for each 1 minute period, square them, and they sum them for each day.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">rv_calc</span>(data):
+    results <span style="color:#f92672">=</span> {}
+    
+    <span style="color:#66d9ef">for</span> idx, data <span style="color:#f92672">in</span> data<span style="color:#f92672">.</span>groupby(data<span style="color:#f92672">.</span>index<span style="color:#f92672">.</span>date):
+        returns <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>log(data[<span style="color:#e6db74">&#39;close&#39;</span>]) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>log(data[<span style="color:#e6db74">&#39;close&#39;</span>]<span style="color:#f92672">.</span>shift(<span style="color:#ae81ff">1</span>))
+        results[idx] <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sum(returns<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>)
+        
+    <span style="color:#66d9ef">return</span> pd<span style="color:#f92672">.</span>Series(results)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Let&#39;s take a look at this one</span>
+rv <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt(rv_calc(spx_minute))
+rv<span style="color:#f92672">.</span>plot()
+</code></pre></div><figure>
+    <img loading="lazy" src="./output_16_1.png"/> 
+</figure>
+
+<h1 id="comparisons">Comparisons<a hidden class="anchor" aria-hidden="true" href="#comparisons">#</a></h1>
+<hr>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Because the minute data has a shorter history, let&#39;s match them up</span>
+gk_vol <span style="color:#f92672">=</span> gk_vol<span style="color:#f92672">.</span>reindex(rv<span style="color:#f92672">.</span>index)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">rv<span style="color:#f92672">.</span>plot()
+gk_vol<span style="color:#f92672">.</span>plot()
+</code></pre></div><figure>
+    <img loading="lazy" src="./output_19_1.png"/> 
+</figure>
+
+<p>Here&rsquo;s a plot of our two different volatility estimators with RV in blue and Garman-Klass in orange. The RV estimator is far less noisy, looking at each of their graphs above. The Garman-Klass estimator also seems to persistently return a lower result than RV. This is backed up by looking at a graph of their difference.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">(gk_vol <span style="color:#f92672">-</span> rv)<span style="color:#f92672">.</span>plot()
+</code></pre></div><figure>
+    <img loading="lazy" src="./output_21_1.png"/> 
+</figure>
+
+<p>Netx, let&rsquo;s analyze how they do at normalizing the returns of the S&amp;P 500. According to (Molnár, 2015) normalizing a number of equity returns by their Garman-Klass estimated volatility does indeed make their distributions normal. Let&rsquo;s see if we can replicate that result with either of our esimates on the S&amp;P 500.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Daily close-to-close returns of the S&amp;P 500</span>
+spx_returns <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>log(spx_daily[<span style="color:#e6db74">&#39;close&#39;</span>]) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>log(spx_daily[<span style="color:#e6db74">&#39;close&#39;</span>]<span style="color:#f92672">.</span>shift(<span style="color:#ae81ff">1</span>))
+spx_returns <span style="color:#f92672">=</span> spx_returns<span style="color:#f92672">.</span>reindex(rv<span style="color:#f92672">.</span>index)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Normalizing by our estimated volatilties</span>
+gk_vol_norm <span style="color:#f92672">=</span> (spx_returns <span style="color:#f92672">/</span> gk_vol)<span style="color:#f92672">.</span>dropna()
+rv_norm <span style="color:#f92672">=</span> (spx_returns <span style="color:#f92672">/</span> rv)<span style="color:#f92672">.</span>dropna()
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Here are the unadjusted returns</span>
+_, _, _ <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>hist(spx_returns, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
+</code></pre></div><figure>
+    <img loading="lazy" src="./output_25_0.png"/> 
+</figure>
+
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Here&#39;s normalized by the Garman-Klass Estimator</span>
+_, _, _ <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>hist(gk_vol_norm, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
+</code></pre></div><figure>
+    <img loading="lazy" src="./output_26_0.png"/> 
+</figure>
+
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># And this is by the RV estimator</span>
+_, _, _ <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>hist(rv_norm, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
+</code></pre></div><figure>
+    <img loading="lazy" src="./output_27_0.png"/> 
+</figure>
+
+<p>At first glance, the RV adjusted returns seem most like normal to me, let&rsquo;s run some tests. These Scipy tests set the null hypothesis that the data comes from a corresponding normal distribution. So if the p-value is small we can reject that hypothesis and conclude the distribution is non-normal.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">print(stats<span style="color:#f92672">.</span>skewtest(gk_vol_norm))
+print(stats<span style="color:#f92672">.</span>skewtest(rv_norm))
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    Garman-Klass Skew: SkewtestResult(statistic=-0.3767923327324783, pvalue=0.7063279391177064)
+    RV-5min Skew: SkewtestResult(statistic=5.251294175425576, pvalue=1.5103423951480544e-07)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">print(stats<span style="color:#f92672">.</span>kurtosistest(gk_vol_norm))
+print(stats<span style="color:#f92672">.</span>kurtosistest(rv_norm))
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    KurtosistestResult(statistic=-13.088609427904334, pvalue=3.825472809774632e-39)
+    KurtosistestResult(statistic=0.315320709120601, pvalue=0.7525181628202805)
+</code></pre></div><p>Looks like the Garman-Klass-normalized returns have normal skew, but non-normal kurtosis. The RV-normalized returns have non-normal skew but normal kurtosis! There&rsquo;s no winning here! Both are non-normal in different ways. Either normalization does do better than the unadjusted returns though.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">print(stats<span style="color:#f92672">.</span>skewtest(spx_returns<span style="color:#f92672">.</span>dropna()))
+print(stats<span style="color:#f92672">.</span>kurtosistest(spx_returns<span style="color:#f92672">.</span>dropna()))
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    SkewtestResult(statistic=-12.386230904806132, pvalue=3.1028724633560147e-35)
+    KurtosistestResult(statistic=26.470418979318143, pvalue=2.124045513612033e-154)
+</code></pre></div><h1 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h1>
+<hr>
+<p>While from a statistical point of view, neither option seems particularly favorable, my personal choice is going to be the RV estimator. I think the literature is clear on its efficacy and its less noisy and conceptually easier. It&rsquo;s been said that when there are a bunch of competing theories, none of them are very good. So I&rsquo;ll pick the simplest option and go with RV.</p>
+<h1 id="references">References<a hidden class="anchor" aria-hidden="true" href="#references">#</a></h1>
+<hr>
+<ul>
+<li>
+<p>Garman, M., &amp; Klass, M. (1980). On the Estimation of Security Price Volatilities from Historical Data. The Journal of Business, 53(1), 67-78. Retrieved February 14, 2021, from <a href="http://www.jstor.org/stable/2352358">http://www.jstor.org/stable/2352358</a></p>
+</li>
+<li>
+<p>Liu, L., Patton, A., &amp; Sheppard, K. (2012). Does Anything Beat 5-Minute RV? A Comparison of Realized Measures Across Multiple Asset Classes. SSRN. <a href="http://dx.doi.org/10.2139/ssrn.2214997">http://dx.doi.org/10.2139/ssrn.2214997</a></p>
+</li>
+<li>
+<p>Molnár, P. (2015). Properties of Range-Based Volatility Estimators. SSRN. Retrieved from <a href="https://ssrn.com/abstract=2691435">https://ssrn.com/abstract=2691435</a></p>
+</li>
+</ul>
+
+
+  </div>
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://example.org/tags/volatility/">volatility</a></li>
+      <li><a href="http://example.org/tags/realized-volatility/">realized-volatility</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    <footer class="footer">
+    <span>&copy; 2021 <a href="http://example.org/">Optionally Bayes</a></span>
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://git.io/hugopapermod" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)">
+    <button class="top-link" id="top-link" type="button" accesskey="g">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+            <path d="M12 6H0l6-6z" />
+        </svg>
+    </button>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+    menu.onscroll = function () {
+        localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+</body>
+
+</html>

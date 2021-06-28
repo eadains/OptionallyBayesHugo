@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Tags on Optionally Bayes</title>
+    <link>http://example.org/tags/</link>
+    <description>Recent content in Tags on Optionally Bayes</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 01 May 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://example.org/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>options</title>
+      <link>http://example.org/tags/options/</link>
+      <pubDate>Sat, 01 May 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/tags/options/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>pricing</title>
+      <link>http://example.org/tags/pricing/</link>
+      <pubDate>Sat, 01 May 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/tags/pricing/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>pytorch</title>
+      <link>http://example.org/tags/pytorch/</link>
+      <pubDate>Sat, 01 May 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/tags/pytorch/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>forecasting</title>
+      <link>http://example.org/tags/forecasting/</link>
+      <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/tags/forecasting/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>machine-learning</title>
+      <link>http://example.org/tags/machine-learning/</link>
+      <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/tags/machine-learning/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>mixture-density-network</title>
+      <link>http://example.org/tags/mixture-density-network/</link>
+      <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/tags/mixture-density-network/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>model-building</title>
+      <link>http://example.org/tags/model-building/</link>
+      <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/tags/model-building/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>volatility</title>
+      <link>http://example.org/tags/volatility/</link>
+      <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/tags/volatility/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>bayesian</title>
+      <link>http://example.org/tags/bayesian/</link>
+      <pubDate>Wed, 17 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/tags/bayesian/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>realized-volatility</title>
+      <link>http://example.org/tags/realized-volatility/</link>
+      <pubDate>Sun, 07 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/tags/realized-volatility/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>diversification-ratio</title>
+      <link>http://example.org/tags/diversification-ratio/</link>
+      <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/tags/diversification-ratio/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>drawdown</title>
+      <link>http://example.org/tags/drawdown/</link>
+      <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/tags/drawdown/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ETFs</title>
+      <link>http://example.org/tags/etfs/</link>
+      <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/tags/etfs/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>performance-measurement</title>
+      <link>http://example.org/tags/performance-measurement/</link>
+      <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/tags/performance-measurement/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>portfolio-optimization</title>
+      <link>http://example.org/tags/portfolio-optimization/</link>
+      <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/tags/portfolio-optimization/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

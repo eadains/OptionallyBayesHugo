@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>diversification-ratio on Optionally Bayes</title>
+    <link>http://example.org/tags/diversification-ratio/</link>
+    <description>Recent content in diversification-ratio on Optionally Bayes</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 07 Jan 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://example.org/tags/diversification-ratio/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>A Most Diversified ETF Portfolio</title>
+      <link>http://example.org/posts/mdp_etf_portfolio/</link>
+      <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/posts/mdp_etf_portfolio/</guid>
+      <description>Constructing a portfolio from a selection of ETFs to maximize the diversification ratio</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>volatility on Optionally Bayes</title>
+    <link>http://example.org/tags/volatility/</link>
+    <description>Recent content in volatility on Optionally Bayes</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 07 Apr 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://example.org/tags/volatility/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Mixture Density Network for Forecasting Realized Volatility</title>
+      <link>http://example.org/posts/vol_mdn/</link>
+      <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/posts/vol_mdn/</guid>
+      <description>Using a mixture density neural network implemented in PyTorch to forecast the distribution of future realized volatility.</description>
+    </item>
+    
+    <item>
+      <title>Bayesian Autoregressive Volatility Forecasting</title>
+      <link>http://example.org/posts/vol_linear_model/</link>
+      <pubDate>Wed, 17 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/posts/vol_linear_model/</guid>
+      <description>Using a simple bayesian autoregressive model to forecast future volatility</description>
+    </item>
+    
+    <item>
+      <title>Comparison of Volatility Estimators</title>
+      <link>http://example.org/posts/vol_estimators/</link>
+      <pubDate>Sun, 07 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/posts/vol_estimators/</guid>
+      <description>Comparing Garman-Klass estimator to 5-minute Realized Volatility estimator.</description>
+    </item>
+    
+  </channel>
+</rss>
