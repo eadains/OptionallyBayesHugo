@@ -1,0 +1,51 @@
+baseURL: http://example.org/
+languageCode: en-us
+title: Optionally Bayes
+paginate: 6
+theme: "PaperMod"
+
+params:
+  description: "A blog for all things math, finance, and data science. Written by Erik Dains"
+  author: Erik Dains
+  defaultTheme: light
+  disableThemeToggle: true
+  math: true
+
+  homeInfoParams:
+    Title: Welcome!
+    Content: "My blog for all things math, finance, and data science.
+    I'm always looking for interesting work, so feel free to contact me on social media or LinkedIn!"
+
+  socialIcons:
+  - name: "github"
+    url: https://github.com/eadains
+  - name: "linkedin"
+    url: https://www.linkedin.com/in/erik-dains/
+  - name: "instagram"
+    url: https://www.instagram.com/erikdains/
+
+menu:
+  main:
+    - name: Posts
+      url: posts/
+      weight: 1
+    - name: Tags
+      url: tags/
+      weight: 3
+    - name: Archive
+      url: archives/
+      weight: 4
+    - name: Search
+      url: search/
+      weight: 5
+
+outputs:
+    home:
+        - HTML
+        - RSS
+        - JSON
+
+markup:
+  goldmark:
+    renderer:
+      unsafe: true

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Monte Carlo Methods for Option Pricing and Greeks | Optionally Bayes</title>
+<meta name="keywords" content="pricing, pytorch, options" />
+<meta name="description" content="Using PyTorch to easily compute Option Greeks first using Black-Scholes and then Monte Carlo methods.">
+<meta name="author" content="Erik Dains">
+<link rel="canonical" href="http://example.org/posts/option_pricing/" />
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.35cd0f65a15cafa92372b8313deef5960aae04b90ad722f2bbf509eb0468137e.css" integrity="sha256-Nc0PZaFcr6kjcrgxPe71lgquBLkK1yLyu/UJ6wRoE34=" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.7680afc38aa6b15ddf158a4f3780b7b1f7dde7e91d26f073e6229bb7a0793c92.js" integrity="sha256-doCvw4qmsV3fFYpPN4C3sffd5&#43;kdJvBz5iKbt6B5PJI="
+    onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="http://example.org/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://example.org/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://example.org/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://example.org/apple-touch-icon.png">
+<link rel="mask-icon" href="http://example.org/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.84.0" />
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css"
+    integrity="sha384-Um5gpz1odJg5Z4HAmzPtgZKdTBHZdw8S29IecapCSB31ligYPhHQZMIlWLYQGVoc" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.js"
+    integrity="sha384-YNHdsYkH6gMx9y3mRkmcJ2mFUjTd0qNQQvY9VYZgQd7DcN7env35GzlmFaZ23JGp"
+    crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/auto-render.min.js"
+    integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous"
+    onload="renderMathInElement(document.body);"></script>
+<meta property="og:title" content="Monte Carlo Methods for Option Pricing and Greeks" />
+<meta property="og:description" content="Using PyTorch to easily compute Option Greeks first using Black-Scholes and then Monte Carlo methods." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://example.org/posts/option_pricing/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-05-01T00:00:00&#43;00:00" />
+<meta property="article:modified_time" content="2021-05-01T00:00:00&#43;00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Monte Carlo Methods for Option Pricing and Greeks"/>
+<meta name="twitter:description" content="Using PyTorch to easily compute Option Greeks first using Black-Scholes and then Monte Carlo methods."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "http://example.org/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Monte Carlo Methods for Option Pricing and Greeks",
+      "item": "http://example.org/posts/option_pricing/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Monte Carlo Methods for Option Pricing and Greeks",
+  "name": "Monte Carlo Methods for Option Pricing and Greeks",
+  "description": "Using PyTorch to easily compute Option Greeks first using Black-Scholes and then Monte Carlo methods.",
+  "keywords": [
+    "pricing", "pytorch", "options"
+  ],
+  "articleBody": "Alright, in this post I’m going to run through how to price options using Monte Carlo methods and also compute the associated greeks using automatic differentiation in PyTorch.\nBlack-Scholes  First, let’s look at implementing the Black-Scholes model in PyTorch.\nThe input variables are as follows:\n\\(K\\) : Strike price of the option\n\\(S(t)\\) : Price of the underlying asset at time \\(t\\)\n\\(t\\) : Current time in years.\n\\(T\\) : Time of option expiration\n\\(\\sigma\\) : Standard deviation of the underlying returns\n\\(r\\) : Annualized risk-free rate\n\\(N(x)\\) : Standard Normal cumulative distribution function\nThe price of a call option is given by:\n$$C(S_t, t) = N(d_1) S_t - N(d_2) K e^{-r(T-t)}$$\n$$d_1 = \\frac{1}{\\sigma\\sqrt{T-t}}[\\ln(\\frac{S_t}{K}) + (r + \\frac{\\sigma^2}{2})(T-t)]$$\n$$d_2 = d_1 - \\sigma\\sqrt{T-t}$$\nAnd by parity the price of a put option is given by:\n$$P(S_t, t) = N(-d_2) K e^{-r(T-t)} - N(-d_1) S_t$$\n Now, let’s implement that using PyTorch functions. For simplicity I replace \\(T\\) and \\(t\\) and their difference by a single term \\(T\\) specifying the total time left to expiry in years.\nimport torch from torch.distributions import Normal std_norm_cdf = Normal(0, 1).cdf std_norm_pdf = lambda x: torch.exp(Normal(0, 1).log_prob(x)) def bs_price(right, K, S, T, sigma, r): d_1 = (1 / (sigma * torch.sqrt(T))) * (torch.log(S / K) + (r + (torch.square(sigma) / 2)) * T) d_2 = d_1 - sigma * torch.sqrt(T) if right == \"C\": C = std_norm_cdf(d_1) * S - std_norm_cdf(d_2) * K * torch.exp(-r * T) return C elif right == \"P\": P = std_norm_cdf(-d_2) * K * torch.exp(-r * T) - std_norm_cdf(-d_1) * S return P With this function I can calculate the price of a call option with the underyling at 100, strike price at 100, 1 year to expiration, 5% annual volatility, and a risk-free rate of 1% annually.\nright = \"C\" K = torch.tensor(100.0, requires_grad=True) S = torch.tensor(100.0, requires_grad=True) T = torch.tensor(1.0, requires_grad=True) sigma = torch.tensor(0.05, requires_grad=True) r = torch.tensor(0.01, requires_grad=True) price = bs_price(right, K, S, T, sigma, r) print(price) tensor(2.5216, grad_fn=) Now, the magic of PyTorch is that it tracks all of those computations in a graph and can use its automatic differentiation feature to give us all the greeks. That’s why I told it that I needed a gradient on all of the input variables.\n# Tell PyTorch to compute gradients price.backward() print(f\"Delta: {S.grad}\\nVega: {sigma.grad}\\nTheta: {T.grad}\\nRho: {r.grad}\") Delta: 0.5890103578567505 Vega: 38.89707946777344 Theta: 1.536220908164978 Rho: 56.379390716552734 How do these compare to the greeks computed directly by differentiating the Black-Scholes formula?\nd_1 = (1 / (sigma * torch.sqrt(T))) * (torch.log(S / K) + (r + (torch.square(sigma) / 2)) * T) d_2 = d_1 - sigma * torch.sqrt(T) delta = std_norm_cdf(d_1) vega = S * std_norm_pdf(d_1) * torch.sqrt(T) theta = ((S * std_norm_pdf(d_1) * sigma) / (2 * torch.sqrt(T))) + r * K * torch.exp(-r * T) * std_norm_cdf(d_2) rho = K * T * torch.exp(-r * T) * std_norm_cdf(d_2) print(f\"Delta: {delta}\\nVega: {vega}\\nTheta: {theta}\\nRho: {rho}\") Delta: 0.5890103578567505 Vega: 38.89707946777344 Theta: 1.5362210273742676 Rho: 56.379390716552734 Exactly the same to a high level of precision! Amazing. It’s easy to see how much simpler the PyTorch autograd approach is. Note that it is possible to calculate second-order derivatives like Gamma, it just requires remaking the computation graph. If anyone knows of a workaround to this let me know.\nS = torch.tensor(100.0, requires_grad=True) price = bs_price(right, K, S, T, sigma, r) delta = torch.autograd.grad(price, S, create_graph=True)[0] delta.backward() print(f\"Autograd Gamma: {S.grad}\") # And the direct Black-Scholes calculation gamma = std_norm_pdf(d_1) / (S * sigma * torch.sqrt(T)) print(f\"BS Gamma: {gamma}\") Autograd Gamma: 0.07779412716627121 BS Gamma: 0.0777941569685936 Monte Carlo Pricing  Now that’s all fine, but nothing new except some computation tricks. Black-Scholes makes assumptions that can often violate what is observed in the real world. The problem is creating closed form pricing models under other market dynamics is usually impossible. That’s where Monte Carlo sampling comes in. It’s a trivial task to create future market paths given a model for its dynamics. You can calculate option payoffs from those paths and get a price. But how can you calculate greeks from Monte Carlo samples? Again, PyTorch and autograd can help.\nI’ll use all of the same parameters as in the example above. Let’s simulate the result of a Geometric Brownian Motion process after one year, just like Black-Scholes does.\nK = torch.tensor(100.0, requires_grad=True) S = torch.tensor(100.0, requires_grad=True) T = torch.tensor(1.0, requires_grad=True) sigma = torch.tensor(0.05, requires_grad=True) r = torch.tensor(0.01, requires_grad=True) Z = torch.randn([1000000]) # Brownian Motion W_T = torch.sqrt(T) * Z # GBM prices = S * torch.exp((r - 0.5 * torch.square(sigma)) * T + sigma * W_T) import matplotlib.pyplot as plt plt.rcParams[\"figure.figsize\"] = (15, 10) plt.hist(prices.detach().numpy(), bins=25) plt.xlabel(\"Prices\") plt.ylabel(\"Occurences\") plt.title(\"Distribution of Underlying Price after 1 Year\")   Now, let’s calculate the option payoffs under each of those future prices, discount them using the risk-free rate, and then take the mean to get the option price. The price calculated with this method is close to the price calculated using Black-Scholes.\npayoffs = torch.max(prices - K, torch.zeros(1000000)) value = torch.mean(payoffs) * torch.exp(-r * T) print(value) tensor(2.5215, grad_fn=) Now, the magic comes in. The only random sampling I used above was a parameter-less standard normal. This fact allows PyTorch to keep track of gradients throughout all of the calculations above. This is called a Pathwise Derivative. This means we can use autograd just like above to get greeks.\nvalue.backward() print(f\"Delta: {S.grad}\\nVega: {sigma.grad}\\nTheta: {T.grad}\\nRho: {r.grad}\") Delta: 0.5890941023826599 Vega: 38.89133834838867 Theta: 1.536162257194519 Rho: 56.38788604736328 All the same! This means that we can simulate any Monte Carlo process we want, as long as its random component can be reparameterized, and get prices and greeks. Obviously this is a trivial example, but let’s look at a more complicated path-dependent option contract like an Asian Option. This type of option has a payoff based on the average price of the underlying over it’s duration, rather than only the price at expiration like a Vanilla Option. This means we must simulate the price movement each day instead of just at the end.\n# All the same parameters for the price process K = torch.tensor(100.0, requires_grad=True) S = torch.tensor(100.0, requires_grad=True) T = torch.tensor(1.0, requires_grad=True) sigma = torch.tensor(0.05, requires_grad=True) r = torch.tensor(0.01, requires_grad=True) dt = torch.tensor(1 / 252) Z = torch.randn([1000000, int(T * 252)]) # Brownian Motion W_t = torch.cumsum(torch.sqrt(dt) * Z, 1) # GBM prices = S * torch.exp((r - 0.5 * torch.square(sigma)) * T + sigma * W_t) plt.plot(prices[0, :].detach().numpy()) plt.xlabel(\"Number of Days in Future\") plt.ylabel(\"Underlying Price\") plt.title(\"One Possible Price path\") plt.axhline(y=torch.mean(prices[0, :]).detach().numpy(), color=\"r\", linestyle=\"--\") plt.axhline(y=100, color='g', linestyle=\"--\")   The payoff of an Asian Option given this price path is the difference between the strike price, the green dashed line, and the daily average price over the year, shown by the dashed red line. In this case, the payoff would be zero because the average daily price is below the strike.\n# Payoff is now based on mean of underlying price, not terminal value payoffs = torch.max(torch.mean(prices, axis=1) - K, torch.zeros(1000000)) #payoffs = torch.max(prices[:, -1] - K, torch.zeros(100000)) value = torch.mean(payoffs) * torch.exp(-r * T) print(value) tensor(1.6765, grad_fn=) value.backward() print(f\"Delta: {S.grad}\\nVega: {sigma.grad}\\nTheta: {T.grad}\\nRho: {r.grad}\") Delta: 0.6314291954040527 Vega: 20.25724220275879 Theta: 0.5357358455657959 Rho: 61.46644973754883 PyTorch Autograd once again gives us greeks even though we are now pricing a totally different contract. Awesome!\nConclusion  Monte Carlo methods provide a way to price options under a much broader range of market process models. However, computing greeks can be challenging, either having to use finite difference methods or calculating pathwise derivatives symbolically. Using PyTorch can mitigate those issues and use automatic differentiation to provide greeks straight out of the box with no real overhead.\n",
+  "wordCount" : "1259",
+  "inLanguage": "en",
+  "datePublished": "2021-05-01T00:00:00Z",
+  "dateModified": "2021-05-01T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "Erik Dains"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://example.org/posts/option_pricing/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Optionally Bayes",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://example.org/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<noscript>
+    <style type="text/css">
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://example.org/" accesskey="h" title="Optionally Bayes (Alt + H)">Optionally Bayes</a>
+            <span class="logo-switches">
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://example.org/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://example.org/tags/" title="Tags">
+                    <span>Tags</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://example.org/archives/" title="Archive">
+                    <span>Archive</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://example.org/search/" title="Search (Alt &#43; /)" accesskey=/>
+                    <span>Search</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title">
+      Monte Carlo Methods for Option Pricing and Greeks
+    </h1>
+    <div class="post-meta">May 1, 2021&nbsp;·&nbsp;Erik Dains
+</div>
+  </header> 
+  <div class="post-content"><p>Alright, in this post I&rsquo;m going to run through how to price options using Monte Carlo methods and also compute the associated greeks using automatic differentiation in PyTorch.</p>
+<h1 id="black-scholes">Black-Scholes<a hidden class="anchor" aria-hidden="true" href="#black-scholes">#</a></h1>
+<hr>
+<p>First, let&rsquo;s look at implementing the Black-Scholes model in PyTorch.</p>
+<p>The input variables are as follows:</p>
+<p>\(K\) : Strike price of the option</p>
+<p>\(S(t)\) : Price of the underlying asset at time \(t\)</p>
+<p>\(t\) : Current time in years.</p>
+<p>\(T\) : Time of option expiration</p>
+<p>\(\sigma\) : Standard deviation of the underlying <em>returns</em></p>
+<p>\(r\) : Annualized risk-free rate</p>
+<p>\(N(x)\) : Standard Normal cumulative distribution function</p>
+<p>The price of a call option is given by:</p>
+<p>$$C(S_t, t) = N(d_1) S_t - N(d_2) K e^{-r(T-t)}$$</p>
+<p>$$d_1 = \frac{1}{\sigma\sqrt{T-t}}[\ln(\frac{S_t}{K}) + (r + \frac{\sigma^2}{2})(T-t)]$$</p>
+<p>$$d_2 = d_1 - \sigma\sqrt{T-t}$$</p>
+<p>And by parity the price of a put option is given by:</p>
+<p>$$P(S_t, t) = N(-d_2) K e^{-r(T-t)} - N(-d_1) S_t$$</p>
+<hr>
+<p>Now, let&rsquo;s implement that using PyTorch functions. For simplicity I replace \(T\) and \(t\) and their difference by a single term \(T\) specifying the total time left to expiry in years.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> torch
+<span style="color:#f92672">from</span> torch.distributions <span style="color:#f92672">import</span> Normal
+
+std_norm_cdf <span style="color:#f92672">=</span> Normal(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>cdf
+std_norm_pdf <span style="color:#f92672">=</span> <span style="color:#66d9ef">lambda</span> x: torch<span style="color:#f92672">.</span>exp(Normal(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>log_prob(x))
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">bs_price</span>(right, K, S, T, sigma, r):
+    d_1 <span style="color:#f92672">=</span> (<span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> (sigma <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>sqrt(T))) <span style="color:#f92672">*</span> (torch<span style="color:#f92672">.</span>log(S <span style="color:#f92672">/</span> K) <span style="color:#f92672">+</span> (r <span style="color:#f92672">+</span> (torch<span style="color:#f92672">.</span>square(sigma) <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span>)) <span style="color:#f92672">*</span> T)
+    d_2 <span style="color:#f92672">=</span> d_1 <span style="color:#f92672">-</span> sigma <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>sqrt(T)
+    
+    <span style="color:#66d9ef">if</span> right <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;C&#34;</span>:
+        C <span style="color:#f92672">=</span> std_norm_cdf(d_1) <span style="color:#f92672">*</span> S <span style="color:#f92672">-</span> std_norm_cdf(d_2) <span style="color:#f92672">*</span> K <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>exp(<span style="color:#f92672">-</span>r <span style="color:#f92672">*</span> T)
+        <span style="color:#66d9ef">return</span> C
+        
+    <span style="color:#66d9ef">elif</span> right <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;P&#34;</span>:
+        P <span style="color:#f92672">=</span> std_norm_cdf(<span style="color:#f92672">-</span>d_2) <span style="color:#f92672">*</span> K <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>exp(<span style="color:#f92672">-</span>r <span style="color:#f92672">*</span> T) <span style="color:#f92672">-</span> std_norm_cdf(<span style="color:#f92672">-</span>d_1) <span style="color:#f92672">*</span> S
+        <span style="color:#66d9ef">return</span> P
+</code></pre></div><p>With this function I can calculate the price of a call option with the underyling at 100, strike price at 100, 1 year to expiration, 5% annual volatility, and a risk-free rate of 1% annually.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">right <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;C&#34;</span>
+K <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">100.0</span>, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+S <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">100.0</span>, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+T <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">1.0</span>, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+sigma <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">0.05</span>, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+r <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">0.01</span>, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+
+price <span style="color:#f92672">=</span> bs_price(right, K, S, T, sigma, r)
+print(price)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    tensor(2.5216, grad_fn=&lt;SubBackward0&gt;)
+</code></pre></div><p>Now, the magic of PyTorch is that it tracks all of those computations in a graph and can use its automatic differentiation feature to give us all the greeks. That&rsquo;s why I told it that I needed a gradient on all of the input variables.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Tell PyTorch to compute gradients</span>
+price<span style="color:#f92672">.</span>backward()
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Delta: </span><span style="color:#e6db74">{</span>S<span style="color:#f92672">.</span>grad<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Vega: </span><span style="color:#e6db74">{</span>sigma<span style="color:#f92672">.</span>grad<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Theta: </span><span style="color:#e6db74">{</span>T<span style="color:#f92672">.</span>grad<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Rho: </span><span style="color:#e6db74">{</span>r<span style="color:#f92672">.</span>grad<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    Delta: 0.5890103578567505
+    Vega: 38.89707946777344
+    Theta: 1.536220908164978
+    Rho: 56.379390716552734
+</code></pre></div><p>How do these compare to the greeks computed directly by differentiating the Black-Scholes formula?</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">d_1 <span style="color:#f92672">=</span> (<span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> (sigma <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>sqrt(T))) <span style="color:#f92672">*</span> (torch<span style="color:#f92672">.</span>log(S <span style="color:#f92672">/</span> K) <span style="color:#f92672">+</span> (r <span style="color:#f92672">+</span> (torch<span style="color:#f92672">.</span>square(sigma) <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span>)) <span style="color:#f92672">*</span> T)
+d_2 <span style="color:#f92672">=</span> d_1 <span style="color:#f92672">-</span> sigma <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>sqrt(T)
+
+delta <span style="color:#f92672">=</span> std_norm_cdf(d_1)
+vega <span style="color:#f92672">=</span> S <span style="color:#f92672">*</span> std_norm_pdf(d_1) <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>sqrt(T)
+theta <span style="color:#f92672">=</span> ((S <span style="color:#f92672">*</span> std_norm_pdf(d_1) <span style="color:#f92672">*</span> sigma) <span style="color:#f92672">/</span> (<span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>sqrt(T))) <span style="color:#f92672">+</span> r <span style="color:#f92672">*</span> K <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>exp(<span style="color:#f92672">-</span>r <span style="color:#f92672">*</span> T) <span style="color:#f92672">*</span> std_norm_cdf(d_2)
+rho <span style="color:#f92672">=</span> K <span style="color:#f92672">*</span> T <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>exp(<span style="color:#f92672">-</span>r <span style="color:#f92672">*</span> T) <span style="color:#f92672">*</span> std_norm_cdf(d_2)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Delta: </span><span style="color:#e6db74">{</span>delta<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Vega: </span><span style="color:#e6db74">{</span>vega<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Theta: </span><span style="color:#e6db74">{</span>theta<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Rho: </span><span style="color:#e6db74">{</span>rho<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    Delta: 0.5890103578567505
+    Vega: 38.89707946777344
+    Theta: 1.5362210273742676
+    Rho: 56.379390716552734
+</code></pre></div><p>Exactly the same to a high level of precision! Amazing. It&rsquo;s easy to see how much simpler the PyTorch autograd approach is. Note that it is possible to calculate second-order derivatives like Gamma, it just requires remaking the computation graph. If anyone knows of a workaround to this let me know.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">S <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">100.0</span>, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+price <span style="color:#f92672">=</span> bs_price(right, K, S, T, sigma, r)
+
+delta <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>autograd<span style="color:#f92672">.</span>grad(price, S, create_graph<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)[<span style="color:#ae81ff">0</span>]
+delta<span style="color:#f92672">.</span>backward()
+
+print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Autograd Gamma: </span><span style="color:#e6db74">{</span>S<span style="color:#f92672">.</span>grad<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+
+<span style="color:#75715e"># And the direct Black-Scholes calculation</span>
+gamma <span style="color:#f92672">=</span> std_norm_pdf(d_1) <span style="color:#f92672">/</span> (S <span style="color:#f92672">*</span> sigma <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>sqrt(T))
+print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;BS Gamma: </span><span style="color:#e6db74">{</span>gamma<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    Autograd Gamma: 0.07779412716627121
+    BS Gamma: 0.0777941569685936
+</code></pre></div><h1 id="monte-carlo-pricing">Monte Carlo Pricing<a hidden class="anchor" aria-hidden="true" href="#monte-carlo-pricing">#</a></h1>
+<hr>
+<p>Now that&rsquo;s all fine, but nothing new except some computation tricks. Black-Scholes makes assumptions that can often violate what is observed in the real world. The problem is creating closed form pricing models under other market dynamics is usually impossible. That&rsquo;s where Monte Carlo sampling comes in. It&rsquo;s a trivial task to create future market paths given a model for its dynamics. You can calculate option payoffs from those paths and get a price. But how can you calculate greeks from Monte Carlo samples? Again, PyTorch and autograd can help.</p>
+<p>I&rsquo;ll use all of the same parameters as in the example above. Let&rsquo;s simulate the result of a Geometric Brownian Motion process after one year, just like Black-Scholes does.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">K <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">100.0</span>, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+S <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">100.0</span>, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+T <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">1.0</span>, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+sigma <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">0.05</span>, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+r <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">0.01</span>, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+
+Z <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>randn([<span style="color:#ae81ff">1000000</span>])
+<span style="color:#75715e"># Brownian Motion</span>
+W_T <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>sqrt(T) <span style="color:#f92672">*</span> Z
+<span style="color:#75715e"># GBM</span>
+prices <span style="color:#f92672">=</span> S <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>exp((r <span style="color:#f92672">-</span> <span style="color:#ae81ff">0.5</span> <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>square(sigma)) <span style="color:#f92672">*</span> T <span style="color:#f92672">+</span> sigma <span style="color:#f92672">*</span> W_T)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#66d9ef">as</span> plt
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#34;figure.figsize&#34;</span>] <span style="color:#f92672">=</span> (<span style="color:#ae81ff">15</span>, <span style="color:#ae81ff">10</span>)
+
+plt<span style="color:#f92672">.</span>hist(prices<span style="color:#f92672">.</span>detach()<span style="color:#f92672">.</span>numpy(), bins<span style="color:#f92672">=</span><span style="color:#ae81ff">25</span>)
+plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Prices&#34;</span>)
+plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Occurences&#34;</span>)
+plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Distribution of Underlying Price after 1 Year&#34;</span>)
+</code></pre></div><figure>
+    <img loading="lazy" src="./output_18_1.png"/> 
+</figure>
+
+<p>Now, let&rsquo;s calculate the option payoffs under each of those future prices, discount them using the risk-free rate, and then take the mean to get the option price. The price calculated with this method is close to the price calculated using Black-Scholes.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">payoffs <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>max(prices <span style="color:#f92672">-</span> K, torch<span style="color:#f92672">.</span>zeros(<span style="color:#ae81ff">1000000</span>))
+value <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>mean(payoffs) <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>exp(<span style="color:#f92672">-</span>r <span style="color:#f92672">*</span> T)
+print(value)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    tensor(2.5215, grad_fn=&lt;MulBackward0&gt;)
+</code></pre></div><p>Now, the magic comes in. The only random sampling I used above was a parameter-less standard normal. This fact allows PyTorch to keep track of gradients throughout all of the calculations above. This is called a Pathwise Derivative. This means we can use autograd just like above to get greeks.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">value<span style="color:#f92672">.</span>backward()
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Delta: </span><span style="color:#e6db74">{</span>S<span style="color:#f92672">.</span>grad<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Vega: </span><span style="color:#e6db74">{</span>sigma<span style="color:#f92672">.</span>grad<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Theta: </span><span style="color:#e6db74">{</span>T<span style="color:#f92672">.</span>grad<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Rho: </span><span style="color:#e6db74">{</span>r<span style="color:#f92672">.</span>grad<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    Delta: 0.5890941023826599
+    Vega: 38.89133834838867
+    Theta: 1.536162257194519
+    Rho: 56.38788604736328
+</code></pre></div><p>All the same! This means that we can simulate any Monte Carlo process we want, as long as its random component can be reparameterized, and get prices and greeks. Obviously this is a trivial example, but let&rsquo;s look at a more complicated path-dependent option contract like an Asian Option. This type of option has a payoff based on the <em>average</em> price of the underlying over it&rsquo;s duration, rather than only the price at expiration like a Vanilla Option. This means we must simulate the price movement each day instead of just at the end.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># All the same parameters for the price process</span>
+K <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">100.0</span>, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+S <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">100.0</span>, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+T <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">1.0</span>, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+sigma <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">0.05</span>, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+r <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">0.01</span>, requires_grad<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+
+dt <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>tensor(<span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> <span style="color:#ae81ff">252</span>)
+Z <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>randn([<span style="color:#ae81ff">1000000</span>, int(T <span style="color:#f92672">*</span> <span style="color:#ae81ff">252</span>)])
+
+<span style="color:#75715e"># Brownian Motion</span>
+W_t <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>cumsum(torch<span style="color:#f92672">.</span>sqrt(dt) <span style="color:#f92672">*</span> Z, <span style="color:#ae81ff">1</span>)
+<span style="color:#75715e"># GBM</span>
+prices <span style="color:#f92672">=</span> S <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>exp((r <span style="color:#f92672">-</span> <span style="color:#ae81ff">0.5</span> <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>square(sigma)) <span style="color:#f92672">*</span> T <span style="color:#f92672">+</span> sigma <span style="color:#f92672">*</span> W_t)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">plt<span style="color:#f92672">.</span>plot(prices[<span style="color:#ae81ff">0</span>, :]<span style="color:#f92672">.</span>detach()<span style="color:#f92672">.</span>numpy())
+plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Number of Days in Future&#34;</span>)
+plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Underlying Price&#34;</span>)
+plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;One Possible Price path&#34;</span>)
+plt<span style="color:#f92672">.</span>axhline(y<span style="color:#f92672">=</span>torch<span style="color:#f92672">.</span>mean(prices[<span style="color:#ae81ff">0</span>, :])<span style="color:#f92672">.</span>detach()<span style="color:#f92672">.</span>numpy(), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;r&#34;</span>, linestyle<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;--&#34;</span>)
+plt<span style="color:#f92672">.</span>axhline(y<span style="color:#f92672">=</span><span style="color:#ae81ff">100</span>, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;g&#39;</span>, linestyle<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;--&#34;</span>)
+</code></pre></div><figure>
+    <img loading="lazy" src="./output_26_1.png"/> 
+</figure>
+
+<p>The payoff of an Asian Option given this price path is the difference between the strike price, the green dashed line, and the daily average price over the year, shown by the dashed red line. In this case, the payoff would be zero because the average daily price is below the strike.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Payoff is now based on mean of underlying price, not terminal value</span>
+payoffs <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>max(torch<span style="color:#f92672">.</span>mean(prices, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">-</span> K, torch<span style="color:#f92672">.</span>zeros(<span style="color:#ae81ff">1000000</span>))
+<span style="color:#75715e">#payoffs = torch.max(prices[:, -1] - K, torch.zeros(100000))</span>
+value <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>mean(payoffs) <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>exp(<span style="color:#f92672">-</span>r <span style="color:#f92672">*</span> T)
+print(value)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    tensor(1.6765, grad_fn=&lt;MulBackward0&gt;)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">value<span style="color:#f92672">.</span>backward()
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Delta: </span><span style="color:#e6db74">{</span>S<span style="color:#f92672">.</span>grad<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Vega: </span><span style="color:#e6db74">{</span>sigma<span style="color:#f92672">.</span>grad<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Theta: </span><span style="color:#e6db74">{</span>T<span style="color:#f92672">.</span>grad<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Rho: </span><span style="color:#e6db74">{</span>r<span style="color:#f92672">.</span>grad<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    Delta: 0.6314291954040527
+    Vega: 20.25724220275879
+    Theta: 0.5357358455657959
+    Rho: 61.46644973754883
+</code></pre></div><p>PyTorch Autograd once again gives us greeks even though we are now pricing a totally different contract. Awesome!</p>
+<h1 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h1>
+<hr>
+<p>Monte Carlo methods provide a way to price options under a much broader range of market process models. However, computing greeks can be challenging, either having to use finite difference methods or calculating pathwise derivatives symbolically. Using PyTorch can mitigate those issues and use automatic differentiation to provide greeks straight out of the box with no real overhead.</p>
+
+
+  </div>
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://example.org/tags/pricing/">pricing</a></li>
+      <li><a href="http://example.org/tags/pytorch/">pytorch</a></li>
+      <li><a href="http://example.org/tags/options/">options</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    <footer class="footer">
+    <span>&copy; 2021 <a href="http://example.org/">Optionally Bayes</a></span>
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://git.io/hugopapermod" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)">
+    <button class="top-link" id="top-link" type="button" accesskey="g">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+            <path d="M12 6H0l6-6z" />
+        </svg>
+    </button>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+    menu.onscroll = function () {
+        localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+</body>
+
+</html>

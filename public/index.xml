@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Optionally Bayes</title>
+    <link>http://example.org/</link>
+    <description>Recent content on Optionally Bayes</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 01 May 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://example.org/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Monte Carlo Methods for Option Pricing and Greeks</title>
+      <link>http://example.org/posts/option_pricing/</link>
+      <pubDate>Sat, 01 May 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/posts/option_pricing/</guid>
+      <description>Using PyTorch to easily compute Option Greeks first using Black-Scholes and then Monte Carlo methods.</description>
+    </item>
+    
+    <item>
+      <title>Mixture Density Network for Forecasting Realized Volatility</title>
+      <link>http://example.org/posts/vol_mdn/</link>
+      <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/posts/vol_mdn/</guid>
+      <description>Using a mixture density neural network implemented in PyTorch to forecast the distribution of future realized volatility.</description>
+    </item>
+    
+    <item>
+      <title>Bayesian Autoregressive Volatility Forecasting</title>
+      <link>http://example.org/posts/vol_linear_model/</link>
+      <pubDate>Wed, 17 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/posts/vol_linear_model/</guid>
+      <description>Using a simple bayesian autoregressive model to forecast future volatility</description>
+    </item>
+    
+    <item>
+      <title>Comparison of Volatility Estimators</title>
+      <link>http://example.org/posts/vol_estimators/</link>
+      <pubDate>Sun, 07 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/posts/vol_estimators/</guid>
+      <description>Comparing Garman-Klass estimator to 5-minute Realized Volatility estimator.</description>
+    </item>
+    
+    <item>
+      <title>A Most Diversified ETF Portfolio</title>
+      <link>http://example.org/posts/mdp_etf_portfolio/</link>
+      <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/posts/mdp_etf_portfolio/</guid>
+      <description>Constructing a portfolio from a selection of ETFs to maximize the diversification ratio</description>
+    </item>
+    
+    
+    
+  </channel>
+</rss>
