@@ -12,7 +12,7 @@ params:
   math: true
 
   homeInfoParams:
-    Title: Welcome! TESTING
+    Title: Welcome!
     Content: "My blog for all things math, finance, and data science.
     I'm always looking for interesting work, so feel free to contact me on social media or LinkedIn!"
 
