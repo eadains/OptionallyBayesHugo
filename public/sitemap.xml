@@ -2,79 +2,79 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>http://example.org/posts/option_pricing/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/option_pricing/</loc>
     <lastmod>2021-05-01T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/</loc>
     <lastmod>2021-05-01T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/options/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/options/</loc>
     <lastmod>2021-05-01T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/posts/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/</loc>
     <lastmod>2021-05-01T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/pricing/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/pricing/</loc>
     <lastmod>2021-05-01T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/pytorch/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/pytorch/</loc>
     <lastmod>2021-05-01T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/</loc>
     <lastmod>2021-05-01T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/forecasting/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/forecasting/</loc>
     <lastmod>2021-04-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/machine-learning/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/machine-learning/</loc>
     <lastmod>2021-04-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/posts/vol_mdn/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/vol_mdn/</loc>
     <lastmod>2021-04-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/mixture-density-network/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/mixture-density-network/</loc>
     <lastmod>2021-04-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/model-building/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/model-building/</loc>
     <lastmod>2021-04-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/volatility/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/volatility/</loc>
     <lastmod>2021-04-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/bayesian/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/bayesian/</loc>
     <lastmod>2021-03-17T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/posts/vol_linear_model/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/vol_linear_model/</loc>
     <lastmod>2021-03-17T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/posts/vol_estimators/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/vol_estimators/</loc>
     <lastmod>2021-03-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/realized-volatility/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/realized-volatility/</loc>
     <lastmod>2021-03-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/posts/mdp_etf_portfolio/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/mdp_etf_portfolio/</loc>
     <lastmod>2021-01-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/diversification-ratio/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/diversification-ratio/</loc>
     <lastmod>2021-01-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/drawdown/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/drawdown/</loc>
     <lastmod>2021-01-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/etfs/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/etfs/</loc>
     <lastmod>2021-01-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/performance-measurement/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/performance-measurement/</loc>
     <lastmod>2021-01-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/portfolio-optimization/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/</loc>
     <lastmod>2021-01-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/archives/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/archives/</loc>
   </url><url>
-    <loc>http://example.org/categories/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/categories/</loc>
   </url><url>
-    <loc>http://example.org/search/</loc>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/search/</loc>
   </url>
 </urlset>
