@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>hugo on Optionally Bayes</title>
+    <link>http://eadains.github.io/OptionallyBayesHugo/tags/hugo/</link>
+    <description>Recent content in hugo on Optionally Bayes</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 27 Jun 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/hugo/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>A Note on Hugo</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/posts/hugo_move/</link>
+      <pubDate>Sun, 27 Jun 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/hugo_move/</guid>
+      <description>My comments on how Hugo compares to Pelican for static site generation</description>
+    </item>
+    
+  </channel>
+</rss>
