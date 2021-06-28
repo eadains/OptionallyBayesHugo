@@ -9,15 +9,15 @@
 <meta name="keywords" content="volatility, realized-volatility" />
 <meta name="description" content="Comparing Garman-Klass estimator to 5-minute Realized Volatility estimator.">
 <meta name="author" content="Erik Dains">
-<link rel="canonical" href="http://example.org/posts/vol_estimators/" />
-<link crossorigin="anonymous" href="/assets/css/stylesheet.min.35cd0f65a15cafa92372b8313deef5960aae04b90ad722f2bbf509eb0468137e.css" integrity="sha256-Nc0PZaFcr6kjcrgxPe71lgquBLkK1yLyu/UJ6wRoE34=" rel="preload stylesheet" as="style">
-<script defer crossorigin="anonymous" src="/assets/js/highlight.min.7680afc38aa6b15ddf158a4f3780b7b1f7dde7e91d26f073e6229bb7a0793c92.js" integrity="sha256-doCvw4qmsV3fFYpPN4C3sffd5&#43;kdJvBz5iKbt6B5PJI="
+<link rel="canonical" href="http://eadains.github.io/OptionallyBayesHugo/posts/vol_estimators/" />
+<link crossorigin="anonymous" href="/OptionallyBayesHugo/assets/css/stylesheet.min.35cd0f65a15cafa92372b8313deef5960aae04b90ad722f2bbf509eb0468137e.css" integrity="sha256-Nc0PZaFcr6kjcrgxPe71lgquBLkK1yLyu/UJ6wRoE34=" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/OptionallyBayesHugo/assets/js/highlight.min.7680afc38aa6b15ddf158a4f3780b7b1f7dde7e91d26f073e6229bb7a0793c92.js" integrity="sha256-doCvw4qmsV3fFYpPN4C3sffd5&#43;kdJvBz5iKbt6B5PJI="
     onload="hljs.initHighlightingOnLoad();"></script>
-<link rel="icon" href="http://example.org/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="http://example.org/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="http://example.org/favicon-32x32.png">
-<link rel="apple-touch-icon" href="http://example.org/apple-touch-icon.png">
-<link rel="mask-icon" href="http://example.org/safari-pinned-tab.svg">
+<link rel="icon" href="http://eadains.github.io/OptionallyBayesHugo/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://eadains.github.io/OptionallyBayesHugo/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://eadains.github.io/OptionallyBayesHugo/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://eadains.github.io/OptionallyBayesHugo/apple-touch-icon.png">
+<link rel="mask-icon" href="http://eadains.github.io/OptionallyBayesHugo/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
 <meta name="generator" content="Hugo 0.84.0" />
@@ -33,7 +33,7 @@
 <meta property="og:title" content="Comparison of Volatility Estimators" />
 <meta property="og:description" content="Comparing Garman-Klass estimator to 5-minute Realized Volatility estimator." />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="http://example.org/posts/vol_estimators/" /><meta property="article:section" content="posts" />
+<meta property="og:url" content="http://eadains.github.io/OptionallyBayesHugo/posts/vol_estimators/" /><meta property="article:section" content="posts" />
 <meta property="article:published_time" content="2021-03-07T00:00:00&#43;00:00" />
 <meta property="article:modified_time" content="2021-03-07T00:00:00&#43;00:00" />
 
@@ -51,13 +51,13 @@
       "@type": "ListItem",
       "position":  1 ,
       "name": "Posts",
-      "item": "http://example.org/posts/"
+      "item": "http://eadains.github.io/OptionallyBayesHugo/posts/"
     }, 
     {
       "@type": "ListItem",
       "position":  2 ,
       "name": "Comparison of Volatility Estimators",
-      "item": "http://example.org/posts/vol_estimators/"
+      "item": "http://eadains.github.io/OptionallyBayesHugo/posts/vol_estimators/"
     }
   ]
 }
@@ -83,14 +83,14 @@
   },
   "mainEntityOfPage": {
     "@type": "WebPage",
-    "@id": "http://example.org/posts/vol_estimators/"
+    "@id": "http://eadains.github.io/OptionallyBayesHugo/posts/vol_estimators/"
   },
   "publisher": {
     "@type": "Organization",
     "name": "Optionally Bayes",
     "logo": {
       "@type": "ImageObject",
-      "url": "http://example.org/favicon.ico"
+      "url": "http://eadains.github.io/OptionallyBayesHugo/favicon.ico"
     }
   }
 }
@@ -111,28 +111,28 @@
 <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="http://example.org/" accesskey="h" title="Optionally Bayes (Alt + H)">Optionally Bayes</a>
+            <a href="http://eadains.github.io/OptionallyBayesHugo/" accesskey="h" title="Optionally Bayes (Alt + H)">Optionally Bayes</a>
             <span class="logo-switches">
             </span>
         </div>
         <ul id="menu">
             <li>
-                <a href="http://example.org/posts/" title="Posts">
+                <a href="http://eadains.github.io/OptionallyBayesHugo/posts/" title="Posts">
                     <span>Posts</span>
                 </a>
             </li>
             <li>
-                <a href="http://example.org/tags/" title="Tags">
+                <a href="http://eadains.github.io/OptionallyBayesHugo/tags/" title="Tags">
                     <span>Tags</span>
                 </a>
             </li>
             <li>
-                <a href="http://example.org/archives/" title="Archive">
+                <a href="http://eadains.github.io/OptionallyBayesHugo/archives/" title="Archive">
                     <span>Archive</span>
                 </a>
             </li>
             <li>
-                <a href="http://example.org/search/" title="Search (Alt &#43; /)" accesskey=/>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/search/" title="Search (Alt &#43; /)" accesskey=/>
                     <span>Search</span>
                 </a>
             </li>
@@ -477,14 +477,14 @@ print(stats<span style="color:#f92672">.</span>kurtosistest(spx_returns<span sty
   </div>
   <footer class="post-footer">
     <ul class="post-tags">
-      <li><a href="http://example.org/tags/volatility/">volatility</a></li>
-      <li><a href="http://example.org/tags/realized-volatility/">realized-volatility</a></li>
+      <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/volatility/">volatility</a></li>
+      <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/realized-volatility/">realized-volatility</a></li>
     </ul>
   </footer>
 </article>
     </main>
     <footer class="footer">
-    <span>&copy; 2021 <a href="http://example.org/">Optionally Bayes</a></span>
+    <span>&copy; 2021 <a href="http://eadains.github.io/OptionallyBayesHugo/">Optionally Bayes</a></span>
     <span>
         Powered by
         <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
