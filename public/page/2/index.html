@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Optionally Bayes</title>
+
+<meta name="description" content="A blog for all things math, finance, and data science. Written by Erik Dains">
+<meta name="author" content="Erik Dains">
+<link rel="canonical" href="http://eadains.github.io/OptionallyBayesHugo/" />
+<link crossorigin="anonymous" href="/OptionallyBayesHugo/assets/css/stylesheet.min.22565d513b14d8ddaed3ac5691392cfbd9911aeb414bfcf2511a41766f93b9b9.css" integrity="sha256-IlZdUTsU2N2u06xWkTks&#43;9mRGutBS/zyURpBdm&#43;Tubk=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://eadains.github.io/OptionallyBayesHugo/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://eadains.github.io/OptionallyBayesHugo/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://eadains.github.io/OptionallyBayesHugo/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://eadains.github.io/OptionallyBayesHugo/apple-touch-icon.png">
+<link rel="mask-icon" href="http://eadains.github.io/OptionallyBayesHugo/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.84.0" />
+<link rel="alternate" type="application/rss+xml" href="http://eadains.github.io/OptionallyBayesHugo/index.xml">
+<link rel="alternate" type="application/json" href="http://eadains.github.io/OptionallyBayesHugo/index.json">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css"
+    integrity="sha384-Um5gpz1odJg5Z4HAmzPtgZKdTBHZdw8S29IecapCSB31ligYPhHQZMIlWLYQGVoc" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.js"
+    integrity="sha384-YNHdsYkH6gMx9y3mRkmcJ2mFUjTd0qNQQvY9VYZgQd7DcN7env35GzlmFaZ23JGp"
+    crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/auto-render.min.js"
+    integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous"
+    onload="renderMathInElement(document.body);"></script>
+<meta property="og:title" content="Optionally Bayes" />
+<meta property="og:description" content="A blog for all things math, finance, and data science. Written by Erik Dains" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="http://eadains.github.io/OptionallyBayesHugo/" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Optionally Bayes"/>
+<meta name="twitter:description" content="A blog for all things math, finance, and data science. Written by Erik Dains"/>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Optionally Bayes",
+  "url": "http://eadains.github.io/OptionallyBayesHugo/",
+  "description": "A blog for all things math, finance, and data science. Written by Erik Dains",
+  "thumbnailUrl": "http://eadains.github.io/OptionallyBayesHugo/favicon.ico",
+  "sameAs": [
+      "https://github.com/eadains", "https://www.linkedin.com/in/erik-dains/", "https://www.instagram.com/erikdains/"
+  ]
+}
+</script>
+</head>
+
+<body class="list" id="top">
+<noscript>
+    <style type="text/css">
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://eadains.github.io/OptionallyBayesHugo/" accesskey="h" title="Optionally Bayes (Alt + H)">Optionally Bayes</a>
+            <span class="logo-switches">
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/tags/" title="Tags">
+                    <span>Tags</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/archives/" title="Archive">
+                    <span>Archive</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/search/" title="Search (Alt &#43; /)" accesskey=/>
+                    <span>Search</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main"> 
+
+<article class="post-entry"> 
+  <header class="entry-header">
+    <h2>A Most Diversified ETF Portfolio</h2>
+  </header>
+  <section class="entry-content">
+    <p>Constructing a portfolio from a selection of ETFs to maximize the diversification ratio</p>
+  </section>
+  <footer class="entry-footer">January 7, 2021&nbsp;·&nbsp;Erik Dains</footer>
+  <a class="entry-link" aria-label="post link to A Most Diversified ETF Portfolio" href="http://eadains.github.io/OptionallyBayesHugo/posts/mdp_etf_portfolio/"></a>
+</article>
+<footer class="page-footer">
+  <nav class="pagination">
+    <a class="prev" href="http://eadains.github.io/OptionallyBayesHugo/">« Prev Page</a>
+  </nav>
+</footer>
+    </main>
+    <footer class="footer">
+    <span>&copy; 2021 <a href="http://eadains.github.io/OptionallyBayesHugo/">Optionally Bayes</a></span>
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://git.io/hugopapermod" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)">
+    <button class="top-link" id="top-link" type="button" accesskey="g">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+            <path d="M12 6H0l6-6z" />
+        </svg>
+    </button>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+    menu.onscroll = function () {
+        localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+</body>
+
+</html>
