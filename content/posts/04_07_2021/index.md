@@ -206,7 +206,7 @@ plt.legend(["Training", "Validation"])
 ```
 
 
-{{< figure src="./output_17_1.png" >}}
+{{< figure src="./output_17_1.png" align=center >}}
     
 
 
@@ -243,7 +243,7 @@ plt.legend(["Model", "Actual"])
 
 
 
-{{< figure src="./output_21_1.png" >}}
+{{< figure src="./output_21_1.png" align=center >}}
     
 
 
@@ -290,7 +290,7 @@ plt.hist(values, bins=10)
 
 
 
-{{< figure src="./output_27_1.png" >}}
+{{< figure src="./output_27_1.png" align=center >}}
     
 
 

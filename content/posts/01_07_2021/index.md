@@ -250,7 +250,7 @@ You can see that the weight changes quite drastically over time, from near zero 
 weights_frame['VGSH'].plot(figsize=(15,10))
 ```
 
-{{< figure src="./output_24_1.png" >}}
+{{< figure src="./output_24_1.png" align=center >}}
     
 
 In this case, it's caused by a large change in correlation for certain assets in early 2020. Shown in the graph below is the correlation between VGSH and the other ETFs over time. Note the large downward jump on the right side. This shows the weakness of using a rolling data approach like in the backtest. You get big market jumps that dramatically shift your allocation and then when they eventually fall out the backward-looking window, you get big jumps again. I want to come back to this topic some time in the future.
@@ -261,7 +261,7 @@ rolling_corr = returns.rolling(252).corr()
 rolling_corr['VGSH'].unstack().plot(figsize=(15,10))
 ```
 
-{{< figure src="./output_26_1.png" >}}
+{{< figure src="./output_26_1.png" align=center >}}
     
 
 ```python
@@ -280,7 +280,7 @@ Alright, plotted below are the cumulative returns for the strategy! Note this is
 cum_port_returns.plot(figsize=(15, 10))
 ```
 
-{{< figure src="./output_29_1.png" >}}
+{{< figure src="./output_29_1.png" align=center >}}
 
 
 Now let's assemble some backtest statistics. We're going to be using mlfinlab for this task.
@@ -359,7 +359,7 @@ cum_sorted_returns.plot(figsize=(15, 10))
 vv_cum_returns.plot()
 ```
 
-{{< figure src="./output_37_1.png" >}}
+{{< figure src="./output_37_1.png" align=center >}}
     
 
 ```python

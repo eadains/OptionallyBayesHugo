@@ -46,7 +46,7 @@ Here are what the weekly returns look like for the past 20-ish years. You can se
 spx_wk_returns.plot(title="S&P 500 Index Weekly Returns", xlabel="Date", ylabel="Return")
 ```
 
-{{< figure src="./output_7_1.png" >}}
+{{< figure src="./output_7_1.png" align=center >}}
 
 
 This can be more easily seen with autocorrelation plots. Let's look at the returns themselves first:
@@ -58,7 +58,7 @@ plt.xlabel("Lags")
 plt.ylabel("Correlation")
 ```
 
-{{< figure src="./output_9_1.png" >}}
+{{< figure src="./output_9_1.png" align=center >}}
 
 
 There's very little autocorrelation, meaning that returns at each time period are unrelated to the returns that came at past time periods. However, let's look at the square of returns, which is a crude way to estimate their volatility.
@@ -70,7 +70,7 @@ plt.xlabel("Lags")
 plt.ylabel("Correlation")
 ```
 
-{{< figure src="./output_11_1.png" >}}
+{{< figure src="./output_11_1.png" align=center >}}
 
 
 Now there is clearly some significant autocorrelation, meaning volatility is affected by past volatility, thus the clustering effect. When there is a volatility shock, we expect to see periods of lasting higher volatility.
@@ -169,7 +169,7 @@ First let's look at how our chain sampled to make sure everything looks okay.
 az.plot_trace(model1_data, compact=True, var_names=["mu_h", "mu_r", "phi", "sigma"])
 ```
 
-{{< figure src="./output_19_1.png" >}}
+{{< figure src="./output_19_1.png" align=center >}}
 
 
 Okay there is no obvious issues here. The parameter distributions from each chain look mostly the same, and there aren't any obvious signs of autocorrelation in the samples. Next, let's look at the summary statistics from our posterior predictive distribution versus our data. The blue histogram bars represent the posterior predictive, and the black line represents that statistic calculated from the data.
@@ -201,7 +201,7 @@ axs[1, 1].axvline(stats.kurtosis(spx_wk_returns), color='black')
 axs[1, 1].set_title("Kurtosis")
 ```
 
-{{< figure src="./output_22_1.png" >}}    
+{{< figure src="./output_22_1.png" align=center >}}    
 
 
 There are some issues here, right off the bat. Ideally, the black line should fall in a high probability region of the histogram. This would mean that the data simulated from our model closely matches the qualities of the input data. This looks true mostly only for the standard deviation and kurtosis. It seems like the model is not modeling the mean or skew very well. Next let's look at the distribution of our input data versus the distribution of the posterior predictive.
@@ -211,7 +211,7 @@ There are some issues here, right off the bat. Ideally, the black line should fa
 az.plot_ppc(model1_data, data_pairs={"r": "r_tilde"})
 ```
 
-{{< figure src="./output_24_1.png" >}}
+{{< figure src="./output_24_1.png" align=center >}}
 
 
 This looks pretty good! The distributions look mostly the same. Next, I want to look at how well calibrated the model is. The model outputs a distributional estimate at each time point. So ideally, for instance, if we calculate the 95th percentile of that distribution, the input data should have values higher than that only 5% of the time. Likewise that data should have values smaller than the 5% percentile only 5% of the time.
@@ -245,7 +245,7 @@ plt.plot(np.percentile(r_tilde, 5, axis=0), color="black")
 plt.plot(spx_wk_returns.values, color="red", alpha=0.5)
 ```
 
-{{< figure src="./output_29_1.png" >}}
+{{< figure src="./output_29_1.png" align=center >}}
 
 
 The next test is doing a probability integral transform. When you put a value through a CDF it gets transformed onto the range 0 to 1. Ideally, if I put the data through the CDF implied by the model, those output values should be uniformly distributed. This implies that the predicted distribution accurately predicts the probabilities of events. Unlike the exceedances test, which only looks at the tails, this test looks at the entire distribution.
@@ -264,7 +264,7 @@ for t in range(len(spx_wk_returns)):
 fig = sm.graphics.qqplot(np.array(values), dist=stats.uniform, line="45")
 ```
 
-{{< figure src="./output_32_1.png" >}}    
+{{< figure src="./output_32_1.png" align=center >}}    
 
 
 A QQ plot displays the transformed data against a reference distribution. If the samples match a uniform distribution, they should all fall perfectly on the 45 degree line in the figure. It's clear there is some odd behavior at the right tail and in the center. It seems like our distributional estimate doesn't match the data too well.
@@ -346,7 +346,7 @@ model2_data = az.from_cmdstanpy(posterior=sample,
 az.plot_trace(model2_data, compact=True, var_names=["mu_h", "mu_r", "phi", "sigma", "alpha"])
 ```
 
-{{< figure src="./output_39_1.png" >}}
+{{< figure src="./output_39_1.png" align=center >}}
 
 Again, everything looks good here. Alpha centers around a negative value, which is a good sign, because negative skew was expected.
 
@@ -375,7 +375,7 @@ axs[1, 1].axvline(stats.kurtosis(spx_wk_returns), color='black')
 axs[1, 1].set_title("Kurtosis")
 ```
 
-{{< figure src="./output_42_1.png" >}}
+{{< figure src="./output_42_1.png" align=center >}}
 
 
 Now the mean value lies right in the center of the distribution and the skew value is closer to the middle then it was before. That looks like progress!
@@ -385,7 +385,7 @@ Now the mean value lies right in the center of the distribution and the skew val
 az.plot_ppc(model2_data, data_pairs={"r": "r_tilde"})
 ```
 
-{{< figure src="./output_44_1.png" >}}
+{{< figure src="./output_44_1.png" align=center >}}
 
 
 
@@ -419,7 +419,7 @@ plt.plot(np.percentile(r_tilde, 5, axis=0), color="black")
 plt.plot(spx_wk_returns.values, color="red", alpha=0.5)
 ```
 
-{{< figure src="./output_48_1.png" >}}
+{{< figure src="./output_48_1.png" align=center >}}
 
 
 
@@ -436,7 +436,7 @@ for t in range(len(spx_wk_returns)):
 fig = sm.graphics.qqplot(np.array(values), dist=stats.uniform, line="45")
 ```
 
-{{< figure src="./output_50_1.png" >}}
+{{< figure src="./output_50_1.png" align=center >}}
 
 
 The QQ plot here looks a little bit more funky than the one in model 1, which is concerning.
@@ -530,7 +530,7 @@ real_vol.plot()
 model_vol.plot(color="r")
 ```
 
-{{< figure src="./output_63_1.png" >}}
+{{< figure src="./output_63_1.png" align=center >}}
 
 
 With the model volatility in red and the realized measure in blue. The model pretty well captures the realized volatility! It's a smoother estimate, which makes sense considering the linear model for it we are using. Cool!

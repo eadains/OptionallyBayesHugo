@@ -194,7 +194,7 @@ arviz.plot_trace(arviz_data, var_names=['mu', 'beta', 'sigma'])
 
 
 
-{{< figure src="./output_24_1.png" >}}
+{{< figure src="./output_24_1.png" align=center >}}
     
 
 
@@ -228,7 +228,7 @@ plt.ylabel('Residual')
 plt.title('In-Sample Residuals')
 ```
 
-{{< figure src="./output_29_1.png" >}}
+{{< figure src="./output_29_1.png" align=center >}}
     
 
 
@@ -241,7 +241,7 @@ plt.title('Out-of-Sample Residuals')
 ```
 
 
-{{< figure src="./output_30_1.png" >}}
+{{< figure src="./output_30_1.png" align=center >}}
     
 
 
@@ -328,7 +328,7 @@ plt.title('Transformed Data')
 ```
 
 
-{{< figure src="./output_41_1.png" >}}
+{{< figure src="./output_41_1.png" align=center >}}
     
 
 

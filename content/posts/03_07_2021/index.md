@@ -291,7 +291,7 @@ gk_vol.plot()
 
 
 
-{{< figure src="./output_11_1.png" >}}
+{{< figure src="./output_11_1.png" align=center >}}
     
 
 
@@ -309,7 +309,7 @@ As an aside, opening jumps have become more common and larger in recent years, m
 
 
 
-{{< figure src="./output_13_1.png" >}}
+{{< figure src="./output_13_1.png" align=center >}}
     
 
 
@@ -347,7 +347,7 @@ rv.plot()
 
 
 
-{{< figure src="./output_16_1.png" >}}
+{{< figure src="./output_16_1.png" align=center >}}
     
 
 
@@ -375,7 +375,7 @@ gk_vol.plot()
 
 
 
-{{< figure src="./output_19_1.png" >}}
+{{< figure src="./output_19_1.png" align=center >}}
     
 
 
@@ -393,7 +393,7 @@ Here's a plot of our two different volatility estimators with RV in blue and Gar
 
 
 
-{{< figure src="./output_21_1.png" >}}
+{{< figure src="./output_21_1.png" align=center >}}
     
 
 
@@ -420,7 +420,7 @@ _, _, _ = plt.hist(spx_returns, bins=50)
 ```
 
 
-{{< figure src="./output_25_0.png" >}}
+{{< figure src="./output_25_0.png" align=center >}}
     
 
 
@@ -431,7 +431,7 @@ _, _, _ = plt.hist(gk_vol_norm, bins=50)
 ```
 
 
-{{< figure src="./output_26_0.png" >}}
+{{< figure src="./output_26_0.png" align=center >}}
     
 
 
@@ -442,7 +442,7 @@ _, _, _ = plt.hist(rv_norm, bins=50)
 ```
 
 
-{{< figure src="./output_27_0.png" >}}
+{{< figure src="./output_27_0.png" align=center >}}
     
 
 

@@ -34,17 +34,17 @@ I have found the AWS documentation to be generally hard to get through. Much of 
 
 AWS creates a virtual network for you to connect all of your instances together. It's also key to setup properly so you can access your instances from a computer connected via the internet. The easiest way to start is by using the automatic wizard from the dashboard page on the VPC console:
 
-{{< figure src="./vpc_1.png" >}}
+{{< figure src="./vpc_1.png" align=center >}}
 
 Then you can select the option for a single public subnet:
 
-{{< figure src="./vpc_2.png" >}}
+{{< figure src="./vpc_2.png" align=center >}}
 
 In the next screen everything can remain the default, and a name for the VPC can be entered. This process automatically creates a VPC, an internet gateway, and a subnet with that gateway attached. We do want to create another subnet under our VPC that is in a different availability zone. This is relevant for the database setup because Amazon puts the backup in a different zone than the database itself. Going to the subnets tab there should be a single subnet under the VPC you created, make note of its availability zone ID. Then you can create a new subnet under that same VPC. The IP block will need to be different. For instance the default subnet will be something like 10.0.0.0/24 so this new subnet will need to be 10.0.1.0/24. Then select an availability zone that is different than the default subnet.
 
 Next up is the security group that defines what connections will be accepted and from where. Create a new security group under the security heading and make the inbound rules look like this:
 
-{{< figure src="./security_group_setup_1.png" >}}
+{{< figure src="./security_group_setup_1.png" align=center >}}
 
 The two top rules are so other instances in your subnets can connect to your database. The third can be set to accept connections from your personal computers IP by selecting "My IP" in the source box. The fourth has a type of SSH, again from your own IP, this allows you to connect to your EC2 instance via SSH to configure it. For outbound rules you can set destination to 0.0.0.0/0 and everything else to All so everything going out will be allowed.
 

@@ -189,7 +189,7 @@ plt.ylabel("Occurences")
 plt.title("Distribution of Underlying Price after 1 Year")
 ```
 
-{{< figure src="./output_18_1.png" >}}
+{{< figure src="./output_18_1.png" align=center >}}
     
 
 
@@ -255,7 +255,7 @@ plt.axhline(y=torch.mean(prices[0, :]).detach().numpy(), color="r", linestyle="-
 plt.axhline(y=100, color='g', linestyle="--")
 ```
 
-{{< figure src="./output_26_1.png" >}}
+{{< figure src="./output_26_1.png" align=center >}}
     
 
 
