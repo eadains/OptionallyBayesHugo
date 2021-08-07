@@ -6,7 +6,52 @@
     <description>Recent content in Tags on Optionally Bayes</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 05 Aug 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 07 Aug 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>bayesian</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/bayesian/</link>
+      <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/bayesian/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>model-building</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/model-building/</link>
+      <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/model-building/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>model-comparison</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/model-comparison/</link>
+      <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/model-comparison/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>stan</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/stan/</link>
+      <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/stan/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>volatility</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/volatility/</link>
+      <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/volatility/</guid>
+      <description></description>
+    </item>
+    
     <item>
       <title>AWS</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/tags/aws/</link>
@@ -103,33 +148,6 @@
       <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
       
       <guid>http://eadains.github.io/OptionallyBayesHugo/tags/mixture-density-network/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>model-building</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/model-building/</link>
-      <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
-      
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/model-building/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>volatility</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/volatility/</link>
-      <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
-      
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/volatility/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>bayesian</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/bayesian/</link>
-      <pubDate>Wed, 17 Mar 2021 00:00:00 +0000</pubDate>
-      
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/bayesian/</guid>
       <description></description>
     </item>
     
