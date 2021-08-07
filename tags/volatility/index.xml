@@ -6,7 +6,16 @@
     <description>Recent content in volatility on Optionally Bayes</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 07 Apr 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/volatility/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 07 Aug 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/volatility/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Stochastic Volatility Models in Stan</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/posts/stoch_vol/</link>
+      <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/stoch_vol/</guid>
+      <description>Fitting 2 different Stochastic Volatility Models to S&amp;amp;P 500 returns and finding out which is better</description>
+    </item>
+    
     <item>
       <title>Mixture Density Network for Forecasting Realized Volatility</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/vol_mdn/</link>
