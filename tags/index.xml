@@ -6,7 +6,43 @@
     <description>Recent content in Tags on Optionally Bayes</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 07 Aug 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 28 Aug 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>clustering</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/clustering/</link>
+      <pubDate>Sat, 28 Aug 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/clustering/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>diversification</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/diversification/</link>
+      <pubDate>Sat, 28 Aug 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/diversification/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ETF</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/etf/</link>
+      <pubDate>Sat, 28 Aug 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/etf/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>portfolio-optimization</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/</link>
+      <pubDate>Sat, 28 Aug 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/</guid>
+      <description></description>
+    </item>
+    
     <item>
       <title>bayesian</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/tags/bayesian/</link>
@@ -193,15 +229,6 @@
       <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
       
       <guid>http://eadains.github.io/OptionallyBayesHugo/tags/performance-measurement/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>portfolio-optimization</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/</link>
-      <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
-      
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/</guid>
       <description></description>
     </item>
     

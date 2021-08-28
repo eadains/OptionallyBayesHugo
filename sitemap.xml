@@ -2,6 +2,30 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/clustering/</loc>
+    <lastmod>2021-08-28T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/etf_clustering/</loc>
+    <lastmod>2021-08-28T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/diversification/</loc>
+    <lastmod>2021-08-28T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/etf/</loc>
+    <lastmod>2021-08-28T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/</loc>
+    <lastmod>2021-08-28T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/</loc>
+    <lastmod>2021-08-28T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/</loc>
+    <lastmod>2021-08-28T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/</loc>
+    <lastmod>2021-08-28T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/bayesian/</loc>
     <lastmod>2021-08-07T00:00:00+00:00</lastmod>
   </url><url>
@@ -11,19 +35,10 @@
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/model-comparison/</loc>
     <lastmod>2021-08-07T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/</loc>
-    <lastmod>2021-08-07T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/</loc>
-    <lastmod>2021-08-07T00:00:00+00:00</lastmod>
-  </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/stan/</loc>
     <lastmod>2021-08-07T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/posts/stoch_vol/</loc>
-    <lastmod>2021-08-07T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/</loc>
     <lastmod>2021-08-07T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/volatility/</loc>
@@ -96,9 +111,6 @@
     <lastmod>2021-01-07T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/performance-measurement/</loc>
-    <lastmod>2021-01-07T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/</loc>
     <lastmod>2021-01-07T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/archives/</loc>

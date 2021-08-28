@@ -6,7 +6,16 @@
     <description>Recent content in portfolio-optimization on Optionally Bayes</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 07 Jan 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 28 Aug 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Clustering ETFs for Optimally Diversified Portfolio</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/posts/etf_clustering/</link>
+      <pubDate>Sat, 28 Aug 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/etf_clustering/</guid>
+      <description>Using clustering algorithms for identifying optimal subset of ETFs for portfolio construction.</description>
+    </item>
+    
     <item>
       <title>A Most Diversified ETF Portfolio</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/mdp_etf_portfolio/</link>
