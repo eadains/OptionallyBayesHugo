@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Clustering ETFs for Optimally Diversified Portfolio | Optionally Bayes</title>
+<meta name="keywords" content="clustering, ETF, portfolio-optimization, diversification" />
+<meta name="description" content="Using clustering algorithms for identifying optimal subset of ETFs for portfolio construction.">
+<meta name="author" content="Erik Dains">
+<link rel="canonical" href="http://eadains.github.io/OptionallyBayesHugo/posts/etf_clustering/" />
+<link crossorigin="anonymous" href="/OptionallyBayesHugo/assets/css/stylesheet.min.22565d513b14d8ddaed3ac5691392cfbd9911aeb414bfcf2511a41766f93b9b9.css" integrity="sha256-IlZdUTsU2N2u06xWkTks&#43;9mRGutBS/zyURpBdm&#43;Tubk=" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/OptionallyBayesHugo/assets/js/highlight.min.7680afc38aa6b15ddf158a4f3780b7b1f7dde7e91d26f073e6229bb7a0793c92.js" integrity="sha256-doCvw4qmsV3fFYpPN4C3sffd5&#43;kdJvBz5iKbt6B5PJI="
+    onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="http://eadains.github.io/OptionallyBayesHugo/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://eadains.github.io/OptionallyBayesHugo/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://eadains.github.io/OptionallyBayesHugo/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://eadains.github.io/OptionallyBayesHugo/apple-touch-icon.png">
+<link rel="mask-icon" href="http://eadains.github.io/OptionallyBayesHugo/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<meta name="generator" content="Hugo 0.84.0" />
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css"
+    integrity="sha384-Um5gpz1odJg5Z4HAmzPtgZKdTBHZdw8S29IecapCSB31ligYPhHQZMIlWLYQGVoc" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.js"
+    integrity="sha384-YNHdsYkH6gMx9y3mRkmcJ2mFUjTd0qNQQvY9VYZgQd7DcN7env35GzlmFaZ23JGp"
+    crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/auto-render.min.js"
+    integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous"
+    onload="renderMathInElement(document.body);"></script>
+<meta property="og:title" content="Clustering ETFs for Optimally Diversified Portfolio" />
+<meta property="og:description" content="Using clustering algorithms for identifying optimal subset of ETFs for portfolio construction." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://eadains.github.io/OptionallyBayesHugo/posts/etf_clustering/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-08-28T00:00:00&#43;00:00" />
+<meta property="article:modified_time" content="2021-08-28T00:00:00&#43;00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Clustering ETFs for Optimally Diversified Portfolio"/>
+<meta name="twitter:description" content="Using clustering algorithms for identifying optimal subset of ETFs for portfolio construction."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "http://eadains.github.io/OptionallyBayesHugo/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Clustering ETFs for Optimally Diversified Portfolio",
+      "item": "http://eadains.github.io/OptionallyBayesHugo/posts/etf_clustering/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Clustering ETFs for Optimally Diversified Portfolio",
+  "name": "Clustering ETFs for Optimally Diversified Portfolio",
+  "description": "Using clustering algorithms for identifying optimal subset of ETFs for portfolio construction.",
+  "keywords": [
+    "clustering", "ETF", "portfolio-optimization", "diversification"
+  ],
+  "articleBody": "In this post I want to apply clustering to ETFs to determine the most effective diversified portfolio. There are a lot of ETFs out there, in my database I count 3612, included delisted ones. If I wanted to build a simple, well-diversified portfolio to hold long-term, which ones should I pick? Would I do better with an S\u0026P 500 ETF or a total stock market ETF? What kind of bond ETFs provide the most diversification to a portfolio? Clustering can help to answer these kinds of questions.\nData I’m immediately going to introduce one simplification to this problem, which is to restrict which tickers are analyzed. Firstly, I’m going to use only ETFs that have price histories before the 2008 crash in September. Secondly, I’m going to make some stylistic choices. I like Vanguard, so I’m including all of their ETFs that meet the date criteria. However, there are some asset groups they don’t offer ETFs for, so I’m also including some iShares ETFs to fill the gaps for things like real estate and junk bonds.\nIn total, this brings the total to 31 tickers, which is a far cry from how many I could include. This makes the results much easier to interpret and more practical.\nimport psycopg2 as pg import pandas as pd import numpy as np import matplotlib.pyplot as plt from mpl_toolkits import mplot3d from sklearn.cluster import AffinityPropagation from sklearn.covariance import GraphicalLassoCV from sklearn.manifold import LocallyLinearEmbedding from config import DATABASE_URI plt.rcParams[\"figure.figsize\"] = (15,10) # All vanguard funds plus HYG, EMB, IYR, and SPY for junk bonds, emerging markets bonds, real estate, and the S\u0026P 500 # respectively. # All created before the 2008 crash, IE before september 29 2008 tickers = [\"EDV\", \"BIV\", \"BLV\", \"BSV\", \"BND\", \"VIG\", \"VUG\", \"VYM\", \"VV\", \"MGC\", \"MGK\", \"MGV\", \"VTI\", \"VTV\", \"VXF\", \"VO\", \"VOT\", \"VOE\", \"VB\", \"VBK\", \"VBR\", \"VT\", \"VEU\", \"VEA\", \"VGK\", \"VPL\", \"VWO\", \"HYG\", \"EMB\", \"IYR\", \"SPY\"] with pg.connect(DATABASE_URI) as conn: with conn.cursor() as cur: cur.execute(f\"SELECT date, ticker, closeadj FROM prices WHERE ticker IN {tuple(tickers)}\") results = cur.fetchall() df = pd.DataFrame.from_records(results, columns=[\"date\", \"ticker\", \"closeadj\"], coerce_float=True) # Set index, sort index, then transform into Series via squeeze df = df.set_index([\"date\", \"ticker\"], verify_integrity=True).sort_index().squeeze() returns = df.unstack().pct_change().dropna() Estimating Structure Alright, so now I have a big matrix of daily returns for 31 different ETFs, what can we say about their structure? An obvious way to look at this is by calculating a covariance matrix. However, this problem brings some challenges here. Luckily, because of the length of the data, I don’t have to worry about the number of features being larger than the number of data points.\nThe problem really is that estimating the empirical covariance matrix doesn’t do well at uncovered structure. What I’m looking for is a graphical model that links together the ETFs we have. I want to know which are meaningfully correlated with which others and which have no meaningful correlation. An empirical covariance matrix will mostly say everything is at least a little correlated with everything else. Which while may be true, isn’t useful for what I want to do.\nWhat I need is a sparse covariance matrix. When two tickers don’t have much to do with each other, I want that covariance value to be zero. This is what a Graphical Lasso will do. Exactly as in Lasso-regularized regression, this procedure shrinks values towards zero.\n# Standardizing improves estimation of sparse covariance matrix X = returns.values.copy() X /= X.std(axis=0) edge_model = GraphicalLassoCV().fit(X) plt.matshow(np.cov(returns.T)) plt.title(\"Normal Covariance\")  plt.matshow(edge_model.covariance_) plt.title(\"Sparse Covariance\")  In the two matrices above you can clearly see the differences. Much of the second matrix is zero, but the first one has a mix of near-zero values. The Graphical Lasso shows us which connections are the most important. Note that the diagonal elements no longer represent each tickers individual variance, but we don’t need that anyways.\nClustering Okay so we have a matrix that tells us which ETFs are structurally related, so we can move the estimating clusters. I’m going to use Affinity Propagation for this because of two reasons: it selects the number of clusters automatically, and it provides a member of each cluster that best represents it. The latter reason is the coolest feature of this method. After it finds out which ETFs belong to which cluster, it will tell us which one of them best represents each cluster. This is exactly what we want! I don’t want to deal with 31 different ETFs, I want to deal with a small number that best represents the whole group. This is essentially a dimensionality reduction problem.\nI’m using a slightly smaller preference value than sklearn would use because I want the number of cluster to be smaller. This is a flexible value. Sklearn by default sets it as the median of the affinity matrix, in this case the covariance matrix. If you set it smaller, there will be fewer clusters, and bigger means more clusters.\nclustering = AffinityPropagation(affinity=\"precomputed\", preference=0.15).fit(edge_model.covariance_) n_labels = clustering.labels_.max() cluster_centers = returns.columns[clustering.cluster_centers_indices_] for i in range(n_labels + 1): print(f\"Cluster {i+1}: {', '.join(returns.columns[clustering.labels_ == i])}\") print(f\" Cluster Representative: {cluster_centers[i]}\") print(\"\\n\") Cluster 1: BIV, BLV, BND, EDV Cluster Representative: BLV Cluster 2: BSV Cluster Representative: BSV Cluster 3: EMB Cluster Representative: EMB Cluster 4: HYG Cluster Representative: HYG Cluster 5: VEA, VEU, VGK, VPL, VT, VWO Cluster Representative: VEU Cluster 6: IYR, MGC, MGK, MGV, SPY, VB, VBK, VBR, VIG, VO, VOE, VOT, VTI, VTV, VUG, VV, VXF, VYM Cluster Representative: VTI Okay, so we get 6 clusters from our 31 ETFs. Looking at them qualitatively, it matches with our expectations. Cluster 1 is longer term bonds, cluster 5 is non-US equities, and cluster 6 is US equities. Looking at which are selected as being representative, we get a very intuitive answer: long term bonds, short term bonds, emerging market bonds, junk bonds, non-US equities, and US total stock market. One slightly unexpected grouping is that real estate (IYR) is grouped with equities.\nVisualization For some extra fun, how do we visualize this? We have the concept of clusters being things that are close together in space, but in this case, what does space even mean? It’s very high-dimensional and non-intuitive. Well, luckily there is a way to attempt to embed higher-dimensional space into lower-dimensional space called Manifold learning. This method tries to find a way in two-dimensions to best represent patterns and groupings in higher-dimensions.\nembed = LocallyLinearEmbedding(n_neighbors=10, n_components=2) embed = embed.fit_transform(edge_model.covariance_) plt.scatter(embed[:, 0], embed[:, 1], c=clustering.labels_, cmap=\"Set1\") labels = returns.columns[clustering.cluster_centers_indices_] points = embed[clustering.cluster_centers_indices_] for i, label in enumerate(labels): plt.annotate(label, (points[i, 0], points[i, 1]))  So, here we can see each of our clusters color-coded with the representative ETF from each cluster labeled. You can obviously see the clustering: bonds in red on the left, non-US equities pink on the bottom right, and US equities in grey in the upper right. Note the overlaid text between EMB and BSV on the left-hand side. The clustering algorithm views them as being distinct, but they are right on top of each other in this 2d embedding. This most likely means there is some high-dimensional difference between them that cannot be projected downward into 2 dimensions.\nConclusion This is way a casual look into clustering applied to ETFs. There’s a lot more you can do with this. There are more sophisticated estimation methods that are potentially non-linear, and you can obviously greatly expand the number of tickers under analysis. This can also be applied to groups of stocks, which can be useful for finding pairs trades.\n",
+  "wordCount" : "1245",
+  "inLanguage": "en",
+  "datePublished": "2021-08-28T00:00:00Z",
+  "dateModified": "2021-08-28T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "Erik Dains"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://eadains.github.io/OptionallyBayesHugo/posts/etf_clustering/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Optionally Bayes",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://eadains.github.io/OptionallyBayesHugo/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<noscript>
+    <style type="text/css">
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://eadains.github.io/OptionallyBayesHugo/" accesskey="h" title="Optionally Bayes (Alt + H)">Optionally Bayes</a>
+            <span class="logo-switches">
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/tags/" title="Tags">
+                    <span>Tags</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/archives/" title="Archive">
+                    <span>Archive</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/search/" title="Search (Alt &#43; /)" accesskey=/>
+                    <span>Search</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title">
+      Clustering ETFs for Optimally Diversified Portfolio
+    </h1>
+    <div class="post-meta">August 28, 2021&nbsp;·&nbsp;Erik Dains
+</div>
+  </header> 
+  <div class="post-content"><p>In this post I want to apply clustering to ETFs to determine the most effective diversified portfolio. There are a lot of ETFs out there, in my database I count 3612, included delisted ones. If I wanted to build a simple, well-diversified portfolio to hold long-term, which ones should I pick? Would I do better with an S&amp;P 500 ETF or a total stock market ETF? What kind of bond ETFs provide the most diversification to a portfolio? Clustering can help to answer these kinds of questions.</p>
+<h1 id="data">Data<a hidden class="anchor" aria-hidden="true" href="#data">#</a></h1>
+<p>I&rsquo;m immediately going to introduce one simplification to this problem, which is to restrict which tickers are analyzed. Firstly, I&rsquo;m going to use only ETFs that have price histories before the 2008 crash in September. Secondly, I&rsquo;m going to make some stylistic choices. I like Vanguard, so I&rsquo;m including all of their ETFs that meet the date criteria. However, there are some asset groups they don&rsquo;t offer ETFs for, so I&rsquo;m also including some iShares ETFs to fill the gaps for things like real estate and junk bonds.</p>
+<p>In total, this brings the total to 31 tickers, which is a far cry from how many I <em>could</em> include. This makes the results much easier to interpret and more practical.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> psycopg2 <span style="color:#66d9ef">as</span> pg
+<span style="color:#f92672">import</span> pandas <span style="color:#66d9ef">as</span> pd
+<span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+<span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#66d9ef">as</span> plt
+<span style="color:#f92672">from</span> mpl_toolkits <span style="color:#f92672">import</span> mplot3d
+<span style="color:#f92672">from</span> sklearn.cluster <span style="color:#f92672">import</span> AffinityPropagation
+<span style="color:#f92672">from</span> sklearn.covariance <span style="color:#f92672">import</span> GraphicalLassoCV
+<span style="color:#f92672">from</span> sklearn.manifold <span style="color:#f92672">import</span> LocallyLinearEmbedding
+
+<span style="color:#f92672">from</span> config <span style="color:#f92672">import</span> DATABASE_URI
+
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#34;figure.figsize&#34;</span>] <span style="color:#f92672">=</span> (<span style="color:#ae81ff">15</span>,<span style="color:#ae81ff">10</span>)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># All vanguard funds plus HYG, EMB, IYR, and SPY for junk bonds, emerging markets bonds, real estate, and the S&amp;P 500</span>
+<span style="color:#75715e"># respectively.</span>
+<span style="color:#75715e"># All created before the 2008 crash, IE before september 29 2008</span>
+tickers <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#34;EDV&#34;</span>, <span style="color:#e6db74">&#34;BIV&#34;</span>, <span style="color:#e6db74">&#34;BLV&#34;</span>, <span style="color:#e6db74">&#34;BSV&#34;</span>, <span style="color:#e6db74">&#34;BND&#34;</span>, <span style="color:#e6db74">&#34;VIG&#34;</span>, <span style="color:#e6db74">&#34;VUG&#34;</span>, <span style="color:#e6db74">&#34;VYM&#34;</span>, <span style="color:#e6db74">&#34;VV&#34;</span>, <span style="color:#e6db74">&#34;MGC&#34;</span>, <span style="color:#e6db74">&#34;MGK&#34;</span>, <span style="color:#e6db74">&#34;MGV&#34;</span>, <span style="color:#e6db74">&#34;VTI&#34;</span>, <span style="color:#e6db74">&#34;VTV&#34;</span>,
+           <span style="color:#e6db74">&#34;VXF&#34;</span>, <span style="color:#e6db74">&#34;VO&#34;</span>, <span style="color:#e6db74">&#34;VOT&#34;</span>, <span style="color:#e6db74">&#34;VOE&#34;</span>, <span style="color:#e6db74">&#34;VB&#34;</span>, <span style="color:#e6db74">&#34;VBK&#34;</span>, <span style="color:#e6db74">&#34;VBR&#34;</span>, <span style="color:#e6db74">&#34;VT&#34;</span>, <span style="color:#e6db74">&#34;VEU&#34;</span>, <span style="color:#e6db74">&#34;VEA&#34;</span>, <span style="color:#e6db74">&#34;VGK&#34;</span>, <span style="color:#e6db74">&#34;VPL&#34;</span>, <span style="color:#e6db74">&#34;VWO&#34;</span>,
+           <span style="color:#e6db74">&#34;HYG&#34;</span>, <span style="color:#e6db74">&#34;EMB&#34;</span>, <span style="color:#e6db74">&#34;IYR&#34;</span>, <span style="color:#e6db74">&#34;SPY&#34;</span>]
+<span style="color:#66d9ef">with</span> pg<span style="color:#f92672">.</span>connect(DATABASE_URI) <span style="color:#66d9ef">as</span> conn:
+    <span style="color:#66d9ef">with</span> conn<span style="color:#f92672">.</span>cursor() <span style="color:#66d9ef">as</span> cur:
+        cur<span style="color:#f92672">.</span>execute(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;SELECT date, ticker, closeadj FROM prices WHERE ticker IN </span><span style="color:#e6db74">{</span>tuple(tickers)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+        results <span style="color:#f92672">=</span> cur<span style="color:#f92672">.</span>fetchall()
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">df <span style="color:#f92672">=</span> pd<span style="color:#f92672">.</span>DataFrame<span style="color:#f92672">.</span>from_records(results, columns<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#34;date&#34;</span>, <span style="color:#e6db74">&#34;ticker&#34;</span>, <span style="color:#e6db74">&#34;closeadj&#34;</span>], coerce_float<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+<span style="color:#75715e"># Set index, sort index, then transform into Series via squeeze</span>
+df <span style="color:#f92672">=</span> df<span style="color:#f92672">.</span>set_index([<span style="color:#e6db74">&#34;date&#34;</span>, <span style="color:#e6db74">&#34;ticker&#34;</span>], verify_integrity<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)<span style="color:#f92672">.</span>sort_index()<span style="color:#f92672">.</span>squeeze()
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">returns <span style="color:#f92672">=</span> df<span style="color:#f92672">.</span>unstack()<span style="color:#f92672">.</span>pct_change()<span style="color:#f92672">.</span>dropna()
+</code></pre></div><h1 id="estimating-structure">Estimating Structure<a hidden class="anchor" aria-hidden="true" href="#estimating-structure">#</a></h1>
+<p>Alright, so now I have a big matrix of daily returns for 31 different ETFs, what can we say about their structure? An obvious way to look at this is by calculating a covariance matrix. However, this problem brings some challenges here. Luckily, because of the length of the data, I don&rsquo;t have to worry about the number of features being larger than the number of data points.</p>
+<p>The problem really is that estimating the empirical covariance matrix doesn&rsquo;t do well at uncovered <em>structure</em>. What I&rsquo;m looking for is a graphical model that links together the ETFs we have. I want to know which are meaningfully correlated with which others and which have no meaningful correlation. An empirical covariance matrix will mostly say everything is at least a little correlated with everything else. Which while may be true, isn&rsquo;t useful for what I want to do.</p>
+<p>What I need is a <em>sparse</em> covariance matrix. When two tickers don&rsquo;t have much to do with each other, I want that covariance value to be zero. This is what a Graphical Lasso will do. Exactly as in Lasso-regularized regression, this procedure shrinks values towards zero.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Standardizing improves estimation of sparse covariance matrix</span>
+X <span style="color:#f92672">=</span> returns<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>copy()
+X <span style="color:#f92672">/=</span> X<span style="color:#f92672">.</span>std(axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
+
+edge_model <span style="color:#f92672">=</span> GraphicalLassoCV()<span style="color:#f92672">.</span>fit(X)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">plt<span style="color:#f92672">.</span>matshow(np<span style="color:#f92672">.</span>cov(returns<span style="color:#f92672">.</span>T))
+plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Normal Covariance&#34;</span>)
+</code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./output_10_1.png#center"/> 
+</figure>
+
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">plt<span style="color:#f92672">.</span>matshow(edge_model<span style="color:#f92672">.</span>covariance_)
+plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Sparse Covariance&#34;</span>)
+</code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./output_11_1.png#center"/> 
+</figure>
+
+<p>In the two matrices above you can clearly see the differences. Much of the second matrix is zero, but the first one has a mix of near-zero values. The Graphical Lasso shows us which connections are the most important. Note that the diagonal elements no longer represent each tickers individual variance, but we don&rsquo;t need that anyways.</p>
+<h1 id="clustering">Clustering<a hidden class="anchor" aria-hidden="true" href="#clustering">#</a></h1>
+<p>Okay so we have a matrix that tells us which ETFs are structurally related, so we can move the estimating clusters. I&rsquo;m going to use Affinity Propagation for this because of two reasons: it selects the number of clusters automatically, and it provides a member of each cluster that best represents it. The latter reason is the coolest feature of this method. After it finds out which ETFs belong to which cluster, it will tell us which one of them best represents each cluster. This is exactly what we want! I don&rsquo;t want to deal with 31 different ETFs, I want to deal with a small number that best represents the whole group. This is essentially a dimensionality reduction problem.</p>
+<p>I&rsquo;m using a slightly smaller preference value than sklearn would use because I want the number of cluster to be smaller. This is a flexible value. Sklearn by default sets it as the median of the affinity matrix, in this case the covariance matrix. If you set it smaller, there will be fewer clusters, and bigger means more clusters.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">clustering <span style="color:#f92672">=</span> AffinityPropagation(affinity<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;precomputed&#34;</span>, preference<span style="color:#f92672">=</span><span style="color:#ae81ff">0.15</span>)<span style="color:#f92672">.</span>fit(edge_model<span style="color:#f92672">.</span>covariance_)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">n_labels <span style="color:#f92672">=</span> clustering<span style="color:#f92672">.</span>labels_<span style="color:#f92672">.</span>max()
+cluster_centers <span style="color:#f92672">=</span> returns<span style="color:#f92672">.</span>columns[clustering<span style="color:#f92672">.</span>cluster_centers_indices_]
+
+<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(n_labels <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>):
+    print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Cluster </span><span style="color:#e6db74">{</span>i<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span><span style="color:#e6db74">}</span><span style="color:#e6db74">: </span><span style="color:#e6db74">{</span><span style="color:#e6db74">&#39;, &#39;</span><span style="color:#f92672">.</span>join(returns<span style="color:#f92672">.</span>columns[clustering<span style="color:#f92672">.</span>labels_ <span style="color:#f92672">==</span> i])<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+    print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;    Cluster Representative: </span><span style="color:#e6db74">{</span>cluster_centers[i]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+    print(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    Cluster 1: BIV, BLV, BND, EDV
+        Cluster Representative: BLV
+    
+    Cluster 2: BSV
+        Cluster Representative: BSV
+    
+    Cluster 3: EMB
+        Cluster Representative: EMB
+    
+    Cluster 4: HYG
+        Cluster Representative: HYG
+    
+    Cluster 5: VEA, VEU, VGK, VPL, VT, VWO
+        Cluster Representative: VEU
+    
+    Cluster 6: IYR, MGC, MGK, MGV, SPY, VB, VBK, VBR, VIG, VO, VOE, VOT, VTI, VTV, VUG, VV, VXF, VYM
+        Cluster Representative: VTI
+</code></pre></div><p>Okay, so we get 6 clusters from our 31 ETFs. Looking at them qualitatively, it matches with our expectations. Cluster 1 is longer term bonds, cluster 5 is non-US equities, and cluster 6 is US equities. Looking at which are selected as being representative, we get a very intuitive answer: long term bonds, short term bonds, emerging market bonds, junk bonds, non-US equities, and US total stock market. One slightly unexpected grouping is that real estate (IYR) is grouped with equities.</p>
+<h1 id="visualization">Visualization<a hidden class="anchor" aria-hidden="true" href="#visualization">#</a></h1>
+<p>For some extra fun, how do we visualize this? We have the concept of clusters being things that are close together in space, but in this case, what does space even mean? It&rsquo;s very high-dimensional and non-intuitive. Well, luckily there is a way to attempt to embed higher-dimensional space into lower-dimensional space called Manifold learning. This method tries to find a way in two-dimensions to best represent patterns and groupings in higher-dimensions.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">embed <span style="color:#f92672">=</span> LocallyLinearEmbedding(n_neighbors<span style="color:#f92672">=</span><span style="color:#ae81ff">10</span>, n_components<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>)
+embed <span style="color:#f92672">=</span> embed<span style="color:#f92672">.</span>fit_transform(edge_model<span style="color:#f92672">.</span>covariance_)
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">plt<span style="color:#f92672">.</span>scatter(embed[:, <span style="color:#ae81ff">0</span>], embed[:, <span style="color:#ae81ff">1</span>], c<span style="color:#f92672">=</span>clustering<span style="color:#f92672">.</span>labels_, cmap<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Set1&#34;</span>)
+
+labels <span style="color:#f92672">=</span> returns<span style="color:#f92672">.</span>columns[clustering<span style="color:#f92672">.</span>cluster_centers_indices_]
+points <span style="color:#f92672">=</span> embed[clustering<span style="color:#f92672">.</span>cluster_centers_indices_]
+<span style="color:#66d9ef">for</span> i, label <span style="color:#f92672">in</span> enumerate(labels):
+    plt<span style="color:#f92672">.</span>annotate(label, (points[i, <span style="color:#ae81ff">0</span>], points[i, <span style="color:#ae81ff">1</span>]))
+</code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./output_21_0.png#center"/> 
+</figure>
+
+<p>So, here we can see each of our clusters color-coded with the representative ETF from each cluster labeled. You can obviously see the clustering: bonds in red on the left, non-US equities pink on the bottom right, and US equities in grey in the upper right. Note the overlaid text between EMB and BSV on the left-hand side. The clustering algorithm views them as being distinct, but they are right on top of each other in this 2d embedding. This most likely means there is some high-dimensional difference between them that cannot be projected downward into 2 dimensions.</p>
+<h1 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h1>
+<p>This is way a casual look into clustering applied to ETFs. There&rsquo;s a lot more you can do with this. There are more sophisticated estimation methods that are potentially non-linear, and you can obviously greatly expand the number of tickers under analysis. This can also be applied to groups of stocks, which can be useful for finding pairs trades.</p>
+
+
+  </div>
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/clustering/">clustering</a></li>
+      <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/etf/">ETF</a></li>
+      <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/">portfolio-optimization</a></li>
+      <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/diversification/">diversification</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    <footer class="footer">
+    <span>&copy; 2021 <a href="http://eadains.github.io/OptionallyBayesHugo/">Optionally Bayes</a></span>
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://git.io/hugopapermod" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)">
+    <button class="top-link" id="top-link" type="button" accesskey="g">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+            <path d="M12 6H0l6-6z" />
+        </svg>
+    </button>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+    menu.onscroll = function () {
+        localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+</body>
+
+</html>
