@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>monte-carlo on Optionally Bayes</title>
+    <link>http://eadains.github.io/OptionallyBayesHugo/tags/monte-carlo/</link>
+    <description>Recent content in monte-carlo on Optionally Bayes</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 08 Dec 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/monte-carlo/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Exploring the Kelly Criterion: Drawdown</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_drawdown/</link>
+      <pubDate>Wed, 08 Dec 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_drawdown/</guid>
+      <description>Exploring the Kelly Criterion and its drawdown properties using Monte Carlo</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -6,7 +6,43 @@
     <description>Recent content in Tags on Optionally Bayes</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 28 Aug 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 08 Dec 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>drawdown</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/drawdown/</link>
+      <pubDate>Wed, 08 Dec 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/drawdown/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>julia</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/julia/</link>
+      <pubDate>Wed, 08 Dec 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/julia/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>kelly</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/kelly/</link>
+      <pubDate>Wed, 08 Dec 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/kelly/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>monte-carlo</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/monte-carlo/</link>
+      <pubDate>Wed, 08 Dec 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/monte-carlo/</guid>
+      <description></description>
+    </item>
+    
     <item>
       <title>clustering</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/tags/clustering/</link>
@@ -202,15 +238,6 @@
       <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
       
       <guid>http://eadains.github.io/OptionallyBayesHugo/tags/diversification-ratio/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>drawdown</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/drawdown/</link>
-      <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
-      
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/drawdown/</guid>
       <description></description>
     </item>
     
