@@ -6,20 +6,11 @@
     <description>Recent content in Tags on Optionally Bayes</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 08 Dec 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/index.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>drawdown</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/drawdown/</link>
-      <pubDate>Wed, 08 Dec 2021 00:00:00 +0000</pubDate>
-      
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/drawdown/</guid>
-      <description></description>
-    </item>
-    
+    <lastBuildDate>Sat, 18 Dec 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>julia</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/tags/julia/</link>
-      <pubDate>Wed, 08 Dec 2021 00:00:00 +0000</pubDate>
+      <pubDate>Sat, 18 Dec 2021 00:00:00 +0000</pubDate>
       
       <guid>http://eadains.github.io/OptionallyBayesHugo/tags/julia/</guid>
       <description></description>
@@ -28,7 +19,7 @@
     <item>
       <title>kelly</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/tags/kelly/</link>
-      <pubDate>Wed, 08 Dec 2021 00:00:00 +0000</pubDate>
+      <pubDate>Sat, 18 Dec 2021 00:00:00 +0000</pubDate>
       
       <guid>http://eadains.github.io/OptionallyBayesHugo/tags/kelly/</guid>
       <description></description>
@@ -37,9 +28,27 @@
     <item>
       <title>monte-carlo</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/tags/monte-carlo/</link>
-      <pubDate>Wed, 08 Dec 2021 00:00:00 +0000</pubDate>
+      <pubDate>Sat, 18 Dec 2021 00:00:00 +0000</pubDate>
       
       <guid>http://eadains.github.io/OptionallyBayesHugo/tags/monte-carlo/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>portfolio-optimization</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/</link>
+      <pubDate>Sat, 18 Dec 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>drawdown</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/drawdown/</link>
+      <pubDate>Wed, 08 Dec 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/drawdown/</guid>
       <description></description>
     </item>
     
@@ -67,15 +76,6 @@
       <pubDate>Sat, 28 Aug 2021 00:00:00 +0000</pubDate>
       
       <guid>http://eadains.github.io/OptionallyBayesHugo/tags/etf/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>portfolio-optimization</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/</link>
-      <pubDate>Sat, 28 Aug 2021 00:00:00 +0000</pubDate>
-      
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/</guid>
       <description></description>
     </item>
     
