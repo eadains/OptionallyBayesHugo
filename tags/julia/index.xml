@@ -6,7 +6,16 @@
     <description>Recent content in julia on Optionally Bayes</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 18 Dec 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/julia/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 11 May 2022 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/julia/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Decomposing Volatility: Continuous and Jump Component</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/posts/vol_decomp/</link>
+      <pubDate>Wed, 11 May 2022 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/vol_decomp/</guid>
+      <description>Illustrating how realized volatility can decomposed into a continuous and jump component, providing new modelling opportunities.</description>
+    </item>
+    
     <item>
       <title>Exploring the Kelly Criterion: The Multi-Period Problem</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_multiperiod/</link>

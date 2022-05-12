@@ -2,10 +2,28 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_multiperiod/</loc>
-    <lastmod>2021-12-18T00:00:00+00:00</lastmod>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/vol_decomp/</loc>
+    <lastmod>2022-05-11T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/julia/</loc>
+    <lastmod>2022-05-11T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/jump/</loc>
+    <lastmod>2022-05-11T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/</loc>
+    <lastmod>2022-05-11T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/</loc>
+    <lastmod>2022-05-11T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/</loc>
+    <lastmod>2022-05-11T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/volatility/</loc>
+    <lastmod>2022-05-11T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_multiperiod/</loc>
     <lastmod>2021-12-18T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/kelly/</loc>
@@ -14,16 +32,7 @@
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/monte-carlo/</loc>
     <lastmod>2021-12-18T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/</loc>
-    <lastmod>2021-12-18T00:00:00+00:00</lastmod>
-  </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/</loc>
-    <lastmod>2021-12-18T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/</loc>
-    <lastmod>2021-12-18T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/</loc>
     <lastmod>2021-12-18T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/drawdown/</loc>
@@ -57,9 +66,6 @@
     <lastmod>2021-08-07T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/posts/stoch_vol/</loc>
-    <lastmod>2021-08-07T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/volatility/</loc>
     <lastmod>2021-08-07T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/aws/</loc>
