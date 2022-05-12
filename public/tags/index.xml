@@ -6,13 +6,31 @@
     <description>Recent content in Tags on Optionally Bayes</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 18 Dec 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 11 May 2022 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>julia</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/tags/julia/</link>
-      <pubDate>Sat, 18 Dec 2021 00:00:00 +0000</pubDate>
+      <pubDate>Wed, 11 May 2022 00:00:00 +0000</pubDate>
       
       <guid>http://eadains.github.io/OptionallyBayesHugo/tags/julia/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>jump</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/jump/</link>
+      <pubDate>Wed, 11 May 2022 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/jump/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>volatility</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/volatility/</link>
+      <pubDate>Wed, 11 May 2022 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/volatility/</guid>
       <description></description>
     </item>
     
@@ -112,15 +130,6 @@
       <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
       
       <guid>http://eadains.github.io/OptionallyBayesHugo/tags/stan/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>volatility</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/volatility/</link>
-      <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
-      
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/volatility/</guid>
       <description></description>
     </item>
     
