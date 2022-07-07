@@ -6,13 +6,40 @@
     <description>Recent content in Tags on Optionally Bayes</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 11 May 2022 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 06 Jul 2022 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>daily-fantasy-sports</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/daily-fantasy-sports/</link>
+      <pubDate>Wed, 06 Jul 2022 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/daily-fantasy-sports/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>integer-programming</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/integer-programming/</link>
+      <pubDate>Wed, 06 Jul 2022 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/integer-programming/</guid>
+      <description></description>
+    </item>
+    
     <item>
       <title>julia</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/tags/julia/</link>
-      <pubDate>Wed, 11 May 2022 00:00:00 +0000</pubDate>
+      <pubDate>Wed, 06 Jul 2022 00:00:00 +0000</pubDate>
       
       <guid>http://eadains.github.io/OptionallyBayesHugo/tags/julia/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>optimization</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/optimization/</link>
+      <pubDate>Wed, 06 Jul 2022 00:00:00 +0000</pubDate>
+      
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/optimization/</guid>
       <description></description>
     </item>
     
