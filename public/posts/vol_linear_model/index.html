@@ -6,12 +6,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="robots" content="index, follow">
 <title>Bayesian Autoregressive Volatility Forecasting | Optionally Bayes</title>
-<meta name="keywords" content="volatility, forecasting, bayesian, model-building" />
+<meta name="keywords" content="volatility, forecasting, bayesian, model-building">
 <meta name="description" content="Using a simple bayesian autoregressive model to forecast future volatility">
 <meta name="author" content="Erik Dains">
-<link rel="canonical" href="http://eadains.github.io/OptionallyBayesHugo/posts/vol_linear_model/" />
-<link crossorigin="anonymous" href="/OptionallyBayesHugo/assets/css/stylesheet.min.22565d513b14d8ddaed3ac5691392cfbd9911aeb414bfcf2511a41766f93b9b9.css" integrity="sha256-IlZdUTsU2N2u06xWkTks&#43;9mRGutBS/zyURpBdm&#43;Tubk=" rel="preload stylesheet" as="style">
-<script defer crossorigin="anonymous" src="/OptionallyBayesHugo/assets/js/highlight.min.7680afc38aa6b15ddf158a4f3780b7b1f7dde7e91d26f073e6229bb7a0793c92.js" integrity="sha256-doCvw4qmsV3fFYpPN4C3sffd5&#43;kdJvBz5iKbt6B5PJI="
+<link rel="canonical" href="http://eadains.github.io/OptionallyBayesHugo/posts/vol_linear_model/">
+<link crossorigin="anonymous" href="/OptionallyBayesHugo/assets/css/stylesheet.904a440301b095e87417b41792bef55151ea4126fffa4548f110fd68bdfc03f1.css" integrity="sha256-kEpEAwGwleh0F7QXkr71UVHqQSb/&#43;kVI8RD9aL38A/E=" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/OptionallyBayesHugo/assets/js/highlight.f413e19d0714851f6474e7ee9632408e58ac146fbdbe62747134bea2fa3415e0.js" integrity="sha256-9BPhnQcUhR9kdOfuljJAjlisFG&#43;9vmJ0cTS&#43;ovo0FeA="
     onload="hljs.initHighlightingOnLoad();"></script>
 <link rel="icon" href="http://eadains.github.io/OptionallyBayesHugo/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="http://eadains.github.io/OptionallyBayesHugo/favicon-16x16.png">
@@ -20,22 +20,30 @@
 <link rel="mask-icon" href="http://eadains.github.io/OptionallyBayesHugo/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<meta name="generator" content="Hugo 0.84.0" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css"
-    integrity="sha384-Um5gpz1odJg5Z4HAmzPtgZKdTBHZdw8S29IecapCSB31ligYPhHQZMIlWLYQGVoc" crossorigin="anonymous">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.js"
-    integrity="sha384-YNHdsYkH6gMx9y3mRkmcJ2mFUjTd0qNQQvY9VYZgQd7DcN7env35GzlmFaZ23JGp"
-    crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/auto-render.min.js"
-    integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous"
-    onload="renderMathInElement(document.body);"></script>
+    </style>
+</noscript>
+<script>
+    MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']]
+        }
+    };
+</script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+</script>
 <meta property="og:title" content="Bayesian Autoregressive Volatility Forecasting" />
 <meta property="og:description" content="Using a simple bayesian autoregressive model to forecast future volatility" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="http://eadains.github.io/OptionallyBayesHugo/posts/vol_linear_model/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2021-03-17T00:00:00&#43;00:00" />
-<meta property="article:modified_time" content="2021-03-17T00:00:00&#43;00:00" />
+<meta property="article:published_time" content="2021-03-17T00:00:00+00:00" />
+<meta property="article:modified_time" content="2021-03-17T00:00:00+00:00" />
 
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Bayesian Autoregressive Volatility Forecasting"/>
@@ -72,8 +80,8 @@
   "keywords": [
     "volatility", "forecasting", "bayesian", "model-building"
   ],
-  "articleBody": "So now that I’ve decided that I’m going to use 1-min RV as my volatility proxy, I can move on to the juicy part: forecasting.\nThe Data  import pandas as pd import numpy as np import sqlite3 from matplotlib import pyplot as plt from scipy import stats # Set default figure size plt.rcParams[\"figure.figsize\"] = (15, 10) pd.plotting.register_matplotlib_converters() # Here's my minute data for the S\u0026P 500 spx_minute = minute = pd.read_csv(\"SPX_1min.csv\", header=0,names=['datetime', 'open', 'high', 'low', 'close'], index_col='datetime', parse_dates=True) # Here's the function for calculating the 1-min RV, as discussed in my last post def rv_calc(data): results = {} for idx, data in data.groupby(data.index.date): returns = np.log(data['close']) - np.log(data['close'].shift(1)) results[idx] = np.sum(returns**2) return pd.Series(results) spx_rv = rv_calc(spx_minute) The Model My goal is to predict the volatility over the next week, or 5 trading days, with the past 5 days of daily volatility. This means my independent variables will be the last 5 days of volatility, and my dependent variable is the realized volatility over the next 5 days. For the sake of increased samples, I’m going to create a rolling 5-day window of volatility and shift it 5 periods backwards and use that as the dependent variable. This means I can create a 5-day volatility forecast for each day, rather than each week.\ndef create_lags(series, lags): \"\"\" Creates a dataframe with lagged values of the given series. Generates columns named x_{n}which means the value of each row is the value of the original series lagged n times \"\"\" result = pd.DataFrame(index=series.index) result[\"x\"] = series \"\" for n in range(lags): result[f\"x_{n+1}\"] = series.shift((n+1)) return result dep_var = spx_rv.rolling(5).sum().shift(-5).dropna() indep_var = create_lags(spx_rv, 5).dropna() # This ensures that we only keep rows that occur in each set. This means their length is the same and # rows match up properly common_index = dep_var.index.intersection(indep_var.index) dep_var = dep_var.loc[common_index] indep_var = indep_var.loc[common_index] # I'm going to take the log of the variance because it has better distributional qualities dep_var = np.log(dep_var) indep_var = np.log(indep_var) I’m going to use a very simple Bayesian linear regression for this model. It assumes the data is distributed according to\n$$y \\sim normal(\\mu + X\\beta, \\sigma)$$\nimport pystan as stan import arviz model_spec = ''' data { int len; int vars; vector[len] dep_var; matrix[len, vars] indep_var; } parameters { real mu; vector[vars] beta; real sigma; } model { mu ~ cauchy(0, 10); beta ~ cauchy(0, 10); sigma ~ cauchy(0, 5); dep_var ~ normal(mu + (indep_var * beta), sigma); } ''' model = stan.StanModel(model_code=model_spec) Model Testing and Verification Okay, let’s do some out of sample testing to see how our model does! Below, I’m defining the training and testing sets. I’m going to use 75% of the data for in-sample fitting and the remaining 25% for out-of-sample testing.\ntest_index = int(len(indep_var) * .75) train_x = indep_var.iloc[:test_index] train_y = dep_var[:test_index] test_x = indep_var.iloc[test_index:] test_y = dep_var[test_index:] Now, I fit the model to the data.\nparams = {'len': len(train_x), 'vars': len(train_x.columns), 'dep_var': train_y, 'indep_var': train_x} sample = model.sampling(data=params, chains=4, warmup=250, iter=1500) Let’s check our sampling statistics to ensure the sampler converged. R-hats all look very good and our effective samples also look good.\nprint(sample.stansummary(pars=['mu', 'beta', 'sigma'])) Inference for Stan model: anon_model_842ef31b1beae12ccaeb1a8773757520. 4 chains, each with iter=1500; warmup=250; thin=1; post-warmup draws per chain=1250, total post-warmup draws=5000. mean se_mean sd 2.5% 25% 50% 75% 97.5% n_eff Rhat mu 0.59 1.2e-3 0.09 0.42 0.53 0.59 0.65 0.77 5682 1.0 beta[1] 0.46 3.4e-4 0.02 0.42 0.45 0.46 0.47 0.5 3219 1.0 beta[2] 0.14 4.5e-4 0.02 0.1 0.13 0.14 0.16 0.18 2408 1.0 beta[3] 0.09 3.9e-4 0.02 0.04 0.07 0.09 0.1 0.13 3317 1.0 beta[4] 0.08 3.7e-4 0.02 0.03 0.06 0.08 0.09 0.12 3753 1.0 beta[5] 0.06 4.1e-4 0.02 0.01 0.04 0.06 0.07 0.1 2966 1.0 beta[6] 0.07 3.0e-4 0.02 0.03 0.06 0.07 0.08 0.11 4026 1.0 sigma 0.49 9.5e-5 6.9e-3 0.48 0.49 0.49 0.5 0.51 5295 1.0 Samples were drawn using NUTS at Wed Mar 17 19:28:01 2021. For each parameter, n_eff is a crude measure of effective sample size, and Rhat is the potential scale reduction factor on split chains (at convergence, Rhat=1). arviz_data = arviz.from_pystan( posterior=sample ) We can look at trace plots for our samples. Good samples should look like fuzzy caterpillars, which is what we see here. The distributions also match across sampling chains. The variables also match our intuition: $\\mu$ and $\\beta$ are positive, and the regression coefficients are all positive.\narviz.plot_trace(arviz_data, var_names=['mu', 'beta', 'sigma'])  The code below creates the posterior predictive distribution for the in-sample and out-of-sample data. These represent what the model predicts the distribution of the data is. The job now is to compare this predicted distribution to the reality.\nmu = sample['mu'] beta = sample['beta'] sigma = sample['sigma'] # This is some tensordot sorcery that works, but that I don't frankly understand. It takes the matrix product of train_x # and beta over each row of beta. Essentially a higher-dimensional version of what the model does. train_post = np.random.normal(mu + (np.tensordot(train_x, beta, axes=(1,1))), sigma) test_post = np.random.normal(mu + (np.tensordot(test_x, beta, axes=(1,1))), sigma) train_post_mean = np.mean(train_post, axis=1) test_post_mean = np.mean(test_post, axis=1) Let’s take a look at the in-sample and out-of-sample residuals. In this case, I’m making a point estimate by taking the mean of the posterior predictive distribution. It’s obvious that the model has problems predicting volatility jumps, signified by unexpected jumps in the residuals.\nplt.plot(np.exp(train_y) - np.exp(train_post_mean)) plt.xlabel('Time') plt.ylabel('Residual') plt.title('In-Sample Residuals')  plt.plot(np.exp(test_y) - np.exp(test_post_mean)) plt.xlabel('Time') plt.ylabel('Residual') plt.title('Out-of-Sample Residuals')  Now, let’s look at the root mean square error of our model. Looks like our out-of-sample RMSE, using exponentiated values, is around 7% higher, not bad!\ntrain_rmse = np.sqrt(np.mean((np.exp(train_y) - np.exp(train_post_mean))**2)) test_rmse = np.sqrt(np.mean((np.exp(test_y) - np.exp(test_post_mean))**2)) print(f'In-Sample RMSE: {train_rmse}\\nOut-of-Sample RMSE: {test_rmse}') print(f'Percent Increase: {(test_rmse / train_rmse) - 1}') In-Sample RMSE: 0.0006314456099670146 Out-of-Sample RMSE: 0.0006745751839390536 Percent Increase: 0.06830291206600037 I like to do a Mincer-Zarnowitz regression to analyze out-of-sample forests. In this case, the out-of-sample predictions are treated as the independent variable and the true values are the dependent variable. The R-Squared for out model is about 64%, which means our out-of-sample predictions explain 64% of the variance of the true values. Not bad! The intercept is also very close to zero, which means our prediction isn’t biased.\nregress = stats.linregress(np.exp(test_post_mean), np.exp(test_y)) print(f'Intercept: {regress.intercept}\\nSlope: {regress.slope}\\nR-Squared: {regress.rvalue**2}') Intercept: 1.7250208362578126e-05 Slope: 1.183989352654772 R-Squared: 0.6438180914963003 Next, I want to check the distributional assumptions. Specifically, I want to know how many times real volatility exceeds what our distribution predicts. To do this, I’m going to look at the posterior predictive distribution, which should, if our model is correct, accurately predict the distribution of the real data. I’ll figure out the 95th percentile of the posterior predictive, and see how many times real volatility exceeded that. We should expect exceedances to happen about 5% of the time.\nupper_bound_train = np.percentile(np.exp(train_post), 95, axis=1) num_exceeds_train = (np.exp(train_y)  upper_bound_train).sum() upper_bound_test = np.percentile(np.exp(test_post), 95, axis=1) num_exceeds_test = (np.exp(test_y)  upper_bound_test).sum() print(f'In-Sample Exceedances: {num_exceeds_train / len(upper_bound_train)}') print(f'Out-of-Sample Exceedances: {num_exceeds_test / len(upper_bound_test)}') In-Sample Exceedances: 0.0481139337952271 Out-of-Sample Exceedances: 0.09815242494226328 In-sample we are within 5%, and out-of-sample we are above 5% by about double, which isn’t a good sign. Next up is testing the empirical distribution of the data. If our posterior predictive distribution is a good representation of the underlying distribution, doing a probability integral transform should transform the data into a uniform distribution.\nclass ECDF: def __init__(self, data): self.sorted = data self.sorted.sort() self.y = np.arange(1, len(self.sorted) + 1) / len(self.sorted) def __call__(self, x): ind = np.searchsorted(self.sorted, x) - 1 return self.y[ind] values = [] for x in range(len(test_post)): ecdf = ECDF(np.exp(test_post[x])) values.append(ecdf(np.exp(test_y[x]))) plt.hist(values) plt.title('Transformed Data')  We can see an obvious deviation from the expected uniform distribution here. It looks like our distribution most significantly under-predicts large volatiltiy values. This makes sense when looking back to the residual graph, large jumps aren’t handled well.\nstats.kstest(values, 'uniform') KstestResult(statistic=0.0760443418013857, pvalue=8.408548699568476e-05) This Kolmogorov-Smirnov test takes the null hypothesis that the data matches the specified distribution, in this case a uniform. It looks like we can handedly reject that hypothesis. This means that the posterior predictive is not fully capable of representing the real distribution.\nConclusion and Extensions It seems like this very simple model does pretty well providing a point-forecast of future volatility, however it fails at accurately describing the distribution of future volatility. This could be fixed in several ways. First is assuming a different distributional form in the model, such as something with fatter tails like a Student’s T. Another possibility is allowing the standard deviation of the normal to vary with time. That is more in line with models like traditional stochastic volatility.\n",
-  "wordCount" : "1418",
+  "articleBody": "So now that I’ve decided that I’m going to use 1-min RV as my volatility proxy, I can move on to the juicy part: forecasting.\nThe Data import pandas as pd import numpy as np import sqlite3 from matplotlib import pyplot as plt from scipy import stats # Set default figure size plt.rcParams[\"figure.figsize\"] = (15, 10) pd.plotting.register_matplotlib_converters() # Here's my minute data for the S\u0026P 500 spx_minute = minute = pd.read_csv(\"SPX_1min.csv\", header=0,names=['datetime', 'open', 'high', 'low', 'close'], index_col='datetime', parse_dates=True) # Here's the function for calculating the 1-min RV, as discussed in my last post def rv_calc(data): results = {} for idx, data in data.groupby(data.index.date): returns = np.log(data['close']) - np.log(data['close'].shift(1)) results[idx] = np.sum(returns**2) return pd.Series(results) spx_rv = rv_calc(spx_minute) The Model My goal is to predict the volatility over the next week, or 5 trading days, with the past 5 days of daily volatility. This means my independent variables will be the last 5 days of volatility, and my dependent variable is the realized volatility over the next 5 days. For the sake of increased samples, I’m going to create a rolling 5-day window of volatility and shift it 5 periods backwards and use that as the dependent variable. This means I can create a 5-day volatility forecast for each day, rather than each week.\ndef create_lags(series, lags): \"\"\" Creates a dataframe with lagged values of the given series. Generates columns named x_{n} which means the value of each row is the value of the original series lagged n times \"\"\" result = pd.DataFrame(index=series.index) result[\"x\"] = series \"\" for n in range(lags): result[f\"x_{n+1}\"] = series.shift((n+1)) return result dep_var = spx_rv.rolling(5).sum().shift(-5).dropna() indep_var = create_lags(spx_rv, 5).dropna() # This ensures that we only keep rows that occur in each set. This means their length is the same and # rows match up properly common_index = dep_var.index.intersection(indep_var.index) dep_var = dep_var.loc[common_index] indep_var = indep_var.loc[common_index] # I'm going to take the log of the variance because it has better distributional qualities dep_var = np.log(dep_var) indep_var = np.log(indep_var) I’m going to use a very simple Bayesian linear regression for this model. It assumes the data is distributed according to\n$$y \\sim normal(\\mu + X\\beta, \\sigma)$$\nimport pystan as stan import arviz model_spec = ''' data { int len; int vars; vector[len] dep_var; matrix[len, vars] indep_var; } parameters { real mu; vector[vars] beta; real",
+  "wordCount" : "1421",
   "inLanguage": "en",
   "datePublished": "2021-03-17T00:00:00Z",
   "dateModified": "2021-03-17T00:00:00Z",
@@ -98,22 +106,13 @@
 </head>
 
 <body class="" id="top">
-<noscript>
-    <style type="text/css">
-        #theme-toggle,
-        .top-link {
-            display: none;
-        }
-
-    </style>
-</noscript>
 
 <header class="header">
     <nav class="nav">
         <div class="logo">
             <a href="http://eadains.github.io/OptionallyBayesHugo/" accesskey="h" title="Optionally Bayes (Alt + H)">Optionally Bayes</a>
-            <span class="logo-switches">
-            </span>
+            <div class="logo-switches">
+            </div>
         </div>
         <ul id="menu">
             <li>
@@ -147,205 +146,207 @@
     <h1 class="post-title">
       Bayesian Autoregressive Volatility Forecasting
     </h1>
-    <div class="post-meta">March 17, 2021&nbsp;·&nbsp;Erik Dains
+    <div class="post-meta"><span title='2021-03-17 00:00:00 +0000 UTC'>March 17, 2021</span>&nbsp;·&nbsp;Erik Dains
+
 </div>
   </header> 
   <div class="post-content"><p>So now that I&rsquo;ve decided that I&rsquo;m going to use 1-min RV as my volatility proxy, I can move on to the juicy part: forecasting.</p>
 <h1 id="the-data">The Data<a hidden class="anchor" aria-hidden="true" href="#the-data">#</a></h1>
 <hr>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> pandas <span style="color:#66d9ef">as</span> pd
-<span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
-<span style="color:#f92672">import</span> sqlite3
-<span style="color:#f92672">from</span> matplotlib <span style="color:#f92672">import</span> pyplot <span style="color:#66d9ef">as</span> plt
-<span style="color:#f92672">from</span> scipy <span style="color:#f92672">import</span> stats
-
-<span style="color:#75715e"># Set default figure size</span>
-plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#34;figure.figsize&#34;</span>] <span style="color:#f92672">=</span> (<span style="color:#ae81ff">15</span>, <span style="color:#ae81ff">10</span>)
-pd<span style="color:#f92672">.</span>plotting<span style="color:#f92672">.</span>register_matplotlib_converters()
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Here&#39;s my minute data for the S&amp;P 500</span>
-spx_minute <span style="color:#f92672">=</span> minute <span style="color:#f92672">=</span> pd<span style="color:#f92672">.</span>read_csv(<span style="color:#e6db74">&#34;SPX_1min.csv&#34;</span>, header<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>,names<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#39;datetime&#39;</span>, <span style="color:#e6db74">&#39;open&#39;</span>, <span style="color:#e6db74">&#39;high&#39;</span>, <span style="color:#e6db74">&#39;low&#39;</span>, <span style="color:#e6db74">&#39;close&#39;</span>],
-                                  index_col<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;datetime&#39;</span>, parse_dates<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Here&#39;s the function for calculating the 1-min RV, as discussed in my last post</span>
-<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">rv_calc</span>(data):
-    results <span style="color:#f92672">=</span> {}
-    
-    <span style="color:#66d9ef">for</span> idx, data <span style="color:#f92672">in</span> data<span style="color:#f92672">.</span>groupby(data<span style="color:#f92672">.</span>index<span style="color:#f92672">.</span>date):
-        returns <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>log(data[<span style="color:#e6db74">&#39;close&#39;</span>]) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>log(data[<span style="color:#e6db74">&#39;close&#39;</span>]<span style="color:#f92672">.</span>shift(<span style="color:#ae81ff">1</span>))
-        results[idx] <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sum(returns<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>)
-        
-    <span style="color:#66d9ef">return</span> pd<span style="color:#f92672">.</span>Series(results)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">spx_rv <span style="color:#f92672">=</span> rv_calc(spx_minute)
-</code></pre></div><h1 id="the-model">The Model<a hidden class="anchor" aria-hidden="true" href="#the-model">#</a></h1>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> pandas <span style="color:#66d9ef">as</span> pd
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> sqlite3
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> matplotlib <span style="color:#f92672">import</span> pyplot <span style="color:#66d9ef">as</span> plt
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> scipy <span style="color:#f92672">import</span> stats
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Set default figure size</span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#34;figure.figsize&#34;</span>] <span style="color:#f92672">=</span> (<span style="color:#ae81ff">15</span>, <span style="color:#ae81ff">10</span>)
+</span></span><span style="display:flex;"><span>pd<span style="color:#f92672">.</span>plotting<span style="color:#f92672">.</span>register_matplotlib_converters()
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># Here&#39;s my minute data for the S&amp;P 500</span>
+</span></span><span style="display:flex;"><span>spx_minute <span style="color:#f92672">=</span> minute <span style="color:#f92672">=</span> pd<span style="color:#f92672">.</span>read_csv(<span style="color:#e6db74">&#34;SPX_1min.csv&#34;</span>, header<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>,names<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#39;datetime&#39;</span>, <span style="color:#e6db74">&#39;open&#39;</span>, <span style="color:#e6db74">&#39;high&#39;</span>, <span style="color:#e6db74">&#39;low&#39;</span>, <span style="color:#e6db74">&#39;close&#39;</span>],
+</span></span><span style="display:flex;"><span>                                  index_col<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;datetime&#39;</span>, parse_dates<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># Here&#39;s the function for calculating the 1-min RV, as discussed in my last post</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">rv_calc</span>(data):
+</span></span><span style="display:flex;"><span>    results <span style="color:#f92672">=</span> {}
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> idx, data <span style="color:#f92672">in</span> data<span style="color:#f92672">.</span>groupby(data<span style="color:#f92672">.</span>index<span style="color:#f92672">.</span>date):
+</span></span><span style="display:flex;"><span>        returns <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>log(data[<span style="color:#e6db74">&#39;close&#39;</span>]) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>log(data[<span style="color:#e6db74">&#39;close&#39;</span>]<span style="color:#f92672">.</span>shift(<span style="color:#ae81ff">1</span>))
+</span></span><span style="display:flex;"><span>        results[idx] <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sum(returns<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> pd<span style="color:#f92672">.</span>Series(results)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>spx_rv <span style="color:#f92672">=</span> rv_calc(spx_minute)
+</span></span></code></pre></div><h1 id="the-model">The Model<a hidden class="anchor" aria-hidden="true" href="#the-model">#</a></h1>
 <p>My goal is to predict the volatility over the next week, or 5 trading days, with the past 5 days of daily volatility. This means my independent variables will be the last 5 days of volatility, and my dependent variable is the realized volatility over the next 5 days. For the sake of increased samples, I&rsquo;m going to create a rolling 5-day window of volatility and shift it 5 periods backwards and use that as the dependent variable. This means I can create a 5-day volatility forecast for each day, rather than each week.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">create_lags</span>(series, lags):
-    <span style="color:#e6db74">&#34;&#34;&#34;
-</span><span style="color:#e6db74">    Creates a dataframe with lagged values of the given series.
-</span><span style="color:#e6db74">    Generates columns named x_</span><span style="color:#e6db74">{n}</span><span style="color:#e6db74"> which means the value of each row is the value of the original series lagged n times
-</span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
-    result <span style="color:#f92672">=</span> pd<span style="color:#f92672">.</span>DataFrame(index<span style="color:#f92672">=</span>series<span style="color:#f92672">.</span>index)
-    result[<span style="color:#e6db74">&#34;x&#34;</span>] <span style="color:#f92672">=</span> series
-    <span style="color:#e6db74">&#34;&#34;</span>
-    <span style="color:#66d9ef">for</span> n <span style="color:#f92672">in</span> range(lags):
-        result[<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;x_</span><span style="color:#e6db74">{</span>n<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>] <span style="color:#f92672">=</span> series<span style="color:#f92672">.</span>shift((n<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>))
-        
-    <span style="color:#66d9ef">return</span> result
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">dep_var <span style="color:#f92672">=</span> spx_rv<span style="color:#f92672">.</span>rolling(<span style="color:#ae81ff">5</span>)<span style="color:#f92672">.</span>sum()<span style="color:#f92672">.</span>shift(<span style="color:#f92672">-</span><span style="color:#ae81ff">5</span>)<span style="color:#f92672">.</span>dropna()
-indep_var <span style="color:#f92672">=</span> create_lags(spx_rv, <span style="color:#ae81ff">5</span>)<span style="color:#f92672">.</span>dropna()
-<span style="color:#75715e"># This ensures that we only keep rows that occur in each set. This means their length is the same and</span>
-<span style="color:#75715e"># rows match up properly</span>
-common_index <span style="color:#f92672">=</span> dep_var<span style="color:#f92672">.</span>index<span style="color:#f92672">.</span>intersection(indep_var<span style="color:#f92672">.</span>index)
-dep_var <span style="color:#f92672">=</span> dep_var<span style="color:#f92672">.</span>loc[common_index]
-indep_var <span style="color:#f92672">=</span> indep_var<span style="color:#f92672">.</span>loc[common_index]
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># I&#39;m going to take the log of the variance because it has better distributional qualities</span>
-dep_var <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>log(dep_var)
-indep_var <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>log(indep_var)
-</code></pre></div><p>I&rsquo;m going to use a very simple Bayesian linear regression for this model. It assumes the data is distributed according to</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">create_lags</span>(series, lags):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Creates a dataframe with lagged values of the given series.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Generates columns named x_</span><span style="color:#e6db74">{n}</span><span style="color:#e6db74"> which means the value of each row is the value of the original series lagged n times
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    result <span style="color:#f92672">=</span> pd<span style="color:#f92672">.</span>DataFrame(index<span style="color:#f92672">=</span>series<span style="color:#f92672">.</span>index)
+</span></span><span style="display:flex;"><span>    result[<span style="color:#e6db74">&#34;x&#34;</span>] <span style="color:#f92672">=</span> series
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> n <span style="color:#f92672">in</span> range(lags):
+</span></span><span style="display:flex;"><span>        result[<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;x_</span><span style="color:#e6db74">{</span>n<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>] <span style="color:#f92672">=</span> series<span style="color:#f92672">.</span>shift((n<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>))
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> result
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>dep_var <span style="color:#f92672">=</span> spx_rv<span style="color:#f92672">.</span>rolling(<span style="color:#ae81ff">5</span>)<span style="color:#f92672">.</span>sum()<span style="color:#f92672">.</span>shift(<span style="color:#f92672">-</span><span style="color:#ae81ff">5</span>)<span style="color:#f92672">.</span>dropna()
+</span></span><span style="display:flex;"><span>indep_var <span style="color:#f92672">=</span> create_lags(spx_rv, <span style="color:#ae81ff">5</span>)<span style="color:#f92672">.</span>dropna()
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># This ensures that we only keep rows that occur in each set. This means their length is the same and</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># rows match up properly</span>
+</span></span><span style="display:flex;"><span>common_index <span style="color:#f92672">=</span> dep_var<span style="color:#f92672">.</span>index<span style="color:#f92672">.</span>intersection(indep_var<span style="color:#f92672">.</span>index)
+</span></span><span style="display:flex;"><span>dep_var <span style="color:#f92672">=</span> dep_var<span style="color:#f92672">.</span>loc[common_index]
+</span></span><span style="display:flex;"><span>indep_var <span style="color:#f92672">=</span> indep_var<span style="color:#f92672">.</span>loc[common_index]
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># I&#39;m going to take the log of the variance because it has better distributional qualities</span>
+</span></span><span style="display:flex;"><span>dep_var <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>log(dep_var)
+</span></span><span style="display:flex;"><span>indep_var <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>log(indep_var)
+</span></span></code></pre></div><p>I&rsquo;m going to use a very simple Bayesian linear regression for this model. It assumes the data is distributed according to</p>
 <p>$$y \sim normal(\mu + X\beta, \sigma)$$</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> pystan <span style="color:#66d9ef">as</span> stan
-<span style="color:#f92672">import</span> arviz
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">model_spec <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;&#39;&#39;
-</span><span style="color:#e6db74">data {
-</span><span style="color:#e6db74">    int len;
-</span><span style="color:#e6db74">    int vars;
-</span><span style="color:#e6db74">    vector[len] dep_var;
-</span><span style="color:#e6db74">    matrix[len, vars] indep_var;
-</span><span style="color:#e6db74">}
-</span><span style="color:#e6db74">parameters {
-</span><span style="color:#e6db74">    real mu;
-</span><span style="color:#e6db74">    vector[vars] beta;
-</span><span style="color:#e6db74">    real&lt;lower=0&gt; sigma;
-</span><span style="color:#e6db74">}
-</span><span style="color:#e6db74">model {
-</span><span style="color:#e6db74">    mu ~ cauchy(0, 10);
-</span><span style="color:#e6db74">    beta ~ cauchy(0, 10);
-</span><span style="color:#e6db74">    sigma ~ cauchy(0, 5);
-</span><span style="color:#e6db74">    
-</span><span style="color:#e6db74">    dep_var ~ normal(mu + (indep_var * beta), sigma);
-</span><span style="color:#e6db74">}
-</span><span style="color:#e6db74">&#39;&#39;&#39;</span>
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">model <span style="color:#f92672">=</span> stan<span style="color:#f92672">.</span>StanModel(model_code<span style="color:#f92672">=</span>model_spec)
-</code></pre></div><h1 id="model-testing-and-verification">Model Testing and Verification<a hidden class="anchor" aria-hidden="true" href="#model-testing-and-verification">#</a></h1>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> pystan <span style="color:#66d9ef">as</span> stan
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> arviz
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>model_spec <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;&#39;&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">data {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    int len;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    int vars;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    vector[len] dep_var;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    matrix[len, vars] indep_var;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">parameters {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    real mu;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    vector[vars] beta;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    real&lt;lower=0&gt; sigma;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">model {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    mu ~ cauchy(0, 10);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    beta ~ cauchy(0, 10);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    sigma ~ cauchy(0, 5);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    dep_var ~ normal(mu + (indep_var * beta), sigma);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#39;&#39;&#39;</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>model <span style="color:#f92672">=</span> stan<span style="color:#f92672">.</span>StanModel(model_code<span style="color:#f92672">=</span>model_spec)
+</span></span></code></pre></div><h1 id="model-testing-and-verification">Model Testing and Verification<a hidden class="anchor" aria-hidden="true" href="#model-testing-and-verification">#</a></h1>
 <p>Okay, let&rsquo;s do some out of sample testing to see how our model does! Below, I&rsquo;m defining the training and testing sets. I&rsquo;m going to use 75% of the data for in-sample fitting and the remaining 25% for out-of-sample testing.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">test_index <span style="color:#f92672">=</span> int(len(indep_var) <span style="color:#f92672">*</span> <span style="color:#ae81ff">.75</span>)
-train_x <span style="color:#f92672">=</span> indep_var<span style="color:#f92672">.</span>iloc[:test_index]
-train_y <span style="color:#f92672">=</span> dep_var[:test_index]
-test_x <span style="color:#f92672">=</span> indep_var<span style="color:#f92672">.</span>iloc[test_index:]
-test_y <span style="color:#f92672">=</span> dep_var[test_index:]
-</code></pre></div><p>Now, I fit the model to the data.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">params <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#39;len&#39;</span>: len(train_x), <span style="color:#e6db74">&#39;vars&#39;</span>: len(train_x<span style="color:#f92672">.</span>columns), <span style="color:#e6db74">&#39;dep_var&#39;</span>: train_y, <span style="color:#e6db74">&#39;indep_var&#39;</span>: train_x}
-
-sample <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>sampling(data<span style="color:#f92672">=</span>params, chains<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>, warmup<span style="color:#f92672">=</span><span style="color:#ae81ff">250</span>, iter<span style="color:#f92672">=</span><span style="color:#ae81ff">1500</span>)
-</code></pre></div><p>Let&rsquo;s check our sampling statistics to ensure the sampler converged. R-hats all look very good and our effective samples also look good.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">print(sample<span style="color:#f92672">.</span>stansummary(pars<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#39;mu&#39;</span>, <span style="color:#e6db74">&#39;beta&#39;</span>, <span style="color:#e6db74">&#39;sigma&#39;</span>]))
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    Inference for Stan model: anon_model_842ef31b1beae12ccaeb1a8773757520.
-    4 chains, each with iter=1500; warmup=250; thin=1; 
-    post-warmup draws per chain=1250, total post-warmup draws=5000.
-    
-              mean se_mean     sd   2.5%    25%    50%    75%  97.5%  n_eff   Rhat
-    mu        0.59  1.2e-3   0.09   0.42   0.53   0.59   0.65   0.77   5682    1.0
-    beta[1]   0.46  3.4e-4   0.02   0.42   0.45   0.46   0.47    0.5   3219    1.0
-    beta[2]   0.14  4.5e-4   0.02    0.1   0.13   0.14   0.16   0.18   2408    1.0
-    beta[3]   0.09  3.9e-4   0.02   0.04   0.07   0.09    0.1   0.13   3317    1.0
-    beta[4]   0.08  3.7e-4   0.02   0.03   0.06   0.08   0.09   0.12   3753    1.0
-    beta[5]   0.06  4.1e-4   0.02   0.01   0.04   0.06   0.07    0.1   2966    1.0
-    beta[6]   0.07  3.0e-4   0.02   0.03   0.06   0.07   0.08   0.11   4026    1.0
-    sigma     0.49  9.5e-5 6.9e-3   0.48   0.49   0.49    0.5   0.51   5295    1.0
-    
-    Samples were drawn using NUTS at Wed Mar 17 19:28:01 2021.
-    For each parameter, n_eff is a crude measure of effective sample size,
-    and Rhat is the potential scale reduction factor on split chains (at 
-    convergence, Rhat=1).
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">arviz_data <span style="color:#f92672">=</span> arviz<span style="color:#f92672">.</span>from_pystan(
-    posterior<span style="color:#f92672">=</span>sample
-)
-</code></pre></div><p>We can look at trace plots for our samples. Good samples should look like fuzzy caterpillars, which is what we see here. The distributions also match across sampling chains. The variables also match our intuition: $\mu$ and $\beta$ are positive, and the regression coefficients are all positive.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">arviz<span style="color:#f92672">.</span>plot_trace(arviz_data, var_names<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#39;mu&#39;</span>, <span style="color:#e6db74">&#39;beta&#39;</span>, <span style="color:#e6db74">&#39;sigma&#39;</span>])
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>test_index <span style="color:#f92672">=</span> int(len(indep_var) <span style="color:#f92672">*</span> <span style="color:#ae81ff">.75</span>)
+</span></span><span style="display:flex;"><span>train_x <span style="color:#f92672">=</span> indep_var<span style="color:#f92672">.</span>iloc[:test_index]
+</span></span><span style="display:flex;"><span>train_y <span style="color:#f92672">=</span> dep_var[:test_index]
+</span></span><span style="display:flex;"><span>test_x <span style="color:#f92672">=</span> indep_var<span style="color:#f92672">.</span>iloc[test_index:]
+</span></span><span style="display:flex;"><span>test_y <span style="color:#f92672">=</span> dep_var[test_index:]
+</span></span></code></pre></div><p>Now, I fit the model to the data.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>params <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#39;len&#39;</span>: len(train_x), <span style="color:#e6db74">&#39;vars&#39;</span>: len(train_x<span style="color:#f92672">.</span>columns), <span style="color:#e6db74">&#39;dep_var&#39;</span>: train_y, <span style="color:#e6db74">&#39;indep_var&#39;</span>: train_x}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>sample <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>sampling(data<span style="color:#f92672">=</span>params, chains<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>, warmup<span style="color:#f92672">=</span><span style="color:#ae81ff">250</span>, iter<span style="color:#f92672">=</span><span style="color:#ae81ff">1500</span>)
+</span></span></code></pre></div><p>Let&rsquo;s check our sampling statistics to ensure the sampler converged. R-hats all look very good and our effective samples also look good.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>print(sample<span style="color:#f92672">.</span>stansummary(pars<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#39;mu&#39;</span>, <span style="color:#e6db74">&#39;beta&#39;</span>, <span style="color:#e6db74">&#39;sigma&#39;</span>]))
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>    Inference for Stan model: anon_model_842ef31b1beae12ccaeb1a8773757520.
+</span></span><span style="display:flex;"><span>    4 chains, each with iter=1500; warmup=250; thin=1; 
+</span></span><span style="display:flex;"><span>    post-warmup draws per chain=1250, total post-warmup draws=5000.
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>              mean se_mean     sd   2.5%    25%    50%    75%  97.5%  n_eff   Rhat
+</span></span><span style="display:flex;"><span>    mu        0.59  1.2e-3   0.09   0.42   0.53   0.59   0.65   0.77   5682    1.0
+</span></span><span style="display:flex;"><span>    beta[1]   0.46  3.4e-4   0.02   0.42   0.45   0.46   0.47    0.5   3219    1.0
+</span></span><span style="display:flex;"><span>    beta[2]   0.14  4.5e-4   0.02    0.1   0.13   0.14   0.16   0.18   2408    1.0
+</span></span><span style="display:flex;"><span>    beta[3]   0.09  3.9e-4   0.02   0.04   0.07   0.09    0.1   0.13   3317    1.0
+</span></span><span style="display:flex;"><span>    beta[4]   0.08  3.7e-4   0.02   0.03   0.06   0.08   0.09   0.12   3753    1.0
+</span></span><span style="display:flex;"><span>    beta[5]   0.06  4.1e-4   0.02   0.01   0.04   0.06   0.07    0.1   2966    1.0
+</span></span><span style="display:flex;"><span>    beta[6]   0.07  3.0e-4   0.02   0.03   0.06   0.07   0.08   0.11   4026    1.0
+</span></span><span style="display:flex;"><span>    sigma     0.49  9.5e-5 6.9e-3   0.48   0.49   0.49    0.5   0.51   5295    1.0
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    Samples were drawn using NUTS at Wed Mar 17 19:28:01 2021.
+</span></span><span style="display:flex;"><span>    For each parameter, n_eff is a crude measure of effective sample size,
+</span></span><span style="display:flex;"><span>    and Rhat is the potential scale reduction factor on split chains (at 
+</span></span><span style="display:flex;"><span>    convergence, Rhat=1).
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>arviz_data <span style="color:#f92672">=</span> arviz<span style="color:#f92672">.</span>from_pystan(
+</span></span><span style="display:flex;"><span>    posterior<span style="color:#f92672">=</span>sample
+</span></span><span style="display:flex;"><span>)
+</span></span></code></pre></div><p>We can look at trace plots for our samples. Good samples should look like fuzzy caterpillars, which is what we see here. The distributions also match across sampling chains. The variables also match our intuition: $\mu$ and $\beta$ are positive, and the regression coefficients are all positive.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>arviz<span style="color:#f92672">.</span>plot_trace(arviz_data, var_names<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#39;mu&#39;</span>, <span style="color:#e6db74">&#39;beta&#39;</span>, <span style="color:#e6db74">&#39;sigma&#39;</span>])
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_24_1.png#center"/> 
 </figure>
 
 <p>The code below creates the posterior predictive distribution for the in-sample and out-of-sample data. These represent what the model predicts the distribution of the data is. The job now is to compare this predicted distribution to the reality.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">mu <span style="color:#f92672">=</span> sample[<span style="color:#e6db74">&#39;mu&#39;</span>]
-beta <span style="color:#f92672">=</span> sample[<span style="color:#e6db74">&#39;beta&#39;</span>]
-sigma <span style="color:#f92672">=</span> sample[<span style="color:#e6db74">&#39;sigma&#39;</span>]
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># This is some tensordot sorcery that works, but that I don&#39;t frankly understand. It takes the matrix product of train_x</span>
-<span style="color:#75715e"># and beta over each row of beta. Essentially a higher-dimensional version of what the model does.</span>
-train_post <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>normal(mu <span style="color:#f92672">+</span> (np<span style="color:#f92672">.</span>tensordot(train_x, beta, axes<span style="color:#f92672">=</span>(<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">1</span>))), sigma)
-test_post <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>normal(mu <span style="color:#f92672">+</span> (np<span style="color:#f92672">.</span>tensordot(test_x, beta, axes<span style="color:#f92672">=</span>(<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">1</span>))), sigma)
-
-train_post_mean <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>mean(train_post, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
-test_post_mean <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>mean(test_post, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
-</code></pre></div><p>Let&rsquo;s take a look at the in-sample and out-of-sample residuals. In this case, I&rsquo;m making a point estimate by taking the mean of the posterior predictive distribution. It&rsquo;s obvious that the model has problems predicting volatility jumps, signified by unexpected jumps in the residuals.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">plt<span style="color:#f92672">.</span>plot(np<span style="color:#f92672">.</span>exp(train_y) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>exp(train_post_mean))
-plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#39;Time&#39;</span>)
-plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#39;Residual&#39;</span>)
-plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#39;In-Sample Residuals&#39;</span>)
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>mu <span style="color:#f92672">=</span> sample[<span style="color:#e6db74">&#39;mu&#39;</span>]
+</span></span><span style="display:flex;"><span>beta <span style="color:#f92672">=</span> sample[<span style="color:#e6db74">&#39;beta&#39;</span>]
+</span></span><span style="display:flex;"><span>sigma <span style="color:#f92672">=</span> sample[<span style="color:#e6db74">&#39;sigma&#39;</span>]
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># This is some tensordot sorcery that works, but that I don&#39;t frankly understand. It takes the matrix product of train_x</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># and beta over each row of beta. Essentially a higher-dimensional version of what the model does.</span>
+</span></span><span style="display:flex;"><span>train_post <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>normal(mu <span style="color:#f92672">+</span> (np<span style="color:#f92672">.</span>tensordot(train_x, beta, axes<span style="color:#f92672">=</span>(<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">1</span>))), sigma)
+</span></span><span style="display:flex;"><span>test_post <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>normal(mu <span style="color:#f92672">+</span> (np<span style="color:#f92672">.</span>tensordot(test_x, beta, axes<span style="color:#f92672">=</span>(<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">1</span>))), sigma)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>train_post_mean <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>mean(train_post, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>test_post_mean <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>mean(test_post, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span></code></pre></div><p>Let&rsquo;s take a look at the in-sample and out-of-sample residuals. In this case, I&rsquo;m making a point estimate by taking the mean of the posterior predictive distribution. It&rsquo;s obvious that the model has problems predicting volatility jumps, signified by unexpected jumps in the residuals.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(np<span style="color:#f92672">.</span>exp(train_y) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>exp(train_post_mean))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#39;Time&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#39;Residual&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#39;In-Sample Residuals&#39;</span>)
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_29_1.png#center"/> 
 </figure>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">plt<span style="color:#f92672">.</span>plot(np<span style="color:#f92672">.</span>exp(test_y) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>exp(test_post_mean))
-plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#39;Time&#39;</span>)
-plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#39;Residual&#39;</span>)
-plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#39;Out-of-Sample Residuals&#39;</span>)
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(np<span style="color:#f92672">.</span>exp(test_y) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>exp(test_post_mean))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#39;Time&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#39;Residual&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#39;Out-of-Sample Residuals&#39;</span>)
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_30_1.png#center"/> 
 </figure>
 
 <p>Now, let&rsquo;s look at the root mean square error of our model. Looks like our out-of-sample RMSE, using exponentiated values, is around 7% higher, not bad!</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">train_rmse <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt(np<span style="color:#f92672">.</span>mean((np<span style="color:#f92672">.</span>exp(train_y) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>exp(train_post_mean))<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>))
-test_rmse <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt(np<span style="color:#f92672">.</span>mean((np<span style="color:#f92672">.</span>exp(test_y) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>exp(test_post_mean))<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>))
-print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;In-Sample RMSE: </span><span style="color:#e6db74">{</span>train_rmse<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Out-of-Sample RMSE: </span><span style="color:#e6db74">{</span>test_rmse<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;</span>)
-print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;Percent Increase: </span><span style="color:#e6db74">{</span>(test_rmse <span style="color:#f92672">/</span> train_rmse) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;</span>)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    In-Sample RMSE: 0.0006314456099670146
-    Out-of-Sample RMSE: 0.0006745751839390536
-    Percent Increase: 0.06830291206600037
-</code></pre></div><p>I like to do a Mincer-Zarnowitz regression to analyze out-of-sample forests. In this case, the out-of-sample predictions are treated as the independent variable and the true values are the dependent variable. The R-Squared for out model is about 64%, which means our out-of-sample predictions explain 64% of the variance of the true values. Not bad! The intercept is also very close to zero, which means our prediction isn&rsquo;t biased.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">regress <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>linregress(np<span style="color:#f92672">.</span>exp(test_post_mean), np<span style="color:#f92672">.</span>exp(test_y))
-print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;Intercept: </span><span style="color:#e6db74">{</span>regress<span style="color:#f92672">.</span>intercept<span style="color:#e6db74">}</span><span style="color:#e6db74"> </span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Slope: </span><span style="color:#e6db74">{</span>regress<span style="color:#f92672">.</span>slope<span style="color:#e6db74">}</span><span style="color:#e6db74"> </span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">R-Squared: </span><span style="color:#e6db74">{</span>regress<span style="color:#f92672">.</span>rvalue<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;</span>)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    Intercept: 1.7250208362578126e-05 
-    Slope: 1.183989352654772 
-    R-Squared: 0.6438180914963003
-</code></pre></div><p>Next, I want to check the distributional assumptions. Specifically, I want to know how many times real volatility exceeds what our distribution predicts. To do this, I&rsquo;m going to look at the posterior predictive distribution, which should, if our model is correct, accurately predict the distribution of the real data. I&rsquo;ll figure out the 95th percentile of the posterior predictive, and see how many times real volatility exceeded that. We should expect exceedances to happen about 5% of the time.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">upper_bound_train <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>percentile(np<span style="color:#f92672">.</span>exp(train_post), <span style="color:#ae81ff">95</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
-num_exceeds_train <span style="color:#f92672">=</span> (np<span style="color:#f92672">.</span>exp(train_y) <span style="color:#f92672">&gt;</span> upper_bound_train)<span style="color:#f92672">.</span>sum()
-
-upper_bound_test <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>percentile(np<span style="color:#f92672">.</span>exp(test_post), <span style="color:#ae81ff">95</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
-num_exceeds_test <span style="color:#f92672">=</span> (np<span style="color:#f92672">.</span>exp(test_y) <span style="color:#f92672">&gt;</span> upper_bound_test)<span style="color:#f92672">.</span>sum()
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;In-Sample Exceedances: </span><span style="color:#e6db74">{</span>num_exceeds_train <span style="color:#f92672">/</span> len(upper_bound_train)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;</span>)
-print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;Out-of-Sample Exceedances: </span><span style="color:#e6db74">{</span>num_exceeds_test <span style="color:#f92672">/</span> len(upper_bound_test)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;</span>)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    In-Sample Exceedances: 0.0481139337952271
-    Out-of-Sample Exceedances: 0.09815242494226328
-</code></pre></div><p>In-sample we are within 5%, and out-of-sample we are above 5% by about double, which isn&rsquo;t a good sign. Next up is testing the empirical distribution of the data. If our posterior predictive distribution is a good representation of the underlying distribution, doing a probability integral transform should transform the data into a uniform distribution.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ECDF</span>:
-    <span style="color:#66d9ef">def</span> __init__(self, data):
-        self<span style="color:#f92672">.</span>sorted <span style="color:#f92672">=</span> data
-        self<span style="color:#f92672">.</span>sorted<span style="color:#f92672">.</span>sort()
-        self<span style="color:#f92672">.</span>y <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>arange(<span style="color:#ae81ff">1</span>, len(self<span style="color:#f92672">.</span>sorted) <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">/</span> len(self<span style="color:#f92672">.</span>sorted)
-        
-    <span style="color:#66d9ef">def</span> __call__(self, x):
-        ind <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>searchsorted(self<span style="color:#f92672">.</span>sorted, x) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
-        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>y[ind]
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">values <span style="color:#f92672">=</span> []
-
-<span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> range(len(test_post)):
-    ecdf <span style="color:#f92672">=</span> ECDF(np<span style="color:#f92672">.</span>exp(test_post[x]))
-    values<span style="color:#f92672">.</span>append(ecdf(np<span style="color:#f92672">.</span>exp(test_y[x])))
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">plt<span style="color:#f92672">.</span>hist(values)
-plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#39;Transformed Data&#39;</span>)
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>train_rmse <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt(np<span style="color:#f92672">.</span>mean((np<span style="color:#f92672">.</span>exp(train_y) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>exp(train_post_mean))<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>))
+</span></span><span style="display:flex;"><span>test_rmse <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt(np<span style="color:#f92672">.</span>mean((np<span style="color:#f92672">.</span>exp(test_y) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>exp(test_post_mean))<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>))
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;In-Sample RMSE: </span><span style="color:#e6db74">{</span>train_rmse<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Out-of-Sample RMSE: </span><span style="color:#e6db74">{</span>test_rmse<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;</span>)
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;Percent Increase: </span><span style="color:#e6db74">{</span>(test_rmse <span style="color:#f92672">/</span> train_rmse) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>    In-Sample RMSE: 0.0006314456099670146
+</span></span><span style="display:flex;"><span>    Out-of-Sample RMSE: 0.0006745751839390536
+</span></span><span style="display:flex;"><span>    Percent Increase: 0.06830291206600037
+</span></span></code></pre></div><p>I like to do a Mincer-Zarnowitz regression to analyze out-of-sample forests. In this case, the out-of-sample predictions are treated as the independent variable and the true values are the dependent variable. The R-Squared for out model is about 64%, which means our out-of-sample predictions explain 64% of the variance of the true values. Not bad! The intercept is also very close to zero, which means our prediction isn&rsquo;t biased.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>regress <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>linregress(np<span style="color:#f92672">.</span>exp(test_post_mean), np<span style="color:#f92672">.</span>exp(test_y))
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;Intercept: </span><span style="color:#e6db74">{</span>regress<span style="color:#f92672">.</span>intercept<span style="color:#e6db74">}</span><span style="color:#e6db74"> </span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Slope: </span><span style="color:#e6db74">{</span>regress<span style="color:#f92672">.</span>slope<span style="color:#e6db74">}</span><span style="color:#e6db74"> </span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">R-Squared: </span><span style="color:#e6db74">{</span>regress<span style="color:#f92672">.</span>rvalue<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>    Intercept: 1.7250208362578126e-05 
+</span></span><span style="display:flex;"><span>    Slope: 1.183989352654772 
+</span></span><span style="display:flex;"><span>    R-Squared: 0.6438180914963003
+</span></span></code></pre></div><p>Next, I want to check the distributional assumptions. Specifically, I want to know how many times real volatility exceeds what our distribution predicts. To do this, I&rsquo;m going to look at the posterior predictive distribution, which should, if our model is correct, accurately predict the distribution of the real data. I&rsquo;ll figure out the 95th percentile of the posterior predictive, and see how many times real volatility exceeded that. We should expect exceedances to happen about 5% of the time.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>upper_bound_train <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>percentile(np<span style="color:#f92672">.</span>exp(train_post), <span style="color:#ae81ff">95</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>num_exceeds_train <span style="color:#f92672">=</span> (np<span style="color:#f92672">.</span>exp(train_y) <span style="color:#f92672">&gt;</span> upper_bound_train)<span style="color:#f92672">.</span>sum()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>upper_bound_test <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>percentile(np<span style="color:#f92672">.</span>exp(test_post), <span style="color:#ae81ff">95</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>num_exceeds_test <span style="color:#f92672">=</span> (np<span style="color:#f92672">.</span>exp(test_y) <span style="color:#f92672">&gt;</span> upper_bound_test)<span style="color:#f92672">.</span>sum()
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;In-Sample Exceedances: </span><span style="color:#e6db74">{</span>num_exceeds_train <span style="color:#f92672">/</span> len(upper_bound_train)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;</span>)
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;Out-of-Sample Exceedances: </span><span style="color:#e6db74">{</span>num_exceeds_test <span style="color:#f92672">/</span> len(upper_bound_test)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>    In-Sample Exceedances: 0.0481139337952271
+</span></span><span style="display:flex;"><span>    Out-of-Sample Exceedances: 0.09815242494226328
+</span></span></code></pre></div><p>In-sample we are within 5%, and out-of-sample we are above 5% by about double, which isn&rsquo;t a good sign. Next up is testing the empirical distribution of the data. If our posterior predictive distribution is a good representation of the underlying distribution, doing a probability integral transform should transform the data into a uniform distribution.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ECDF</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self, data):
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>sorted <span style="color:#f92672">=</span> data
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>sorted<span style="color:#f92672">.</span>sort()
+</span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>y <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>arange(<span style="color:#ae81ff">1</span>, len(self<span style="color:#f92672">.</span>sorted) <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">/</span> len(self<span style="color:#f92672">.</span>sorted)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __call__(self, x):
+</span></span><span style="display:flex;"><span>        ind <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>searchsorted(self<span style="color:#f92672">.</span>sorted, x) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>y[ind]
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>values <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> range(len(test_post)):
+</span></span><span style="display:flex;"><span>    ecdf <span style="color:#f92672">=</span> ECDF(np<span style="color:#f92672">.</span>exp(test_post[x]))
+</span></span><span style="display:flex;"><span>    values<span style="color:#f92672">.</span>append(ecdf(np<span style="color:#f92672">.</span>exp(test_y[x])))
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>hist(values)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#39;Transformed Data&#39;</span>)
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_41_1.png#center"/> 
 </figure>
 
 <p>We can see an obvious deviation from the expected uniform distribution here. It looks like our distribution most significantly under-predicts large volatiltiy values. This makes sense when looking back to the residual graph, large jumps aren&rsquo;t handled well.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">stats<span style="color:#f92672">.</span>kstest(values, <span style="color:#e6db74">&#39;uniform&#39;</span>)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    KstestResult(statistic=0.0760443418013857, pvalue=8.408548699568476e-05)
-</code></pre></div><p>This Kolmogorov-Smirnov test takes the null hypothesis that the data matches the specified distribution, in this case a uniform. It looks like we can handedly reject that hypothesis. This means that the posterior predictive is not fully capable of representing the real distribution.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>stats<span style="color:#f92672">.</span>kstest(values, <span style="color:#e6db74">&#39;uniform&#39;</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>    KstestResult(statistic=0.0760443418013857, pvalue=8.408548699568476e-05)
+</span></span></code></pre></div><p>This Kolmogorov-Smirnov test takes the null hypothesis that the data matches the specified distribution, in this case a uniform. It looks like we can handedly reject that hypothesis. This means that the posterior predictive is not fully capable of representing the real distribution.</p>
 <h1 id="conclusion-and-extensions">Conclusion and Extensions<a hidden class="anchor" aria-hidden="true" href="#conclusion-and-extensions">#</a></h1>
 <p>It seems like this very simple model does pretty well providing a point-forecast of future volatility, however it fails at accurately describing the distribution of future volatility. This could be fixed in several ways. First is assuming a different distributional form in the model, such as something with fatter tails like a Student&rsquo;s T. Another possibility is allowing the standard deviation of the normal to vary with time. That is more in line with models like traditional stochastic volatility.</p>
 
 
   </div>
+
   <footer class="post-footer">
     <ul class="post-tags">
       <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/volatility/">volatility</a></li>
@@ -356,27 +357,28 @@ plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#39;Tr
   </footer>
 </article>
     </main>
-    <footer class="footer">
-    <span>&copy; 2022 <a href="http://eadains.github.io/OptionallyBayesHugo/">Optionally Bayes</a></span>
+    
+<footer class="footer">
+    <span>&copy; 2023 <a href="http://eadains.github.io/OptionallyBayesHugo/">Optionally Bayes</a></span>
     <span>
         Powered by
         <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
-        <a href="https://git.io/hugopapermod" rel="noopener" target="_blank">PaperMod</a>
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
     </span>
 </footer>
-<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)">
-    <button class="top-link" id="top-link" type="button" accesskey="g">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
-            <path d="M12 6H0l6-6z" />
-        </svg>
-    </button>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
 </a>
 
 <script>
     let menu = document.getElementById('menu')
-    menu.scrollLeft = localStorage.getItem("menu-scroll-position");
-    menu.onscroll = function () {
-        localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
     }
 
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {

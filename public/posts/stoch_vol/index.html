@@ -6,12 +6,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="robots" content="index, follow">
 <title>Stochastic Volatility Models in Stan | Optionally Bayes</title>
-<meta name="keywords" content="volatility, stan, bayesian, model-comparison, model-building" />
+<meta name="keywords" content="volatility, stan, bayesian, model-comparison, model-building">
 <meta name="description" content="Fitting 2 different Stochastic Volatility Models to S&amp;P 500 returns and finding out which is better">
 <meta name="author" content="Erik Dains">
-<link rel="canonical" href="http://eadains.github.io/OptionallyBayesHugo/posts/stoch_vol/" />
-<link crossorigin="anonymous" href="/OptionallyBayesHugo/assets/css/stylesheet.min.22565d513b14d8ddaed3ac5691392cfbd9911aeb414bfcf2511a41766f93b9b9.css" integrity="sha256-IlZdUTsU2N2u06xWkTks&#43;9mRGutBS/zyURpBdm&#43;Tubk=" rel="preload stylesheet" as="style">
-<script defer crossorigin="anonymous" src="/OptionallyBayesHugo/assets/js/highlight.min.7680afc38aa6b15ddf158a4f3780b7b1f7dde7e91d26f073e6229bb7a0793c92.js" integrity="sha256-doCvw4qmsV3fFYpPN4C3sffd5&#43;kdJvBz5iKbt6B5PJI="
+<link rel="canonical" href="http://eadains.github.io/OptionallyBayesHugo/posts/stoch_vol/">
+<link crossorigin="anonymous" href="/OptionallyBayesHugo/assets/css/stylesheet.904a440301b095e87417b41792bef55151ea4126fffa4548f110fd68bdfc03f1.css" integrity="sha256-kEpEAwGwleh0F7QXkr71UVHqQSb/&#43;kVI8RD9aL38A/E=" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/OptionallyBayesHugo/assets/js/highlight.f413e19d0714851f6474e7ee9632408e58ac146fbdbe62747134bea2fa3415e0.js" integrity="sha256-9BPhnQcUhR9kdOfuljJAjlisFG&#43;9vmJ0cTS&#43;ovo0FeA="
     onload="hljs.initHighlightingOnLoad();"></script>
 <link rel="icon" href="http://eadains.github.io/OptionallyBayesHugo/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="http://eadains.github.io/OptionallyBayesHugo/favicon-16x16.png">
@@ -20,22 +20,30 @@
 <link rel="mask-icon" href="http://eadains.github.io/OptionallyBayesHugo/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<meta name="generator" content="Hugo 0.84.0" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css"
-    integrity="sha384-Um5gpz1odJg5Z4HAmzPtgZKdTBHZdw8S29IecapCSB31ligYPhHQZMIlWLYQGVoc" crossorigin="anonymous">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.js"
-    integrity="sha384-YNHdsYkH6gMx9y3mRkmcJ2mFUjTd0qNQQvY9VYZgQd7DcN7env35GzlmFaZ23JGp"
-    crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/auto-render.min.js"
-    integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous"
-    onload="renderMathInElement(document.body);"></script>
+    </style>
+</noscript>
+<script>
+    MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']]
+        }
+    };
+</script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+</script>
 <meta property="og:title" content="Stochastic Volatility Models in Stan" />
 <meta property="og:description" content="Fitting 2 different Stochastic Volatility Models to S&amp;P 500 returns and finding out which is better" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="http://eadains.github.io/OptionallyBayesHugo/posts/stoch_vol/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2021-08-07T00:00:00&#43;00:00" />
-<meta property="article:modified_time" content="2021-08-07T00:00:00&#43;00:00" />
+<meta property="article:published_time" content="2021-08-07T00:00:00+00:00" />
+<meta property="article:modified_time" content="2021-08-07T00:00:00+00:00" />
 
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Stochastic Volatility Models in Stan"/>
@@ -72,8 +80,8 @@
   "keywords": [
     "volatility", "stan", "bayesian", "model-comparison", "model-building"
   ],
-  "articleBody": "Today I’ll be running through Stochastic Volatility Models! These are related to GARCH models in that they allow for time-varying volatility in the return distribution. In other words, it accounts for heteroscedasticity.\nData I’m interested in the weekly returns of the S\u0026P 500 index. My intent is to trade weekly options to go short volatility, so weekly forecasts are what I need.\nimport numpy as np import pandas as pd from cmdstanpy import cmdstan_path, CmdStanModel import matplotlib.pyplot as plt import arviz as az from scipy import stats import statsmodels.api as sm from psis import psisloo from datamodel import SPX, StockData plt.rcParams[\"figure.figsize\"] = (15,10) spx = SPX() spx_wk_prices = spx.prices.resample(\"W-FRI\").last() spx_wk_returns = (np.log(spx_wk_prices) - np.log(spx_wk_prices.shift(1))).dropna() Here are what the weekly returns look like for the past 20-ish years. You can see that volatility “clusters” meaning that periods of extreme returns are generally followed by periods of extreme returns.\nspx_wk_returns.plot(title=\"S\u0026P 500 Index Weekly Returns\", xlabel=\"Date\", ylabel=\"Return\")  This can be more easily seen with autocorrelation plots. Let’s look at the returns themselves first:\nfig = sm.tsa.graphics.plot_acf(spx_wk_returns, title=\"Returns Autocorrelation\") plt.xlabel(\"Lags\") plt.ylabel(\"Correlation\")  There’s very little autocorrelation, meaning that returns at each time period are unrelated to the returns that came at past time periods. However, let’s look at the square of returns, which is a crude way to estimate their volatility.\nfig = sm.tsa.graphics.plot_acf(spx_wk_returns**2, title=\"Squared Returns Autocorrelation\") plt.xlabel(\"Lags\") plt.ylabel(\"Correlation\")  Now there is clearly some significant autocorrelation, meaning volatility is affected by past volatility, thus the clustering effect. When there is a volatility shock, we expect to see periods of lasting higher volatility.\nModel 1 I’m going to be fitting a Stochastic Volatility Model which differs from a standard GARCH model. In a GARCH model, variance is modeled as a deterministic function of past errors and past variances:\n$$ \\sigma_{t}^2 = \\omega + \\alpha_{1} \\epsilon_{t-1}^2 + \\beta_{1} \\sigma_{t-1}^2 $$\nHowever, in a Stochastic Volatility Model, variance is modeled as a stochastic function of past variance:\n$$ \\sigma_{t}^2 = \\mu + \\phi (\\sigma_{t-1}^2 - \\mu) + \\epsilon_{t}$$\n$$ \\epsilon_{t} \\sim \\mathcal{N}(0, \\omega) $$\nThis model is what is encapsulated below in Stan model language. To use the symbols below it’s like this:\n$$ r_{t} \\sim \\mathcal{N}(\\mu_{r}, \\exp(\\frac{h_{t}}{2})) $$\n$$ h_{t} = \\mu_{h} + \\phi (h_{t-1} - \\mu_{h}) + \\epsilon_{t}$$\n$$ \\epsilon_{t} \\sim \\mathcal{N}(0, \\sigma) $$\nNote here that \\(h\\) represents the logarithm of variance. This makes its distribution far more symmetrical than in its normal form, making fitting the model easier. The gist of the model is that there exists a normal mean variance level represented by \\(\\mu_{h}\\) and when shocks occur, whose magnitude is governed by \\(\\sigma\\), variance will tend back towards that mean at a rate dictated by \\(\\phi\\).\nI generate the posterior predictive distribution in the generated quantities block, this will be useful for analysis of the model. I’m using broad uninformative priors here because I have plenty enough data points that they hardly matter.\nmodel_spec = \"\"\" data { int N; // Length of data vector[N] r; // SPX returns } parameters { real mu_h; // Volatility mean term real mu_r; // Returns mean term realphi; // Persistence of volatility real sigma; // Volatility noise vector[N] h_std; // Log volatility } transformed parameters { vector[N] h = h_std * sigma; // h ~ normal(0, sigma); h[1] /= sqrt(1 - square(phi)); // h[1] ~ normal(0, sigma / sqrt(1 - square(phi))) h += mu_h; // h ~ normal(mu_h, sigma) for (t in 2:N) { h[t] += phi * (h[t-1] - mu_h); // h[2:N] ~ normal(mu_h + phi * (h[t-1] - mu_h), sigma) } } model { phi ~ uniform(-1, 1); sigma ~ normal(0, 10); mu_h ~ normal(0, 10); mu_r ~ normal(0, 10); h_std ~ std_normal(); r ~ normal(mu_r, exp(h / 2)); } generated quantities { real r_tilde[N]; real log_prob[N]; r_tilde = normal_rng(mu_r, exp(h / 2)); for (t in 1:N) { log_prob[t] = normal_lpdf(r[t] | mu_r, exp(h[t] / 2)); // Need log probabilities later on } } \"\"\" with open(\"./stan_model/model.stan\", \"w\") as file: file.write(model_spec) model = CmdStanModel(stan_file=\"./stan_model/model.stan\") data = {\"N\": len(spx_wk_returns), \"r\": spx_wk_returns.values} sample = model.sample(data=data, chains=4, parallel_chains=4, output_dir=\"./stan_model\", iter_warmup=1000, iter_sampling=2500) model1_data = az.from_cmdstanpy(posterior=sample, posterior_predictive=\"r_tilde\", observed_data={\"r\": spx_wk_returns.values}, log_likelihood=\"log_prob\") First let’s look at how our chain sampled to make sure everything looks okay.\naz.plot_trace(model1_data, compact=True, var_names=[\"mu_h\", \"mu_r\", \"phi\", \"sigma\"])  Okay there is no obvious issues here. The parameter distributions from each chain look mostly the same, and there aren’t any obvious signs of autocorrelation in the samples. Next, let’s look at the summary statistics from our posterior predictive distribution versus our data. The blue histogram bars represent the posterior predictive, and the black line represents that statistic calculated from the data.\nr_tilde = model1_data.posterior_predictive.r_tilde.values.reshape(10000, -1) vol = model1_data.posterior.h.values.reshape(10000, -1) mean = np.mean(r_tilde, axis=1) std = np.std(r_tilde, axis=1) skew = stats.skew(r_tilde, axis=1) kurt = stats.kurtosis(r_tilde, axis=1) fig, axs = plt.subplots(2, 2) axs[0, 0].hist(mean, bins=50) axs[0, 0].axvline(np.mean(spx_wk_returns), color='black') axs[0, 0].set_title(\"Mean\") axs[0, 1].hist(std, bins=50) axs[0, 1].axvline(np.std(spx_wk_returns), color='black') axs[0, 1].set_title(\"Standard Deviation\") axs[1, 0].hist(skew, bins=50) axs[1, 0].axvline(stats.skew(spx_wk_returns), color='black') axs[1, 0].set_title(\"Skew\") axs[1, 1].hist(kurt, bins=50) axs[1, 1].axvline(stats.kurtosis(spx_wk_returns), color='black') axs[1, 1].set_title(\"Kurtosis\")  There are some issues here, right off the bat. Ideally, the black line should fall in a high probability region of the histogram. This would mean that the data simulated from our model closely matches the qualities of the input data. This looks true mostly only for the standard deviation and kurtosis. It seems like the model is not modeling the mean or skew very well. Next let’s look at the distribution of our input data versus the distribution of the posterior predictive.\naz.plot_ppc(model1_data, data_pairs={\"r\": \"r_tilde\"})  This looks pretty good! The distributions look mostly the same. Next, I want to look at how well calibrated the model is. The model outputs a distributional estimate at each time point. So ideally, for instance, if we calculate the 95th percentile of that distribution, the input data should have values higher than that only 5% of the time. Likewise that data should have values smaller than the 5% percentile only 5% of the time.\n# 95% bounds exceedances np.sum(spx_wk_returns.values  np.percentile(r_tilde, 95, axis=0)) / len(spx_wk_returns) 0.015459723352318959 # 5% bounds exceedances np.sum(spx_wk_returns.values  np.percentile(r_tilde, 5, axis=0)) / len(spx_wk_returns) 0.03986981285598047 So 1.6% of the time the data values are above the 95% bounds, and 3.8% of the time the data values are below the 5% bounds. If anything then, our distribution may be too broad. However, in this case that could be considered a good thing because I’d rather predict a broader distribution of returns than a too restrictive one. It’s best to be over-prepared for extreme outcomes than under-prepared. The next plot is the 95% and 5% bounds plotted against the return data. You can see the points where the returns exceed those bounds.\nplt.plot(np.percentile(r_tilde, 95, axis=0), color=\"black\") plt.plot(np.percentile(r_tilde, 5, axis=0), color=\"black\") plt.plot(spx_wk_returns.values, color=\"red\", alpha=0.5)  The next test is doing a probability integral transform. When you put a value through a CDF it gets transformed onto the range 0 to 1. Ideally, if I put the data through the CDF implied by the model, those output values should be uniformly distributed. This implies that the predicted distribution accurately predicts the probabilities of events. Unlike the exceedances test, which only looks at the tails, this test looks at the entire distribution.\nvalues = [] for t in range(len(spx_wk_returns)): ecdf = sm.distributions.empirical_distribution.ECDF(r_tilde[:, t]) values.append(ecdf(spx_wk_returns.iloc[t])) fig = sm.graphics.qqplot(np.array(values), dist=stats.uniform, line=\"45\")  A QQ plot displays the transformed data against a reference distribution. If the samples match a uniform distribution, they should all fall perfectly on the 45 degree line in the figure. It’s clear there is some odd behavior at the right tail and in the center. It seems like our distributional estimate doesn’t match the data too well.\nModel 2 Okay, so issues are that the mean and skew seem off, and the distribution estimate doesn’t match too well with the data. What should I try? Well, we expect negative skew, because large negative returns happen rarely. So instead of assuming a normal error for returns, let’s try a skew normal! So everything is the same but the sampling statement for the returns looks like this now:\n$$ r_{t} \\sim Skew Normal(\\mu_{r}, \\exp(\\frac{h_{t}}{2}), \\alpha) $$\nWhere \\(\\alpha\\) is a new parameter that dictates the level of skew. In Stan, that model looks like this.\nmodel_spec = \"\"\" data { int N; // Length of data vector[N] r; // SPX returns } parameters { real mu_h; // Volatility mean term real mu_r; // Returns mean term realphi; // Persistence of volatility real sigma; // Volatility noise vector[N] h_std; // Log volatility real alpha; // Skew Normal shape parameter } transformed parameters { vector[N] h = h_std * sigma; // h ~ normal(0, sigma); h[1] /= sqrt(1 - square(phi)); // h[1] ~ normal(0, sigma / sqrt(1 - square(phi))) h += mu_h; // h ~ normal(mu_h, sigma) for (t in 2:N) { h[t] += phi * (h[t-1] - mu_h); // h[2:N] ~ normal(mu_h + phi * (h[t-1] - mu_h), sigma) } } model { phi ~ uniform(-1, 1); sigma ~ normal(0, 10); mu_h ~ normal(0, 10); mu_r ~ normal(0, 10); alpha ~ normal(0, 10); h_std ~ std_normal(); r ~ skew_normal(mu_r, exp(h / 2), alpha); } generated quantities { real r_tilde[N]; real log_prob[N]; r_tilde = skew_normal_rng(mu_r, exp(h / 2), alpha); for (t in 1:N) { log_prob[t] = skew_normal_lpdf(r[t] | mu_r, exp(h[t] / 2), alpha); // Need log probabilities later on } } \"\"\" with open(\"./stan_model/model.stan\", \"w\") as file: file.write(model_spec) model = CmdStanModel(stan_file=\"./stan_model/model.stan\") data = {\"N\": len(spx_wk_returns), \"r\": spx_wk_returns.values} sample = model.sample(data=data, chains=4, parallel_chains=4, output_dir=\"./stan_model\", iter_warmup=1000, iter_sampling=2500) model2_data = az.from_cmdstanpy(posterior=sample, posterior_predictive=\"r_tilde\", observed_data={\"r\": spx_wk_returns.values}, log_likelihood=\"log_prob\") az.plot_trace(model2_data, compact=True, var_names=[\"mu_h\", \"mu_r\", \"phi\", \"sigma\", \"alpha\"])  Again, everything looks good here. Alpha centers around a negative value, which is a good sign, because negative skew was expected.\nr_tilde = model2_data.posterior_predictive.r_tilde.values.reshape(10000, -1) vol = model2_data.posterior.h.values.reshape(10000, -1) mean = np.mean(r_tilde, axis=1) std = np.std(r_tilde, axis=1) skew = stats.skew(r_tilde, axis=1) kurt = stats.kurtosis(r_tilde, axis=1) fig, axs = plt.subplots(2, 2) axs[0, 0].hist(mean, bins=50) axs[0, 0].axvline(np.mean(spx_wk_returns), color='black') axs[0, 0].set_title(\"Mean\") axs[0, 1].hist(std, bins=50) axs[0, 1].axvline(np.std(spx_wk_returns), color='black') axs[0, 1].set_title(\"Standard Deviation\") axs[1, 0].hist(skew, bins=50) axs[1, 0].axvline(stats.skew(spx_wk_returns), color='black') axs[1, 0].set_title(\"Skew\") axs[1, 1].hist(kurt, bins=50) axs[1, 1].axvline(stats.kurtosis(spx_wk_returns), color='black') axs[1, 1].set_title(\"Kurtosis\")  Now the mean value lies right in the center of the distribution and the skew value is closer to the middle then it was before. That looks like progress!\naz.plot_ppc(model2_data, data_pairs={\"r\": \"r_tilde\"})  # 95% bounds exceedances np.sum(spx_wk_returns.values  np.percentile(r_tilde, 95, axis=0)) / len(spx_wk_returns) 0.025223759153783564 # 5% bounds exceedances np.sum(spx_wk_returns.values  np.percentile(r_tilde, 5, axis=0)) / len(spx_wk_returns) 0.025223759153783564 Our exceedances are again a bit too broad but they are more even than the first model.\nplt.plot(np.percentile(r_tilde, 95, axis=0), color=\"black\") plt.plot(np.percentile(r_tilde, 5, axis=0), color=\"black\") plt.plot(spx_wk_returns.values, color=\"red\", alpha=0.5)  values = [] for t in range(len(spx_wk_returns)): ecdf = sm.distributions.empirical_distribution.ECDF(r_tilde[:, t]) values.append(ecdf(spx_wk_returns.iloc[t])) fig = sm.graphics.qqplot(np.array(values), dist=stats.uniform, line=\"45\")  The QQ plot here looks a little bit more funky than the one in model 1, which is concerning.\nModel Comparison So there are two models. There must be a better way to find out which is better than looking at visualizations. Turns out there is a really cool method for this called Pareto Smoothed Importance Sampling. This paper covers it very well. It sounds more complicated than it is. It allows the use of posterior samples and log probabilities to estimate the out-of-sample error of the model. It seeks to approximate the error estimated by leave-one-out (LOO) cross validation without running the model repeatedly. In this case, the model doesn’t take long to fit, and I could run fewer samples, but it would still have to be run nearly 1200 times to do true LOO cross validation\nI’ll take a brief aside to discuss leave-one-out methods on time series. This paper does some analysis on K-Fold cross validation on time series considering stationarity. They find little difference in error estimation using walk-forward versus K-Fold cross validation on stationary time series. This makes intuitive sense in that stationary time series display no time dependence, so the order in which you use the data shouldn’t matter. It’s obvious that stock market returns are not stationary. However, for the sake of this analysis, I’m going to assume that they are conditionally stationary given the volatility process. This gives some legitimacy to what I’m about to do. I will warn, however, that it’s not a perfect method and it’s applicability here can be called into question. With all of that said, let’s continue.\nThe author of the first paper linked very nicely has coded this process in python already, available here.\nmodel1_probs = model1_data.log_likelihood.log_prob.values.reshape(10000, -1) model2_probs = model2_data.log_likelihood.log_prob.values.reshape(10000, -1) loo1, loos1, ks1 = psisloo(model1_probs) loo2, loos2, ks2 = psisloo(model2_probs) diff = round(loo2 - loo1, 2) diff_se = round(np.sqrt(len(loos1) * np.var(loos2 - loos1)), 2) diff_interval = [round(diff - 2.6 * diff_se, 2), round(diff + 2.6 * diff_se, 2)] print(f\"Model 1 ELPD: {round(loo1, 2)}\\nModel 2 ELPD: {round(loo2, 2)}\") Model 1 ELPD: 3042.64 Model 2 ELPD: 3050.58 print(f\"Model 2 - Model 1: {diff}\\nStandard Error: {diff_se}\\nDifference 99% Interval: {diff_interval[0]}| {diff_interval[1]}\") Model 2 - Model 1: 7.94 Standard Error: 3.96 Difference 99% Interval: -2.36 | 18.24 ELPD stands for expected log predictive density. This is what we expect the out-of-sample log probability to be for the model, so we want it to be higher. Higher values imply that the probability of seeing the data given the model is higher, which means the model more closely matches the nature of the data. So, it looks like model 2 is better. Although, given the standard error of the estimate, there is some region of the sampling distribution where model 2 is similar or worse but not by very much. This method also returns a value for the shape parameter fitted to the Pareto distribution. Ideally we want this parameter to be less than 0.5 for every point, but 0.5 to 1 is okay. At these higher levels the variance of the estimator is higher and makes it less reliable. Parameter values greater than 1 are highly undesirable. At these levels, the variance of the estimator is infinite and totally unreliable.\nks1_max = round(np.max(ks1), 2) ks2_max = round(np.max(ks2), 2) ks1_gt = round(sum(ks1  0.5) / len(ks1) * 100, 2) ks2_gt = round(sum(ks2  0.5) / len(ks2) * 100, 2) print(f\"Max k for Model 1: {ks1_max}\\nMax k for Model 2: {ks2_max}\") print(f\"Percentage of values greater than 0.5 for Model 1: {ks1_gt}%\\nPercentage of values greater than 0.5 for Model 2: {ks2_gt}%\") Max k for Model 1: 0.87 Max k for Model 2: 0.95 Percentage of values greater than 0.5 for Model 1: 10.9% Percentage of values greater than 0.5 for Model 2: 11.64% It looks like the estimates for model 2 are slightly less reliable than model 1, which is worth considering because of how close the difference above was. The max value of k is also quite high, indicating that there are som significant data points making estimation more difficult. All-in-all I would consider model 2 to be better, but the differences are slight.\nModel Volatility versus Realized Volatility The model basically finds the value of volatility that fits the return data we give it. It’s a type of hierarchical model where volatility is a latent quantity. We cannot directly observe the volatility of a return series in the real world, we can only imply it. In the literature, there is a great deal about how to estimate that latent volatility. I’ve covered a few of those methods in a previous post. Let’s compare what our model thinks volatility is to a realized volatility estimator. I’m going to be taking the volatility from the second model.\nNote I’m taking the proper transformations to ensure both series are in standard deviation form. My volatility data is shorter than my weekly returns data, so I have to truncate some of it.\nreal_vol = np.sqrt(spx.vol.resample(\"W-FRI\").sum()) model_vol = pd.Series(np.mean(arviz_data.posterior.h.values.reshape(10000, -1), axis=0), index=spx_wk_returns.index) model_vol = np.sqrt(np.exp(model_vol)) common_index = real_vol.index.intersection(model_vol.index) real_vol = real_vol.loc[common_index] model_vol = model_vol.loc[common_index] real_vol.plot() model_vol.plot(color=\"r\")  With the model volatility in red and the realized measure in blue. The model pretty well captures the realized volatility! It’s a smoother estimate, which makes sense considering the linear model for it we are using. Cool!\nConclusion The model isn’t perfect, but then again no model is! The first one fails to capture the negative skew, and while the second one does better, the QQ plot looks less pleasing. This may mean that in doing better capturing skew, it fails to as effectively capture the middle of the distribution.\nThere are a lot of interesting extensions you could make to this model. The mean process of volatility could include exogenous regressors like VIX levels, or it could include past values of the returns themselves! Next the volatility of volatility, \\(\\sigma\\) in the model, could be made to have a stochastic or deterministic process of its own! Essentially, it could be made to vary with time, just like volatility of the returns.\nI’m becoming very interested in Bayesian methods for time series analysis, and there seems to be a lot less literature about that than non-time series models. I think the process for writing, fitting, and interpreting Bayesian models is much more straightforward and clear than frequentist methods. Credible intervals, the fact that parameter uncertainty is automatically accounted for in the posterior predictive distribution, and the methods for estimating out-of-sample error make life much easier.\n",
-  "wordCount" : "2858",
+  "articleBody": "Today I’ll be running through Stochastic Volatility Models! These are related to GARCH models in that they allow for time-varying volatility in the return distribution. In other words, it accounts for heteroscedasticity.\nData I’m interested in the weekly returns of the S\u0026P 500 index. My intent is to trade weekly options to go short volatility, so weekly forecasts are what I need.\nimport numpy as np import pandas as pd from cmdstanpy import cmdstan_path, CmdStanModel import matplotlib.pyplot as plt import arviz as az from scipy import stats import statsmodels.api as sm from psis import psisloo from datamodel import SPX, StockData plt.rcParams[\"figure.figsize\"] = (15,10) spx = SPX() spx_wk_prices = spx.prices.resample(\"W-FRI\").last() spx_wk_returns = (np.log(spx_wk_prices) - np.log(spx_wk_prices.shift(1))).dropna() Here are what the weekly returns look like for the past 20-ish years. You can see that volatility “clusters” meaning that periods of extreme returns are generally followed by periods of extreme returns.\nspx_wk_returns.plot(title=\"S\u0026P 500 Index Weekly Returns\", xlabel=\"Date\", ylabel=\"Return\") This can be more easily seen with autocorrelation plots. Let’s look at the returns themselves first:\nfig = sm.tsa.graphics.plot_acf(spx_wk_returns, title=\"Returns Autocorrelation\") plt.xlabel(\"Lags\") plt.ylabel(\"Correlation\") There’s very little autocorrelation, meaning that returns at each time period are unrelated to the returns that came at past time periods. However, let’s look at the square of returns, which is a crude way to estimate their volatility.\nfig = sm.tsa.graphics.plot_acf(spx_wk_returns**2, title=\"Squared Returns Autocorrelation\") plt.xlabel(\"Lags\") plt.ylabel(\"Correlation\") Now there is clearly some significant autocorrelation, meaning volatility is affected by past volatility, thus the clustering effect. When there is a volatility shock, we expect to see periods of lasting higher volatility.\nModel 1 I’m going to be fitting a Stochastic Volatility Model which differs from a standard GARCH model. In a GARCH model, variance is modeled as a deterministic function of past errors and past variances:\n$$ \\sigma_{t}^2 = \\omega + \\alpha_{1} \\epsilon_{t-1}^2 + \\beta_{1} \\sigma_{t-1}^2 $$\nHowever, in a Stochastic Volatility Model, variance is modeled as a stochastic function of past variance:\n$$ \\sigma_{t}^2 = \\mu + \\phi (\\sigma_{t-1}^2 - \\mu) + \\epsilon_{t}$$\n$$ \\epsilon_{t} \\sim \\mathcal{N}(0, \\omega) $$\nThis model is what is encapsulated below in Stan model language. To use the symbols below it’s like this:\n$$ r_{t} \\sim \\mathcal{N}(\\mu_{r}, \\exp(\\frac{h_{t}}{2})) $$\n$$ h_{t} = \\mu_{h} + \\phi (h_{t-1} - \\mu_{h}) + \\epsilon_{t}$$\n$$ \\epsilon_{t} \\sim \\mathcal{N}(0, \\sigma) $$\nNote here that \\(h\\) represents the logarithm of variance. This makes its distribution far more symmetrical than in its normal form, making fitting the model easier. The gist of the model is that there exists a normal mean variance level represented by \\(\\mu_{h}\\) and when shocks occur, whose magnitude is governed by \\(\\sigma\\), variance will tend back towards that mean at a rate dictated by \\(\\phi\\).\nI generate the posterior predictive distribution in the generated quantities block, this will be useful for analysis of the model. I’m using broad uninformative priors here because I have plenty enough data points that they hardly matter.\nmodel_spec = \"\"\" data { int N; // Length of data vector[N] r; // SPX returns } parameters { real mu_h; // Volatility mean term real mu_r; // Returns mean term real",
+  "wordCount" : "2859",
   "inLanguage": "en",
   "datePublished": "2021-08-07T00:00:00Z",
   "dateModified": "2021-08-07T00:00:00Z",
@@ -98,22 +106,13 @@
 </head>
 
 <body class="" id="top">
-<noscript>
-    <style type="text/css">
-        #theme-toggle,
-        .top-link {
-            display: none;
-        }
-
-    </style>
-</noscript>
 
 <header class="header">
     <nav class="nav">
         <div class="logo">
             <a href="http://eadains.github.io/OptionallyBayesHugo/" accesskey="h" title="Optionally Bayes (Alt + H)">Optionally Bayes</a>
-            <span class="logo-switches">
-            </span>
+            <div class="logo-switches">
+            </div>
         </div>
         <ul id="menu">
             <li>
@@ -147,46 +146,47 @@
     <h1 class="post-title">
       Stochastic Volatility Models in Stan
     </h1>
-    <div class="post-meta">August 7, 2021&nbsp;·&nbsp;Erik Dains
+    <div class="post-meta"><span title='2021-08-07 00:00:00 +0000 UTC'>August 7, 2021</span>&nbsp;·&nbsp;Erik Dains
+
 </div>
   </header> 
   <div class="post-content"><p>Today I&rsquo;ll be running through Stochastic Volatility Models! These are related to GARCH models in that they allow for time-varying volatility in the return distribution. In other words, it accounts for heteroscedasticity.</p>
 <h1 id="data">Data<a hidden class="anchor" aria-hidden="true" href="#data">#</a></h1>
 <p>I&rsquo;m interested in the weekly returns of the S&amp;P 500 index. My intent is to trade weekly options to go short volatility, so weekly forecasts are what I need.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
-<span style="color:#f92672">import</span> pandas <span style="color:#66d9ef">as</span> pd
-<span style="color:#f92672">from</span> cmdstanpy <span style="color:#f92672">import</span> cmdstan_path, CmdStanModel
-<span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#66d9ef">as</span> plt
-<span style="color:#f92672">import</span> arviz <span style="color:#66d9ef">as</span> az
-<span style="color:#f92672">from</span> scipy <span style="color:#f92672">import</span> stats
-<span style="color:#f92672">import</span> statsmodels.api <span style="color:#66d9ef">as</span> sm
-<span style="color:#f92672">from</span> psis <span style="color:#f92672">import</span> psisloo
-
-<span style="color:#f92672">from</span> datamodel <span style="color:#f92672">import</span> SPX, StockData
-
-plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#34;figure.figsize&#34;</span>] <span style="color:#f92672">=</span> (<span style="color:#ae81ff">15</span>,<span style="color:#ae81ff">10</span>)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">spx <span style="color:#f92672">=</span> SPX()
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">spx_wk_prices <span style="color:#f92672">=</span> spx<span style="color:#f92672">.</span>prices<span style="color:#f92672">.</span>resample(<span style="color:#e6db74">&#34;W-FRI&#34;</span>)<span style="color:#f92672">.</span>last()
-spx_wk_returns <span style="color:#f92672">=</span> (np<span style="color:#f92672">.</span>log(spx_wk_prices) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>log(spx_wk_prices<span style="color:#f92672">.</span>shift(<span style="color:#ae81ff">1</span>)))<span style="color:#f92672">.</span>dropna()
-</code></pre></div><p>Here are what the weekly returns look like for the past 20-ish years. You can see that volatility &ldquo;clusters&rdquo; meaning that periods of extreme returns are generally followed by periods of extreme returns.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">spx_wk_returns<span style="color:#f92672">.</span>plot(title<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;S&amp;P 500 Index Weekly Returns&#34;</span>, xlabel<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Date&#34;</span>, ylabel<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Return&#34;</span>)
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> pandas <span style="color:#66d9ef">as</span> pd
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> cmdstanpy <span style="color:#f92672">import</span> cmdstan_path, CmdStanModel
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#66d9ef">as</span> plt
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> arviz <span style="color:#66d9ef">as</span> az
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> scipy <span style="color:#f92672">import</span> stats
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> statsmodels.api <span style="color:#66d9ef">as</span> sm
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> psis <span style="color:#f92672">import</span> psisloo
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> datamodel <span style="color:#f92672">import</span> SPX, StockData
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#34;figure.figsize&#34;</span>] <span style="color:#f92672">=</span> (<span style="color:#ae81ff">15</span>,<span style="color:#ae81ff">10</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>spx <span style="color:#f92672">=</span> SPX()
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>spx_wk_prices <span style="color:#f92672">=</span> spx<span style="color:#f92672">.</span>prices<span style="color:#f92672">.</span>resample(<span style="color:#e6db74">&#34;W-FRI&#34;</span>)<span style="color:#f92672">.</span>last()
+</span></span><span style="display:flex;"><span>spx_wk_returns <span style="color:#f92672">=</span> (np<span style="color:#f92672">.</span>log(spx_wk_prices) <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>log(spx_wk_prices<span style="color:#f92672">.</span>shift(<span style="color:#ae81ff">1</span>)))<span style="color:#f92672">.</span>dropna()
+</span></span></code></pre></div><p>Here are what the weekly returns look like for the past 20-ish years. You can see that volatility &ldquo;clusters&rdquo; meaning that periods of extreme returns are generally followed by periods of extreme returns.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>spx_wk_returns<span style="color:#f92672">.</span>plot(title<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;S&amp;P 500 Index Weekly Returns&#34;</span>, xlabel<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Date&#34;</span>, ylabel<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Return&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_7_1.png#center"/> 
 </figure>
 
 <p>This can be more easily seen with autocorrelation plots. Let&rsquo;s look at the returns themselves first:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">fig <span style="color:#f92672">=</span> sm<span style="color:#f92672">.</span>tsa<span style="color:#f92672">.</span>graphics<span style="color:#f92672">.</span>plot_acf(spx_wk_returns, title<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Returns Autocorrelation&#34;</span>)
-plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Lags&#34;</span>)
-plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Correlation&#34;</span>)
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig <span style="color:#f92672">=</span> sm<span style="color:#f92672">.</span>tsa<span style="color:#f92672">.</span>graphics<span style="color:#f92672">.</span>plot_acf(spx_wk_returns, title<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Returns Autocorrelation&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Lags&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Correlation&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_9_1.png#center"/> 
 </figure>
 
 <p>There&rsquo;s very little autocorrelation, meaning that returns at each time period are unrelated to the returns that came at past time periods. However, let&rsquo;s look at the square of returns, which is a crude way to estimate their volatility.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">fig <span style="color:#f92672">=</span> sm<span style="color:#f92672">.</span>tsa<span style="color:#f92672">.</span>graphics<span style="color:#f92672">.</span>plot_acf(spx_wk_returns<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>, title<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Squared Returns Autocorrelation&#34;</span>)
-plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Lags&#34;</span>)
-plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Correlation&#34;</span>)
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig <span style="color:#f92672">=</span> sm<span style="color:#f92672">.</span>tsa<span style="color:#f92672">.</span>graphics<span style="color:#f92672">.</span>plot_acf(spx_wk_returns<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>, title<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Squared Returns Autocorrelation&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Lags&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Correlation&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_11_1.png#center"/> 
 </figure>
 
@@ -203,118 +203,118 @@ plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;C
 <p>$$ \epsilon_{t} \sim \mathcal{N}(0, \sigma) $$</p>
 <p>Note here that \(h\) represents the logarithm of variance. This makes its distribution far more symmetrical than in its normal form, making fitting the model easier. The gist of the model is that there exists a normal mean variance level represented by \(\mu_{h}\) and when shocks occur, whose magnitude is governed by \(\sigma\), variance will tend back towards that mean at a rate dictated by \(\phi\).</p>
 <p>I generate the posterior predictive distribution in the generated quantities block, this will be useful for analysis of the model. I&rsquo;m using broad uninformative priors here because I have plenty enough data points that they hardly matter.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">model_spec <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&#34;&#34;
-</span><span style="color:#e6db74">    data {
-</span><span style="color:#e6db74">        int N;                              // Length of data
-</span><span style="color:#e6db74">        vector[N] r;                        // SPX returns
-</span><span style="color:#e6db74">    }
-</span><span style="color:#e6db74">    parameters {
-</span><span style="color:#e6db74">        real mu_h;                          // Volatility mean term
-</span><span style="color:#e6db74">        real mu_r;                          // Returns mean term
-</span><span style="color:#e6db74">        real&lt;lower=-1, upper=1&gt; phi;        // Persistence of volatility
-</span><span style="color:#e6db74">        real&lt;lower=0&gt; sigma;                // Volatility noise
-</span><span style="color:#e6db74">        vector[N] h_std;                    // Log volatility
-</span><span style="color:#e6db74">    }
-</span><span style="color:#e6db74">    transformed parameters {
-</span><span style="color:#e6db74">        vector[N] h = h_std * sigma;        // h ~ normal(0, sigma);
-</span><span style="color:#e6db74">        h[1] /= sqrt(1 - square(phi));      // h[1] ~ normal(0, sigma / sqrt(1 - square(phi)))
-</span><span style="color:#e6db74">        h += mu_h;                          // h ~ normal(mu_h, sigma)
-</span><span style="color:#e6db74">        for (t in 2:N) {
-</span><span style="color:#e6db74">            h[t] += phi * (h[t-1] - mu_h);  // h[2:N] ~ normal(mu_h + phi * (h[t-1] - mu_h), sigma)
-</span><span style="color:#e6db74">        }
-</span><span style="color:#e6db74">    }
-</span><span style="color:#e6db74">    model {
-</span><span style="color:#e6db74">        phi ~ uniform(-1, 1);
-</span><span style="color:#e6db74">        sigma ~ normal(0, 10);
-</span><span style="color:#e6db74">        mu_h ~ normal(0, 10);
-</span><span style="color:#e6db74">        mu_r ~ normal(0, 10);
-</span><span style="color:#e6db74">        
-</span><span style="color:#e6db74">        h_std ~ std_normal();
-</span><span style="color:#e6db74">        r ~ normal(mu_r, exp(h / 2));
-</span><span style="color:#e6db74">    }
-</span><span style="color:#e6db74">    generated quantities {
-</span><span style="color:#e6db74">        real r_tilde[N];
-</span><span style="color:#e6db74">        real log_prob[N];
-</span><span style="color:#e6db74">        r_tilde = normal_rng(mu_r, exp(h / 2));
-</span><span style="color:#e6db74">        for (t in 1:N) {
-</span><span style="color:#e6db74">            log_prob[t] = normal_lpdf(r[t] | mu_r, exp(h[t] / 2));  // Need log probabilities later on
-</span><span style="color:#e6db74">        }
-</span><span style="color:#e6db74">    }
-</span><span style="color:#e6db74">&#34;&#34;&#34;</span>
-<span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;./stan_model/model.stan&#34;</span>, <span style="color:#e6db74">&#34;w&#34;</span>) <span style="color:#66d9ef">as</span> file:
-    file<span style="color:#f92672">.</span>write(model_spec)
-
-model <span style="color:#f92672">=</span> CmdStanModel(stan_file<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;./stan_model/model.stan&#34;</span>)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">data <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#34;N&#34;</span>: len(spx_wk_returns), <span style="color:#e6db74">&#34;r&#34;</span>: spx_wk_returns<span style="color:#f92672">.</span>values}
-sample <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>sample(data<span style="color:#f92672">=</span>data,
-                      chains<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>,
-                      parallel_chains<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>,
-                      output_dir<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;./stan_model&#34;</span>,
-                      iter_warmup<span style="color:#f92672">=</span><span style="color:#ae81ff">1000</span>,
-                      iter_sampling<span style="color:#f92672">=</span><span style="color:#ae81ff">2500</span>)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">model1_data <span style="color:#f92672">=</span> az<span style="color:#f92672">.</span>from_cmdstanpy(posterior<span style="color:#f92672">=</span>sample,
-                                posterior_predictive<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;r_tilde&#34;</span>,
-                                observed_data<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;r&#34;</span>: spx_wk_returns<span style="color:#f92672">.</span>values},
-                                log_likelihood<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;log_prob&#34;</span>)
-</code></pre></div><p>First let&rsquo;s look at how our chain sampled to make sure everything looks okay.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">az<span style="color:#f92672">.</span>plot_trace(model1_data, compact<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>, var_names<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#34;mu_h&#34;</span>, <span style="color:#e6db74">&#34;mu_r&#34;</span>, <span style="color:#e6db74">&#34;phi&#34;</span>, <span style="color:#e6db74">&#34;sigma&#34;</span>])
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>model_spec <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    data {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        int N;                              // Length of data
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        vector[N] r;                        // SPX returns
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    parameters {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        real mu_h;                          // Volatility mean term
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        real mu_r;                          // Returns mean term
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        real&lt;lower=-1, upper=1&gt; phi;        // Persistence of volatility
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        real&lt;lower=0&gt; sigma;                // Volatility noise
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        vector[N] h_std;                    // Log volatility
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    transformed parameters {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        vector[N] h = h_std * sigma;        // h ~ normal(0, sigma);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        h[1] /= sqrt(1 - square(phi));      // h[1] ~ normal(0, sigma / sqrt(1 - square(phi)))
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        h += mu_h;                          // h ~ normal(mu_h, sigma)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        for (t in 2:N) {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            h[t] += phi * (h[t-1] - mu_h);  // h[2:N] ~ normal(mu_h + phi * (h[t-1] - mu_h), sigma)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    model {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        phi ~ uniform(-1, 1);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        sigma ~ normal(0, 10);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        mu_h ~ normal(0, 10);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        mu_r ~ normal(0, 10);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        h_std ~ std_normal();
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        r ~ normal(mu_r, exp(h / 2));
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    generated quantities {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        real r_tilde[N];
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        real log_prob[N];
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        r_tilde = normal_rng(mu_r, exp(h / 2));
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        for (t in 1:N) {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            log_prob[t] = normal_lpdf(r[t] | mu_r, exp(h[t] / 2));  // Need log probabilities later on
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;./stan_model/model.stan&#34;</span>, <span style="color:#e6db74">&#34;w&#34;</span>) <span style="color:#66d9ef">as</span> file:
+</span></span><span style="display:flex;"><span>    file<span style="color:#f92672">.</span>write(model_spec)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>model <span style="color:#f92672">=</span> CmdStanModel(stan_file<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;./stan_model/model.stan&#34;</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>data <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#34;N&#34;</span>: len(spx_wk_returns), <span style="color:#e6db74">&#34;r&#34;</span>: spx_wk_returns<span style="color:#f92672">.</span>values}
+</span></span><span style="display:flex;"><span>sample <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>sample(data<span style="color:#f92672">=</span>data,
+</span></span><span style="display:flex;"><span>                      chains<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>,
+</span></span><span style="display:flex;"><span>                      parallel_chains<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>,
+</span></span><span style="display:flex;"><span>                      output_dir<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;./stan_model&#34;</span>,
+</span></span><span style="display:flex;"><span>                      iter_warmup<span style="color:#f92672">=</span><span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>                      iter_sampling<span style="color:#f92672">=</span><span style="color:#ae81ff">2500</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>model1_data <span style="color:#f92672">=</span> az<span style="color:#f92672">.</span>from_cmdstanpy(posterior<span style="color:#f92672">=</span>sample,
+</span></span><span style="display:flex;"><span>                                posterior_predictive<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;r_tilde&#34;</span>,
+</span></span><span style="display:flex;"><span>                                observed_data<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;r&#34;</span>: spx_wk_returns<span style="color:#f92672">.</span>values},
+</span></span><span style="display:flex;"><span>                                log_likelihood<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;log_prob&#34;</span>)
+</span></span></code></pre></div><p>First let&rsquo;s look at how our chain sampled to make sure everything looks okay.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>az<span style="color:#f92672">.</span>plot_trace(model1_data, compact<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>, var_names<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#34;mu_h&#34;</span>, <span style="color:#e6db74">&#34;mu_r&#34;</span>, <span style="color:#e6db74">&#34;phi&#34;</span>, <span style="color:#e6db74">&#34;sigma&#34;</span>])
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_19_1.png#center"/> 
 </figure>
 
 <p>Okay there is no obvious issues here. The parameter distributions from each chain look mostly the same, and there aren&rsquo;t any obvious signs of autocorrelation in the samples. Next, let&rsquo;s look at the summary statistics from our posterior predictive distribution versus our data. The blue histogram bars represent the posterior predictive, and the black line represents that statistic calculated from the data.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">r_tilde <span style="color:#f92672">=</span> model1_data<span style="color:#f92672">.</span>posterior_predictive<span style="color:#f92672">.</span>r_tilde<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>reshape(<span style="color:#ae81ff">10000</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
-vol <span style="color:#f92672">=</span> model1_data<span style="color:#f92672">.</span>posterior<span style="color:#f92672">.</span>h<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>reshape(<span style="color:#ae81ff">10000</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
-mean <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>mean(r_tilde, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
-std <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>std(r_tilde, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
-skew <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>skew(r_tilde, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
-kurt <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>kurtosis(r_tilde, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">fig, axs <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>)
-axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>hist(mean, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
-axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>axvline(np<span style="color:#f92672">.</span>mean(spx_wk_returns), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
-axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Mean&#34;</span>)
-axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>hist(std, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
-axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>axvline(np<span style="color:#f92672">.</span>std(spx_wk_returns), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
-axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Standard Deviation&#34;</span>)
-axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>hist(skew, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
-axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>axvline(stats<span style="color:#f92672">.</span>skew(spx_wk_returns), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
-axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Skew&#34;</span>)
-axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>hist(kurt, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
-axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>axvline(stats<span style="color:#f92672">.</span>kurtosis(spx_wk_returns), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
-axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Kurtosis&#34;</span>)
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>r_tilde <span style="color:#f92672">=</span> model1_data<span style="color:#f92672">.</span>posterior_predictive<span style="color:#f92672">.</span>r_tilde<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>reshape(<span style="color:#ae81ff">10000</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>vol <span style="color:#f92672">=</span> model1_data<span style="color:#f92672">.</span>posterior<span style="color:#f92672">.</span>h<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>reshape(<span style="color:#ae81ff">10000</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>mean <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>mean(r_tilde, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>std <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>std(r_tilde, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>skew <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>skew(r_tilde, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>kurt <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>kurtosis(r_tilde, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig, axs <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>hist(mean, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>axvline(np<span style="color:#f92672">.</span>mean(spx_wk_returns), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Mean&#34;</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>hist(std, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>axvline(np<span style="color:#f92672">.</span>std(spx_wk_returns), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Standard Deviation&#34;</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>hist(skew, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>axvline(stats<span style="color:#f92672">.</span>skew(spx_wk_returns), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Skew&#34;</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>hist(kurt, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>axvline(stats<span style="color:#f92672">.</span>kurtosis(spx_wk_returns), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Kurtosis&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_22_1.png#center"/> 
 </figure>
 
 <p>There are some issues here, right off the bat. Ideally, the black line should fall in a high probability region of the histogram. This would mean that the data simulated from our model closely matches the qualities of the input data. This looks true mostly only for the standard deviation and kurtosis. It seems like the model is not modeling the mean or skew very well. Next let&rsquo;s look at the distribution of our input data versus the distribution of the posterior predictive.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">az<span style="color:#f92672">.</span>plot_ppc(model1_data, data_pairs<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;r&#34;</span>: <span style="color:#e6db74">&#34;r_tilde&#34;</span>})
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>az<span style="color:#f92672">.</span>plot_ppc(model1_data, data_pairs<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;r&#34;</span>: <span style="color:#e6db74">&#34;r_tilde&#34;</span>})
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_24_1.png#center"/> 
 </figure>
 
 <p>This looks pretty good! The distributions look mostly the same. Next, I want to look at how well calibrated the model is. The model outputs a distributional estimate at each time point. So ideally, for instance, if we calculate the 95th percentile of that distribution, the input data should have values higher than that only 5% of the time. Likewise that data should have values smaller than the 5% percentile only 5% of the time.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># 95% bounds exceedances</span>
-np<span style="color:#f92672">.</span>sum(spx_wk_returns<span style="color:#f92672">.</span>values <span style="color:#f92672">&gt;</span> np<span style="color:#f92672">.</span>percentile(r_tilde, <span style="color:#ae81ff">95</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)) <span style="color:#f92672">/</span> len(spx_wk_returns)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    0.015459723352318959
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># 5% bounds exceedances</span>
-np<span style="color:#f92672">.</span>sum(spx_wk_returns<span style="color:#f92672">.</span>values <span style="color:#f92672">&lt;</span> np<span style="color:#f92672">.</span>percentile(r_tilde, <span style="color:#ae81ff">5</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)) <span style="color:#f92672">/</span> len(spx_wk_returns)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    0.03986981285598047
-</code></pre></div><p>So 1.6% of the time the data values are above the 95% bounds, and 3.8% of the time the data values are below the 5% bounds. If anything then, our distribution may be too broad. However, in this case that could be considered a good thing because I&rsquo;d rather predict a broader distribution of returns than a too restrictive one. It&rsquo;s best to be over-prepared for extreme outcomes than under-prepared. The next plot is the 95% and 5% bounds plotted against the return data. You can see the points where the returns exceed those bounds.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">plt<span style="color:#f92672">.</span>plot(np<span style="color:#f92672">.</span>percentile(r_tilde, <span style="color:#ae81ff">95</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
-plt<span style="color:#f92672">.</span>plot(np<span style="color:#f92672">.</span>percentile(r_tilde, <span style="color:#ae81ff">5</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
-plt<span style="color:#f92672">.</span>plot(spx_wk_returns<span style="color:#f92672">.</span>values, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;red&#34;</span>, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.5</span>)
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># 95% bounds exceedances</span>
+</span></span><span style="display:flex;"><span>np<span style="color:#f92672">.</span>sum(spx_wk_returns<span style="color:#f92672">.</span>values <span style="color:#f92672">&gt;</span> np<span style="color:#f92672">.</span>percentile(r_tilde, <span style="color:#ae81ff">95</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)) <span style="color:#f92672">/</span> len(spx_wk_returns)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>    0.015459723352318959
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># 5% bounds exceedances</span>
+</span></span><span style="display:flex;"><span>np<span style="color:#f92672">.</span>sum(spx_wk_returns<span style="color:#f92672">.</span>values <span style="color:#f92672">&lt;</span> np<span style="color:#f92672">.</span>percentile(r_tilde, <span style="color:#ae81ff">5</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)) <span style="color:#f92672">/</span> len(spx_wk_returns)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>    0.03986981285598047
+</span></span></code></pre></div><p>So 1.6% of the time the data values are above the 95% bounds, and 3.8% of the time the data values are below the 5% bounds. If anything then, our distribution may be too broad. However, in this case that could be considered a good thing because I&rsquo;d rather predict a broader distribution of returns than a too restrictive one. It&rsquo;s best to be over-prepared for extreme outcomes than under-prepared. The next plot is the 95% and 5% bounds plotted against the return data. You can see the points where the returns exceed those bounds.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(np<span style="color:#f92672">.</span>percentile(r_tilde, <span style="color:#ae81ff">95</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(np<span style="color:#f92672">.</span>percentile(r_tilde, <span style="color:#ae81ff">5</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(spx_wk_returns<span style="color:#f92672">.</span>values, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;red&#34;</span>, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.5</span>)
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_29_1.png#center"/> 
 </figure>
 
 <p>The next test is doing a probability integral transform. When you put a value through a CDF it gets transformed onto the range 0 to 1. Ideally, if I put the data through the CDF implied by the model, those output values should be uniformly distributed. This implies that the predicted distribution accurately predicts the probabilities of events. Unlike the exceedances test, which only looks at the tails, this test looks at the entire distribution.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">values <span style="color:#f92672">=</span> []
-
-<span style="color:#66d9ef">for</span> t <span style="color:#f92672">in</span> range(len(spx_wk_returns)):
-    ecdf <span style="color:#f92672">=</span> sm<span style="color:#f92672">.</span>distributions<span style="color:#f92672">.</span>empirical_distribution<span style="color:#f92672">.</span>ECDF(r_tilde[:, t])
-    values<span style="color:#f92672">.</span>append(ecdf(spx_wk_returns<span style="color:#f92672">.</span>iloc[t]))
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">fig <span style="color:#f92672">=</span> sm<span style="color:#f92672">.</span>graphics<span style="color:#f92672">.</span>qqplot(np<span style="color:#f92672">.</span>array(values), dist<span style="color:#f92672">=</span>stats<span style="color:#f92672">.</span>uniform, line<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;45&#34;</span>)
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>values <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> t <span style="color:#f92672">in</span> range(len(spx_wk_returns)):
+</span></span><span style="display:flex;"><span>    ecdf <span style="color:#f92672">=</span> sm<span style="color:#f92672">.</span>distributions<span style="color:#f92672">.</span>empirical_distribution<span style="color:#f92672">.</span>ECDF(r_tilde[:, t])
+</span></span><span style="display:flex;"><span>    values<span style="color:#f92672">.</span>append(ecdf(spx_wk_returns<span style="color:#f92672">.</span>iloc[t]))
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig <span style="color:#f92672">=</span> sm<span style="color:#f92672">.</span>graphics<span style="color:#f92672">.</span>qqplot(np<span style="color:#f92672">.</span>array(values), dist<span style="color:#f92672">=</span>stats<span style="color:#f92672">.</span>uniform, line<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;45&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_32_1.png#center"/> 
 </figure>
 
@@ -323,117 +323,117 @@ plt<span style="color:#f92672">.</span>plot(spx_wk_returns<span style="color:#f9
 <p>Okay, so issues are that the mean and skew seem off, and the distribution estimate doesn&rsquo;t match too well with the data. What should I try? Well, we expect negative skew, because large negative returns happen rarely. So instead of assuming a normal error for returns, let&rsquo;s try a skew normal! So everything is the same but the sampling statement for the returns looks like this now:</p>
 <p>$$ r_{t} \sim Skew Normal(\mu_{r}, \exp(\frac{h_{t}}{2}), \alpha) $$</p>
 <p>Where \(\alpha\) is a new parameter that dictates the level of skew. In Stan, that model looks like this.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">model_spec <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&#34;&#34;
-</span><span style="color:#e6db74">    data {
-</span><span style="color:#e6db74">        int N;                              // Length of data
-</span><span style="color:#e6db74">        vector[N] r;                        // SPX returns
-</span><span style="color:#e6db74">    }
-</span><span style="color:#e6db74">    parameters {
-</span><span style="color:#e6db74">        real mu_h;                          // Volatility mean term
-</span><span style="color:#e6db74">        real mu_r;                          // Returns mean term
-</span><span style="color:#e6db74">        real&lt;lower=-1, upper=1&gt; phi;        // Persistence of volatility
-</span><span style="color:#e6db74">        real&lt;lower=0&gt; sigma;                // Volatility noise
-</span><span style="color:#e6db74">        vector[N] h_std;                    // Log volatility
-</span><span style="color:#e6db74">        real alpha;                         // Skew Normal shape parameter
-</span><span style="color:#e6db74">    }
-</span><span style="color:#e6db74">    transformed parameters {
-</span><span style="color:#e6db74">        vector[N] h = h_std * sigma;        // h ~ normal(0, sigma);
-</span><span style="color:#e6db74">        h[1] /= sqrt(1 - square(phi));      // h[1] ~ normal(0, sigma / sqrt(1 - square(phi)))
-</span><span style="color:#e6db74">        h += mu_h;                          // h ~ normal(mu_h, sigma)
-</span><span style="color:#e6db74">        for (t in 2:N) {
-</span><span style="color:#e6db74">            h[t] += phi * (h[t-1] - mu_h);  // h[2:N] ~ normal(mu_h + phi * (h[t-1] - mu_h), sigma)
-</span><span style="color:#e6db74">        }
-</span><span style="color:#e6db74">    }
-</span><span style="color:#e6db74">    model {
-</span><span style="color:#e6db74">        phi ~ uniform(-1, 1);
-</span><span style="color:#e6db74">        sigma ~ normal(0, 10);
-</span><span style="color:#e6db74">        mu_h ~ normal(0, 10);
-</span><span style="color:#e6db74">        mu_r ~ normal(0, 10);
-</span><span style="color:#e6db74">        alpha ~ normal(0, 10);
-</span><span style="color:#e6db74">        
-</span><span style="color:#e6db74">        h_std ~ std_normal();
-</span><span style="color:#e6db74">        r ~ skew_normal(mu_r, exp(h / 2), alpha);
-</span><span style="color:#e6db74">    }
-</span><span style="color:#e6db74">    generated quantities {
-</span><span style="color:#e6db74">        real r_tilde[N];
-</span><span style="color:#e6db74">        real log_prob[N];
-</span><span style="color:#e6db74">        r_tilde = skew_normal_rng(mu_r, exp(h / 2), alpha);
-</span><span style="color:#e6db74">        for (t in 1:N) {
-</span><span style="color:#e6db74">            log_prob[t] = skew_normal_lpdf(r[t] | mu_r, exp(h[t] / 2), alpha);  // Need log probabilities later on
-</span><span style="color:#e6db74">        }
-</span><span style="color:#e6db74">    }
-</span><span style="color:#e6db74">&#34;&#34;&#34;</span>
-<span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;./stan_model/model.stan&#34;</span>, <span style="color:#e6db74">&#34;w&#34;</span>) <span style="color:#66d9ef">as</span> file:
-    file<span style="color:#f92672">.</span>write(model_spec)
-
-model <span style="color:#f92672">=</span> CmdStanModel(stan_file<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;./stan_model/model.stan&#34;</span>)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">data <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#34;N&#34;</span>: len(spx_wk_returns), <span style="color:#e6db74">&#34;r&#34;</span>: spx_wk_returns<span style="color:#f92672">.</span>values}
-sample <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>sample(data<span style="color:#f92672">=</span>data,
-                      chains<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>,
-                      parallel_chains<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>,
-                      output_dir<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;./stan_model&#34;</span>,
-                      iter_warmup<span style="color:#f92672">=</span><span style="color:#ae81ff">1000</span>,
-                      iter_sampling<span style="color:#f92672">=</span><span style="color:#ae81ff">2500</span>)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">model2_data <span style="color:#f92672">=</span> az<span style="color:#f92672">.</span>from_cmdstanpy(posterior<span style="color:#f92672">=</span>sample,
-                                posterior_predictive<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;r_tilde&#34;</span>,
-                                observed_data<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;r&#34;</span>: spx_wk_returns<span style="color:#f92672">.</span>values},
-                                log_likelihood<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;log_prob&#34;</span>)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">az<span style="color:#f92672">.</span>plot_trace(model2_data, compact<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>, var_names<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#34;mu_h&#34;</span>, <span style="color:#e6db74">&#34;mu_r&#34;</span>, <span style="color:#e6db74">&#34;phi&#34;</span>, <span style="color:#e6db74">&#34;sigma&#34;</span>, <span style="color:#e6db74">&#34;alpha&#34;</span>])
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>model_spec <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    data {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        int N;                              // Length of data
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        vector[N] r;                        // SPX returns
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    parameters {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        real mu_h;                          // Volatility mean term
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        real mu_r;                          // Returns mean term
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        real&lt;lower=-1, upper=1&gt; phi;        // Persistence of volatility
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        real&lt;lower=0&gt; sigma;                // Volatility noise
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        vector[N] h_std;                    // Log volatility
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        real alpha;                         // Skew Normal shape parameter
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    transformed parameters {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        vector[N] h = h_std * sigma;        // h ~ normal(0, sigma);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        h[1] /= sqrt(1 - square(phi));      // h[1] ~ normal(0, sigma / sqrt(1 - square(phi)))
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        h += mu_h;                          // h ~ normal(mu_h, sigma)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        for (t in 2:N) {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            h[t] += phi * (h[t-1] - mu_h);  // h[2:N] ~ normal(mu_h + phi * (h[t-1] - mu_h), sigma)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    model {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        phi ~ uniform(-1, 1);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        sigma ~ normal(0, 10);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        mu_h ~ normal(0, 10);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        mu_r ~ normal(0, 10);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        alpha ~ normal(0, 10);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        h_std ~ std_normal();
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        r ~ skew_normal(mu_r, exp(h / 2), alpha);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    generated quantities {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        real r_tilde[N];
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        real log_prob[N];
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        r_tilde = skew_normal_rng(mu_r, exp(h / 2), alpha);
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        for (t in 1:N) {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            log_prob[t] = skew_normal_lpdf(r[t] | mu_r, exp(h[t] / 2), alpha);  // Need log probabilities later on
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;./stan_model/model.stan&#34;</span>, <span style="color:#e6db74">&#34;w&#34;</span>) <span style="color:#66d9ef">as</span> file:
+</span></span><span style="display:flex;"><span>    file<span style="color:#f92672">.</span>write(model_spec)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>model <span style="color:#f92672">=</span> CmdStanModel(stan_file<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;./stan_model/model.stan&#34;</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>data <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#34;N&#34;</span>: len(spx_wk_returns), <span style="color:#e6db74">&#34;r&#34;</span>: spx_wk_returns<span style="color:#f92672">.</span>values}
+</span></span><span style="display:flex;"><span>sample <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>sample(data<span style="color:#f92672">=</span>data,
+</span></span><span style="display:flex;"><span>                      chains<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>,
+</span></span><span style="display:flex;"><span>                      parallel_chains<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>,
+</span></span><span style="display:flex;"><span>                      output_dir<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;./stan_model&#34;</span>,
+</span></span><span style="display:flex;"><span>                      iter_warmup<span style="color:#f92672">=</span><span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>                      iter_sampling<span style="color:#f92672">=</span><span style="color:#ae81ff">2500</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>model2_data <span style="color:#f92672">=</span> az<span style="color:#f92672">.</span>from_cmdstanpy(posterior<span style="color:#f92672">=</span>sample,
+</span></span><span style="display:flex;"><span>                                posterior_predictive<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;r_tilde&#34;</span>,
+</span></span><span style="display:flex;"><span>                                observed_data<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;r&#34;</span>: spx_wk_returns<span style="color:#f92672">.</span>values},
+</span></span><span style="display:flex;"><span>                                log_likelihood<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;log_prob&#34;</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>az<span style="color:#f92672">.</span>plot_trace(model2_data, compact<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>, var_names<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#34;mu_h&#34;</span>, <span style="color:#e6db74">&#34;mu_r&#34;</span>, <span style="color:#e6db74">&#34;phi&#34;</span>, <span style="color:#e6db74">&#34;sigma&#34;</span>, <span style="color:#e6db74">&#34;alpha&#34;</span>])
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_39_1.png#center"/> 
 </figure>
 
 <p>Again, everything looks good here. Alpha centers around a negative value, which is a good sign, because negative skew was expected.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">r_tilde <span style="color:#f92672">=</span> model2_data<span style="color:#f92672">.</span>posterior_predictive<span style="color:#f92672">.</span>r_tilde<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>reshape(<span style="color:#ae81ff">10000</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
-vol <span style="color:#f92672">=</span> model2_data<span style="color:#f92672">.</span>posterior<span style="color:#f92672">.</span>h<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>reshape(<span style="color:#ae81ff">10000</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
-mean <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>mean(r_tilde, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
-std <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>std(r_tilde, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
-skew <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>skew(r_tilde, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
-kurt <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>kurtosis(r_tilde, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">fig, axs <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>)
-axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>hist(mean, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
-axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>axvline(np<span style="color:#f92672">.</span>mean(spx_wk_returns), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
-axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Mean&#34;</span>)
-axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>hist(std, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
-axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>axvline(np<span style="color:#f92672">.</span>std(spx_wk_returns), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
-axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Standard Deviation&#34;</span>)
-axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>hist(skew, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
-axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>axvline(stats<span style="color:#f92672">.</span>skew(spx_wk_returns), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
-axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Skew&#34;</span>)
-axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>hist(kurt, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
-axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>axvline(stats<span style="color:#f92672">.</span>kurtosis(spx_wk_returns), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
-axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Kurtosis&#34;</span>)
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>r_tilde <span style="color:#f92672">=</span> model2_data<span style="color:#f92672">.</span>posterior_predictive<span style="color:#f92672">.</span>r_tilde<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>reshape(<span style="color:#ae81ff">10000</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>vol <span style="color:#f92672">=</span> model2_data<span style="color:#f92672">.</span>posterior<span style="color:#f92672">.</span>h<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>reshape(<span style="color:#ae81ff">10000</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>mean <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>mean(r_tilde, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>std <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>std(r_tilde, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>skew <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>skew(r_tilde, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>kurt <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>kurtosis(r_tilde, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig, axs <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>hist(mean, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>axvline(np<span style="color:#f92672">.</span>mean(spx_wk_returns), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Mean&#34;</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>hist(std, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>axvline(np<span style="color:#f92672">.</span>std(spx_wk_returns), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Standard Deviation&#34;</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>hist(skew, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>axvline(stats<span style="color:#f92672">.</span>skew(spx_wk_returns), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Skew&#34;</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>hist(kurt, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>axvline(stats<span style="color:#f92672">.</span>kurtosis(spx_wk_returns), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;black&#39;</span>)
+</span></span><span style="display:flex;"><span>axs[<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Kurtosis&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_42_1.png#center"/> 
 </figure>
 
 <p>Now the mean value lies right in the center of the distribution and the skew value is closer to the middle then it was before. That looks like progress!</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">az<span style="color:#f92672">.</span>plot_ppc(model2_data, data_pairs<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;r&#34;</span>: <span style="color:#e6db74">&#34;r_tilde&#34;</span>})
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>az<span style="color:#f92672">.</span>plot_ppc(model2_data, data_pairs<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;r&#34;</span>: <span style="color:#e6db74">&#34;r_tilde&#34;</span>})
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_44_1.png#center"/> 
 </figure>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># 95% bounds exceedances</span>
-np<span style="color:#f92672">.</span>sum(spx_wk_returns<span style="color:#f92672">.</span>values <span style="color:#f92672">&gt;</span> np<span style="color:#f92672">.</span>percentile(r_tilde, <span style="color:#ae81ff">95</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)) <span style="color:#f92672">/</span> len(spx_wk_returns)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    0.025223759153783564
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># 5% bounds exceedances</span>
-np<span style="color:#f92672">.</span>sum(spx_wk_returns<span style="color:#f92672">.</span>values <span style="color:#f92672">&lt;</span> np<span style="color:#f92672">.</span>percentile(r_tilde, <span style="color:#ae81ff">5</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)) <span style="color:#f92672">/</span> len(spx_wk_returns)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    0.025223759153783564
-</code></pre></div><p>Our exceedances are again a bit too broad but they are more even than the first model.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">plt<span style="color:#f92672">.</span>plot(np<span style="color:#f92672">.</span>percentile(r_tilde, <span style="color:#ae81ff">95</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
-plt<span style="color:#f92672">.</span>plot(np<span style="color:#f92672">.</span>percentile(r_tilde, <span style="color:#ae81ff">5</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
-plt<span style="color:#f92672">.</span>plot(spx_wk_returns<span style="color:#f92672">.</span>values, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;red&#34;</span>, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.5</span>)
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># 95% bounds exceedances</span>
+</span></span><span style="display:flex;"><span>np<span style="color:#f92672">.</span>sum(spx_wk_returns<span style="color:#f92672">.</span>values <span style="color:#f92672">&gt;</span> np<span style="color:#f92672">.</span>percentile(r_tilde, <span style="color:#ae81ff">95</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)) <span style="color:#f92672">/</span> len(spx_wk_returns)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>    0.025223759153783564
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># 5% bounds exceedances</span>
+</span></span><span style="display:flex;"><span>np<span style="color:#f92672">.</span>sum(spx_wk_returns<span style="color:#f92672">.</span>values <span style="color:#f92672">&lt;</span> np<span style="color:#f92672">.</span>percentile(r_tilde, <span style="color:#ae81ff">5</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)) <span style="color:#f92672">/</span> len(spx_wk_returns)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>    0.025223759153783564
+</span></span></code></pre></div><p>Our exceedances are again a bit too broad but they are more even than the first model.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(np<span style="color:#f92672">.</span>percentile(r_tilde, <span style="color:#ae81ff">95</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(np<span style="color:#f92672">.</span>percentile(r_tilde, <span style="color:#ae81ff">5</span>, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(spx_wk_returns<span style="color:#f92672">.</span>values, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;red&#34;</span>, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.5</span>)
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_48_1.png#center"/> 
 </figure>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">values <span style="color:#f92672">=</span> []
-
-<span style="color:#66d9ef">for</span> t <span style="color:#f92672">in</span> range(len(spx_wk_returns)):
-    ecdf <span style="color:#f92672">=</span> sm<span style="color:#f92672">.</span>distributions<span style="color:#f92672">.</span>empirical_distribution<span style="color:#f92672">.</span>ECDF(r_tilde[:, t])
-    values<span style="color:#f92672">.</span>append(ecdf(spx_wk_returns<span style="color:#f92672">.</span>iloc[t]))
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">fig <span style="color:#f92672">=</span> sm<span style="color:#f92672">.</span>graphics<span style="color:#f92672">.</span>qqplot(np<span style="color:#f92672">.</span>array(values), dist<span style="color:#f92672">=</span>stats<span style="color:#f92672">.</span>uniform, line<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;45&#34;</span>)
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>values <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> t <span style="color:#f92672">in</span> range(len(spx_wk_returns)):
+</span></span><span style="display:flex;"><span>    ecdf <span style="color:#f92672">=</span> sm<span style="color:#f92672">.</span>distributions<span style="color:#f92672">.</span>empirical_distribution<span style="color:#f92672">.</span>ECDF(r_tilde[:, t])
+</span></span><span style="display:flex;"><span>    values<span style="color:#f92672">.</span>append(ecdf(spx_wk_returns<span style="color:#f92672">.</span>iloc[t]))
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig <span style="color:#f92672">=</span> sm<span style="color:#f92672">.</span>graphics<span style="color:#f92672">.</span>qqplot(np<span style="color:#f92672">.</span>array(values), dist<span style="color:#f92672">=</span>stats<span style="color:#f92672">.</span>uniform, line<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;45&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_50_1.png#center"/> 
 </figure>
 
@@ -442,50 +442,50 @@ plt<span style="color:#f92672">.</span>plot(spx_wk_returns<span style="color:#f9
 <p>So there are two models. There must be a better way to find out which is better than looking at visualizations. Turns out there is a really cool method for this called Pareto Smoothed Importance Sampling. <a href="https://arxiv.org/abs/1507.04544">This paper covers it very well</a>. It sounds more complicated than it is. It allows the use of posterior samples and log probabilities to estimate the out-of-sample error of the model. It seeks to approximate the error estimated by leave-one-out (LOO) cross validation without running the model repeatedly. In this case, the model doesn&rsquo;t take long to fit, and I could run fewer samples, but it would still have to be run nearly 1200 times to do true LOO cross validation</p>
 <p>I&rsquo;ll take a brief aside to discuss leave-one-out methods on time series. <a href="https://arxiv.org/abs/1905.11744">This</a> paper does some analysis on K-Fold cross validation on time series considering stationarity. They find little difference in error estimation using walk-forward versus K-Fold cross validation on stationary time series. This makes intuitive sense in that stationary time series display no time dependence, so the order in which you use the data shouldn&rsquo;t matter. It&rsquo;s obvious that stock market returns are not stationary. However, for the sake of this analysis, I&rsquo;m going to assume that they are <em>conditionally</em> stationary given the volatility process. This gives some legitimacy to what I&rsquo;m about to do. I will warn, however, that it&rsquo;s not a perfect method and it&rsquo;s applicability here can be called into question. With all of that said, let&rsquo;s continue.</p>
 <p>The author of the first paper linked very nicely has coded this process in python already, available <a href="https://github.com/avehtari/PSIS/blob/master/py/psis.py">here</a>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">model1_probs <span style="color:#f92672">=</span> model1_data<span style="color:#f92672">.</span>log_likelihood<span style="color:#f92672">.</span>log_prob<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>reshape(<span style="color:#ae81ff">10000</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
-model2_probs <span style="color:#f92672">=</span> model2_data<span style="color:#f92672">.</span>log_likelihood<span style="color:#f92672">.</span>log_prob<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>reshape(<span style="color:#ae81ff">10000</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
-
-loo1, loos1, ks1 <span style="color:#f92672">=</span> psisloo(model1_probs)
-loo2, loos2, ks2 <span style="color:#f92672">=</span> psisloo(model2_probs)
-
-diff <span style="color:#f92672">=</span> round(loo2 <span style="color:#f92672">-</span> loo1, <span style="color:#ae81ff">2</span>)
-diff_se <span style="color:#f92672">=</span> round(np<span style="color:#f92672">.</span>sqrt(len(loos1) <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>var(loos2 <span style="color:#f92672">-</span> loos1)), <span style="color:#ae81ff">2</span>)
-diff_interval <span style="color:#f92672">=</span> [round(diff <span style="color:#f92672">-</span> <span style="color:#ae81ff">2.6</span> <span style="color:#f92672">*</span> diff_se, <span style="color:#ae81ff">2</span>), round(diff <span style="color:#f92672">+</span> <span style="color:#ae81ff">2.6</span> <span style="color:#f92672">*</span> diff_se, <span style="color:#ae81ff">2</span>)]
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Model 1 ELPD: </span><span style="color:#e6db74">{</span>round(loo1, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Model 2 ELPD: </span><span style="color:#e6db74">{</span>round(loo2, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    Model 1 ELPD: 3042.64
-    Model 2 ELPD: 3050.58
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Model 2 - Model 1: </span><span style="color:#e6db74">{</span>diff<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Standard Error: </span><span style="color:#e6db74">{</span>diff_se<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Difference 99% Interval: </span><span style="color:#e6db74">{</span>diff_interval[<span style="color:#ae81ff">0</span>]<span style="color:#e6db74">}</span><span style="color:#e6db74"> | </span><span style="color:#e6db74">{</span>diff_interval[<span style="color:#ae81ff">1</span>]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    Model 2 - Model 1: 7.94
-    Standard Error: 3.96
-    Difference 99% Interval: -2.36 | 18.24
-</code></pre></div><p>ELPD stands for expected log predictive density. This is what we expect the out-of-sample log probability to be for the model, so we want it to be higher. Higher values imply that the probability of seeing the data given the model is higher, which means the model more closely matches the nature of the data. So, it looks like model 2 <em>is</em> better. Although, given the standard error of the estimate, there is some region of the sampling distribution where model 2 is similar or worse but not by very much. This method also returns a value for the shape parameter fitted to the Pareto distribution. Ideally we want this parameter to be less than 0.5 for every point, but 0.5 to 1 is okay. At these higher levels the variance of the estimator is higher and makes it less reliable. Parameter values greater than 1 are highly undesirable. At these levels, the variance of the estimator is infinite and totally unreliable.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">ks1_max <span style="color:#f92672">=</span> round(np<span style="color:#f92672">.</span>max(ks1), <span style="color:#ae81ff">2</span>)
-ks2_max <span style="color:#f92672">=</span> round(np<span style="color:#f92672">.</span>max(ks2), <span style="color:#ae81ff">2</span>)
-
-ks1_gt <span style="color:#f92672">=</span> round(sum(ks1 <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0.5</span>) <span style="color:#f92672">/</span> len(ks1) <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)
-ks2_gt <span style="color:#f92672">=</span> round(sum(ks2 <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0.5</span>) <span style="color:#f92672">/</span> len(ks2) <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)
-
-print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Max k for Model 1: </span><span style="color:#e6db74">{</span>ks1_max<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Max k for Model 2: </span><span style="color:#e6db74">{</span>ks2_max<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
-print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Percentage of values greater than 0.5 for Model 1: </span><span style="color:#e6db74">{</span>ks1_gt<span style="color:#e6db74">}</span><span style="color:#e6db74">%</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Percentage of values greater than 0.5 for Model 2: </span><span style="color:#e6db74">{</span>ks2_gt<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#34;</span>)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    Max k for Model 1: 0.87
-    Max k for Model 2: 0.95
-    Percentage of values greater than 0.5 for Model 1: 10.9%
-    Percentage of values greater than 0.5 for Model 2: 11.64%
-</code></pre></div><p>It looks like the estimates for model 2 are slightly less reliable than model 1, which is worth considering because of how close the difference above was. The max value of k is also quite high, indicating that there are som significant data points making estimation more difficult. All-in-all I would consider model 2 to be better, but the differences are slight.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>model1_probs <span style="color:#f92672">=</span> model1_data<span style="color:#f92672">.</span>log_likelihood<span style="color:#f92672">.</span>log_prob<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>reshape(<span style="color:#ae81ff">10000</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>model2_probs <span style="color:#f92672">=</span> model2_data<span style="color:#f92672">.</span>log_likelihood<span style="color:#f92672">.</span>log_prob<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>reshape(<span style="color:#ae81ff">10000</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>loo1, loos1, ks1 <span style="color:#f92672">=</span> psisloo(model1_probs)
+</span></span><span style="display:flex;"><span>loo2, loos2, ks2 <span style="color:#f92672">=</span> psisloo(model2_probs)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>diff <span style="color:#f92672">=</span> round(loo2 <span style="color:#f92672">-</span> loo1, <span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>diff_se <span style="color:#f92672">=</span> round(np<span style="color:#f92672">.</span>sqrt(len(loos1) <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>var(loos2 <span style="color:#f92672">-</span> loos1)), <span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>diff_interval <span style="color:#f92672">=</span> [round(diff <span style="color:#f92672">-</span> <span style="color:#ae81ff">2.6</span> <span style="color:#f92672">*</span> diff_se, <span style="color:#ae81ff">2</span>), round(diff <span style="color:#f92672">+</span> <span style="color:#ae81ff">2.6</span> <span style="color:#f92672">*</span> diff_se, <span style="color:#ae81ff">2</span>)]
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Model 1 ELPD: </span><span style="color:#e6db74">{</span>round(loo1, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Model 2 ELPD: </span><span style="color:#e6db74">{</span>round(loo2, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>    Model 1 ELPD: 3042.64
+</span></span><span style="display:flex;"><span>    Model 2 ELPD: 3050.58
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Model 2 - Model 1: </span><span style="color:#e6db74">{</span>diff<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Standard Error: </span><span style="color:#e6db74">{</span>diff_se<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Difference 99% Interval: </span><span style="color:#e6db74">{</span>diff_interval[<span style="color:#ae81ff">0</span>]<span style="color:#e6db74">}</span><span style="color:#e6db74"> | </span><span style="color:#e6db74">{</span>diff_interval[<span style="color:#ae81ff">1</span>]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>    Model 2 - Model 1: 7.94
+</span></span><span style="display:flex;"><span>    Standard Error: 3.96
+</span></span><span style="display:flex;"><span>    Difference 99% Interval: -2.36 | 18.24
+</span></span></code></pre></div><p>ELPD stands for expected log predictive density. This is what we expect the out-of-sample log probability to be for the model, so we want it to be higher. Higher values imply that the probability of seeing the data given the model is higher, which means the model more closely matches the nature of the data. So, it looks like model 2 <em>is</em> better. Although, given the standard error of the estimate, there is some region of the sampling distribution where model 2 is similar or worse but not by very much. This method also returns a value for the shape parameter fitted to the Pareto distribution. Ideally we want this parameter to be less than 0.5 for every point, but 0.5 to 1 is okay. At these higher levels the variance of the estimator is higher and makes it less reliable. Parameter values greater than 1 are highly undesirable. At these levels, the variance of the estimator is infinite and totally unreliable.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>ks1_max <span style="color:#f92672">=</span> round(np<span style="color:#f92672">.</span>max(ks1), <span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>ks2_max <span style="color:#f92672">=</span> round(np<span style="color:#f92672">.</span>max(ks2), <span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>ks1_gt <span style="color:#f92672">=</span> round(sum(ks1 <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0.5</span>) <span style="color:#f92672">/</span> len(ks1) <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>ks2_gt <span style="color:#f92672">=</span> round(sum(ks2 <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0.5</span>) <span style="color:#f92672">/</span> len(ks2) <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Max k for Model 1: </span><span style="color:#e6db74">{</span>ks1_max<span style="color:#e6db74">}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Max k for Model 2: </span><span style="color:#e6db74">{</span>ks2_max<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Percentage of values greater than 0.5 for Model 1: </span><span style="color:#e6db74">{</span>ks1_gt<span style="color:#e6db74">}</span><span style="color:#e6db74">%</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Percentage of values greater than 0.5 for Model 2: </span><span style="color:#e6db74">{</span>ks2_gt<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#34;</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>    Max k for Model 1: 0.87
+</span></span><span style="display:flex;"><span>    Max k for Model 2: 0.95
+</span></span><span style="display:flex;"><span>    Percentage of values greater than 0.5 for Model 1: 10.9%
+</span></span><span style="display:flex;"><span>    Percentage of values greater than 0.5 for Model 2: 11.64%
+</span></span></code></pre></div><p>It looks like the estimates for model 2 are slightly less reliable than model 1, which is worth considering because of how close the difference above was. The max value of k is also quite high, indicating that there are som significant data points making estimation more difficult. All-in-all I would consider model 2 to be better, but the differences are slight.</p>
 <h1 id="model-volatility-versus-realized-volatility">Model Volatility versus Realized Volatility<a hidden class="anchor" aria-hidden="true" href="#model-volatility-versus-realized-volatility">#</a></h1>
 <p>The model basically finds the value of volatility that fits the return data we give it. It&rsquo;s a type of hierarchical model where volatility is a latent quantity. We cannot directly observe the volatility of a return series in the real world, we can only imply it. In the literature, there is a great deal about how to estimate that latent volatility. I&rsquo;ve covered a few of those methods in a <a href="https://eadains.github.io/OptionallyBayesHugo/posts/vol_estimators/">previous post</a>. Let&rsquo;s compare what our model thinks volatility is to a realized volatility estimator. I&rsquo;m going to be taking the volatility from the second model.</p>
 <p>Note I&rsquo;m taking the proper transformations to ensure both series are in standard deviation form. My volatility data is shorter than my weekly returns data, so I have to truncate some of it.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">real_vol <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt(spx<span style="color:#f92672">.</span>vol<span style="color:#f92672">.</span>resample(<span style="color:#e6db74">&#34;W-FRI&#34;</span>)<span style="color:#f92672">.</span>sum())
-model_vol <span style="color:#f92672">=</span> pd<span style="color:#f92672">.</span>Series(np<span style="color:#f92672">.</span>mean(arviz_data<span style="color:#f92672">.</span>posterior<span style="color:#f92672">.</span>h<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>reshape(<span style="color:#ae81ff">10000</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>), axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>), index<span style="color:#f92672">=</span>spx_wk_returns<span style="color:#f92672">.</span>index)
-model_vol <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt(np<span style="color:#f92672">.</span>exp(model_vol))
-
-common_index <span style="color:#f92672">=</span> real_vol<span style="color:#f92672">.</span>index<span style="color:#f92672">.</span>intersection(model_vol<span style="color:#f92672">.</span>index)
-
-real_vol <span style="color:#f92672">=</span> real_vol<span style="color:#f92672">.</span>loc[common_index]
-model_vol <span style="color:#f92672">=</span> model_vol<span style="color:#f92672">.</span>loc[common_index]
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">real_vol<span style="color:#f92672">.</span>plot()
-model_vol<span style="color:#f92672">.</span>plot(color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;r&#34;</span>)
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>real_vol <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt(spx<span style="color:#f92672">.</span>vol<span style="color:#f92672">.</span>resample(<span style="color:#e6db74">&#34;W-FRI&#34;</span>)<span style="color:#f92672">.</span>sum())
+</span></span><span style="display:flex;"><span>model_vol <span style="color:#f92672">=</span> pd<span style="color:#f92672">.</span>Series(np<span style="color:#f92672">.</span>mean(arviz_data<span style="color:#f92672">.</span>posterior<span style="color:#f92672">.</span>h<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>reshape(<span style="color:#ae81ff">10000</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>), axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>), index<span style="color:#f92672">=</span>spx_wk_returns<span style="color:#f92672">.</span>index)
+</span></span><span style="display:flex;"><span>model_vol <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt(np<span style="color:#f92672">.</span>exp(model_vol))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>common_index <span style="color:#f92672">=</span> real_vol<span style="color:#f92672">.</span>index<span style="color:#f92672">.</span>intersection(model_vol<span style="color:#f92672">.</span>index)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>real_vol <span style="color:#f92672">=</span> real_vol<span style="color:#f92672">.</span>loc[common_index]
+</span></span><span style="display:flex;"><span>model_vol <span style="color:#f92672">=</span> model_vol<span style="color:#f92672">.</span>loc[common_index]
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>real_vol<span style="color:#f92672">.</span>plot()
+</span></span><span style="display:flex;"><span>model_vol<span style="color:#f92672">.</span>plot(color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;r&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_63_1.png#center"/> 
 </figure>
 
@@ -497,6 +497,7 @@ model_vol<span style="color:#f92672">.</span>plot(color<span style="color:#f9267
 
 
   </div>
+
   <footer class="post-footer">
     <ul class="post-tags">
       <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/volatility/">volatility</a></li>
@@ -508,27 +509,28 @@ model_vol<span style="color:#f92672">.</span>plot(color<span style="color:#f9267
   </footer>
 </article>
     </main>
-    <footer class="footer">
-    <span>&copy; 2022 <a href="http://eadains.github.io/OptionallyBayesHugo/">Optionally Bayes</a></span>
+    
+<footer class="footer">
+    <span>&copy; 2023 <a href="http://eadains.github.io/OptionallyBayesHugo/">Optionally Bayes</a></span>
     <span>
         Powered by
         <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
-        <a href="https://git.io/hugopapermod" rel="noopener" target="_blank">PaperMod</a>
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
     </span>
 </footer>
-<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)">
-    <button class="top-link" id="top-link" type="button" accesskey="g">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
-            <path d="M12 6H0l6-6z" />
-        </svg>
-    </button>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
 </a>
 
 <script>
     let menu = document.getElementById('menu')
-    menu.scrollLeft = localStorage.getItem("menu-scroll-position");
-    menu.onscroll = function () {
-        localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
     }
 
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {

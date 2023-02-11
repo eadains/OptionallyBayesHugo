@@ -6,12 +6,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="robots" content="index, follow">
 <title>A Most Diversified ETF Portfolio | Optionally Bayes</title>
-<meta name="keywords" content="portfolio-optimization, ETFs, diversification-ratio, performance-measurement, drawdown" />
+<meta name="keywords" content="portfolio-optimization, ETFs, diversification-ratio, performance-measurement, drawdown">
 <meta name="description" content="Constructing a portfolio from a selection of ETFs to maximize the diversification ratio">
 <meta name="author" content="Erik Dains">
-<link rel="canonical" href="http://eadains.github.io/OptionallyBayesHugo/posts/mdp_etf_portfolio/" />
-<link crossorigin="anonymous" href="/OptionallyBayesHugo/assets/css/stylesheet.min.22565d513b14d8ddaed3ac5691392cfbd9911aeb414bfcf2511a41766f93b9b9.css" integrity="sha256-IlZdUTsU2N2u06xWkTks&#43;9mRGutBS/zyURpBdm&#43;Tubk=" rel="preload stylesheet" as="style">
-<script defer crossorigin="anonymous" src="/OptionallyBayesHugo/assets/js/highlight.min.7680afc38aa6b15ddf158a4f3780b7b1f7dde7e91d26f073e6229bb7a0793c92.js" integrity="sha256-doCvw4qmsV3fFYpPN4C3sffd5&#43;kdJvBz5iKbt6B5PJI="
+<link rel="canonical" href="http://eadains.github.io/OptionallyBayesHugo/posts/mdp_etf_portfolio/">
+<link crossorigin="anonymous" href="/OptionallyBayesHugo/assets/css/stylesheet.904a440301b095e87417b41792bef55151ea4126fffa4548f110fd68bdfc03f1.css" integrity="sha256-kEpEAwGwleh0F7QXkr71UVHqQSb/&#43;kVI8RD9aL38A/E=" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/OptionallyBayesHugo/assets/js/highlight.f413e19d0714851f6474e7ee9632408e58ac146fbdbe62747134bea2fa3415e0.js" integrity="sha256-9BPhnQcUhR9kdOfuljJAjlisFG&#43;9vmJ0cTS&#43;ovo0FeA="
     onload="hljs.initHighlightingOnLoad();"></script>
 <link rel="icon" href="http://eadains.github.io/OptionallyBayesHugo/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="http://eadains.github.io/OptionallyBayesHugo/favicon-16x16.png">
@@ -20,22 +20,30 @@
 <link rel="mask-icon" href="http://eadains.github.io/OptionallyBayesHugo/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<meta name="generator" content="Hugo 0.84.0" />
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.css"
-    integrity="sha384-Um5gpz1odJg5Z4HAmzPtgZKdTBHZdw8S29IecapCSB31ligYPhHQZMIlWLYQGVoc" crossorigin="anonymous">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/katex.min.js"
-    integrity="sha384-YNHdsYkH6gMx9y3mRkmcJ2mFUjTd0qNQQvY9VYZgQd7DcN7env35GzlmFaZ23JGp"
-    crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.11/dist/contrib/auto-render.min.js"
-    integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous"
-    onload="renderMathInElement(document.body);"></script>
+    </style>
+</noscript>
+<script>
+    MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']]
+        }
+    };
+</script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+</script>
 <meta property="og:title" content="A Most Diversified ETF Portfolio" />
 <meta property="og:description" content="Constructing a portfolio from a selection of ETFs to maximize the diversification ratio" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="http://eadains.github.io/OptionallyBayesHugo/posts/mdp_etf_portfolio/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2021-01-07T00:00:00&#43;00:00" />
-<meta property="article:modified_time" content="2021-01-07T00:00:00&#43;00:00" />
+<meta property="article:published_time" content="2021-01-07T00:00:00+00:00" />
+<meta property="article:modified_time" content="2021-01-07T00:00:00+00:00" />
 
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="A Most Diversified ETF Portfolio"/>
@@ -72,7 +80,7 @@
   "keywords": [
     "portfolio-optimization", "ETFs", "diversification-ratio", "performance-measurement", "drawdown"
   ],
-  "articleBody": "Alright, with this post I’m going to start a series on portfolio optimization techniques! This is one of my favorite topics in finance. This post is going to construct a portfolio based on the diversification ratio, which is outlined in the papers linked below. The basic idea is to maximize the Diversification ratio, which is defined as the weighted average volatilities of assets in the portfolio divided by the total portfolio volatility. This makes intuitive sense, by increasing diversification we lower portfolio volatility compared to the average volatility of the assets that make it up.\nChoueifaty, Y., \u0026 Coignard, Y. (2008). Toward Maximum Diversification. The Journal of Portfolio Management, 40-51. doi:https://doi.org/10.3905/JPM.2008.35.1.40\nChoueifaty, Y., Reynier, J., \u0026 Froidure, T. (2013). Properties of the Most Diversified Portfolio. Journal of Investment Strategies, 49-70. doi:http://doi.org/10.2139/ssrn.1895459\nThe assets  I’m going to mainly focus on Vanguard ETFs as they have the lowest fees. For anything they don’t offer, I’m using iShares. I’m also limiting myself to funds with inception dates 10 years ago for stability.\nHere’s the list:    Symbol Description     VGSH Short-term Treasury   VGIT Mid-term Treasury   VGLT Long-term Treasury   TIP TIPS Treasury Bonds   VMBS Agency MBS   SUB Municipal Bonds   VCSH Short-term Investment Grade Corporate Bonds   VCIT Mid-term Investment Grade Corporate Bonds   VCLT Long-term Investment Grade Corporate Bonds   HYG High-yield Corporate Bonds   EMB Emerging Markets Bonds   IGOV International Treasuries   VV Large Cap US Stocks   VO Mid-Cap US Stocks   VB Small-Cap US Stocks   VWO Emerging Markets Stocks   VEA Non-US Developed Markets Stocks   IYR US Real Estate   IFGL Non-US Real Estate    Data  All of this is the code to fetch historical data from QuantConnect and calculate returns.\nimport numpy as np import pandas as pd symbols = ['VGSH', 'VGIT', 'VGLT', 'TIP', 'VMBS', 'SUB', 'VCSH', 'VCIT', 'VCLT', 'HYG', 'EMB', 'IGOV', 'VV', 'VO', 'VB', 'VWO', 'VEA', 'IYR', 'IFGL'] qb = QuantBook() symbols_data = {symbol: qb.AddEquity(symbol) for symbol in symbols} from datetime import datetime # This is QuantConnect API code to get price history history = qb.History(qb.Securities.Keys, datetime(2009, 1, 1), datetime(2020, 12, 31), Resolution.Daily) history = history['close'].unstack(level=0).dropna() I’m using arithmetic returns here so I can easily weight the returns across assets when computing portfolio returns.\nreturns = (history / history.shift(1)) - 1 returns = returns.dropna() # Let's define some helper functions to get cumulative return series and the total return def get_cum_returns(returns): return (returns + 1).cumprod() - 1 def get_total_return(returns): return np.product(returns + 1) - 1 The Optimization  This function calculates the diversification ratio for a portfolio given asset weights and their covariance matrix. This is from equation (1) (Choueifaty \u0026 Coignard, 2008).\ndef diverse_ratio(weights, covariance): # Standard deviation vector stds = np.sqrt(np.diagonal(covariance)) # Asset-weighted standard deviation num = np.dot(weights, stds) # Portfolio standard deviation denom = np.sqrt(weights @ covariance @ weights) return num / denom Now, to confirm that scipy minimize works as we expect for this problem, I’m going to test a bunch of randomized starting weights to confirm that the final weights end up the same. I increase the level of precision using the ‘ftol’ option because returns are fairly small decimal quantities and I want to ensure the optimization converges completely.\nfrom scipy.optimize import minimize cov = np.cov(returns.values.T) # Long-only constraint bounds = [(0, 1) for x in range(len(cov))] # Portfolio weights must sum to 1 constraints = ( {'type': 'eq', 'fun': lambda x: np.sum(x) - 1} ) results = [] for x in range(100): # Set initial weights randomly initial = np.random.random(len(cov)) # Use negative of objective function to maximize result = minimize(lambda x, y: -1 * diverse_ratio(x, y), initial, method='SLSQP', args=(cov), bounds=bounds, constraints=constraints, options={'ftol': 1e-10}) results.append(result.x) # Stack all optimized weight vectors, and round to 4 digits after the decimal results_array = np.round(np.stack(results), 4) # Let's look at the standard deviation of the asset weights accross the different optimizations stds = np.std(results_array, axis=0) # Looks like they're all zero or nearly zero! print(stds) [0.00000000e+00 3.12250226e-17 0.00000000e+00 1.24900090e-16 0.00000000e+00 0.00000000e+00 0.00000000e+00 4.16333634e-17 0.00000000e+00 0.00000000e+00 0.00000000e+00 2.08166817e-17 1.66533454e-16 1.38777878e-16 1.66533454e-16 0.00000000e+00 0.00000000e+00 1.24900090e-16 2.42861287e-17] Looks like the optimization converges to the same values every time regardless of starting point! This means it’s finding the true minimum (or maximum in this case). Let’s look the at the weights for each symbol.\n# I'll just grab the last optimization result this way weights_series = pd.Series(data=np.round(result.x, 4), index=returns.columns) print(weights_series) EMB 0.0000 HYG 0.0215 IFGL 0.0000 IGOV 0.0586 IYR 0.0000 SUB 0.2759 TIP 0.0000 VB 0.0336 VCIT 0.0000 VCLT 0.0000 VCSH 0.0000 VEA 0.0265 VGIT 0.1150 VGLT 0.1868 VGSH 0.1825 VMBS 0.0000 VO 0.0000 VV 0.0817 VWO 0.0179 # Let's drop everything with a zero weight final_weights = weights_series[weights_series  0] # Sort by weight for viewing ease print(final_weights.sort_values(ascending=False)) SUB 0.2759 VGLT 0.1868 VGSH 0.1825 VGIT 0.1150 VV 0.0817 IGOV 0.0586 VB 0.0336 VEA 0.0265 HYG 0.0215 VWO 0.0179 # Confirm everything sums to 1. Looks good! final_weights.sum() 0.9999999999999999 Backtest Results  After doing some offscreen magic to implement this in QuantConnect, we get a dataframe tracking portfolio weights over each month. The algorithm starts at the beginning of 2011 and runs to the end of 2020. On the first trading day of each month it computes the portfolio using the code above using the past year of returns data for each ticker. Note that this is slightly different than the above that uses the entire return history in the optimization. Let’s take a closer look at a particular ETFs portfolio allocation over time. I’m going to use VGSH for this because it’s the least risky, most cash-like instrument under consideration.\nYou can see that the weight changes quite drastically over time, from near zero to nearly 90% in the later parts of 2020. This reflects the nature of how we are calculating asset variances and correlations using only the last 252 days of data. When volatilities or correlations change it causes changes in the allocation.\nweights_frame['VGSH'].plot(figsize=(15,10))  In this case, it’s caused by a large change in correlation for certain assets in early 2020. Shown in the graph below is the correlation between VGSH and the other ETFs over time. Note the large downward jump on the right side. This shows the weakness of using a rolling data approach like in the backtest. You get big market jumps that dramatically shift your allocation and then when they eventually fall out the backward-looking window, you get big jumps again. I want to come back to this topic some time in the future.\nrolling_corr = returns.rolling(252).corr() rolling_corr['VGSH'].unstack().plot(figsize=(15,10))  # let's reindex the monthly weights frame to daily with forward fill to match returns arra weights_frame = weights_frame.reindex(returns.index, method='ffill') # Now we can calculate portfolio returns by weight the returns and summing port_returns = (weights_frame.values * returns).sum(axis=1, skipna=False).dropna() # We can also calculate cumulative returns this way because we're working with logarithmic returns cum_port_returns = get_cum_returns(port_returns) Alright, plotted below are the cumulative returns for the strategy! Note this is without transaction costs factored in.\ncum_port_returns.plot(figsize=(15, 10))  Now let’s assemble some backtest statistics. We’re going to be using mlfinlab for this task.\nfrom mlfinlab import backtest_statistics total_return = get_total_return(port_returns) cagr = (total_return + 1)**(1 / 9) - 1 sharpe = backtest_statistics.sharpe_ratio(port_returns) drawdown, _ = backtest_statistics.drawdown_and_time_under_water(cum_port_returns + 1) mar_ratio = cagr / drawdown.max() pd.Series({'Total Return': f'{round(total_return * 100, 2)}%','CAGR': f'{round(cagr * 100, 2)}%', 'Sharpe Ratio': round(sharpe, 2), 'Maximum Drawdown': f'{round(drawdown.max() * 100, 2)}%', 'MAR Ratio': round(mar_ratio, 2)}) Total Return 29.77% CAGR 2.94% Sharpe Ratio 1.15 Maximum Drawdown 7.07% MAR Ratio 0.42 Let’s compare that to just US large cap stocks over the same period.\nvv_returns = returns['VV']['2011':] vv_cum_returns = get_cum_returns(vv_returns) total_return = get_total_return(vv_returns) cagr = (total_return + 1)**(1 / 9) - 1 sharpe = backtest_statistics.sharpe_ratio(vv_returns) drawdown, _ = backtest_statistics.drawdown_and_time_under_water(vv_cum_returns + 1) mar_ratio = cagr / drawdown.max() pd.Series({'Total Return': f'{round(total_return * 100, 2)}%','CAGR': f'{round(cagr * 100, 2)}%', 'Sharpe Ratio': round(sharpe, 2), 'Maximum Drawdown': f'{round(drawdown.max() * 100, 2)}%', 'MAR Ratio': round(mar_ratio, 2)}) Total Return 267.74% CAGR 15.57% Sharpe Ratio 0.84 Maximum Drawdown 34.28% MAR Ratio 0.45 Looks like the maximum diversification portfolio achieves a higher sharpe ratio! Although it comes at the cost of signficantly lower total returns. More interesting is the MAR ratio, defined as the CAGR over the maximum drawdown. This is a useful ratio because it gauges how much extra return you are getting for taking on heavier drawdown risk. It looks like large cap US stocks win out on this metric.\nIt gives a different perspective than the Sharpe ratio. The Sharpe ratio uses only standard deviation as a metric for risk. This can be very unrealistic because radically different equity curves can actually have the same Sharpe ratio and total return. That can be interestingly illustrated by reordering returns.\n# Okay, let's sort VV returns from least to greatest. Note that these are the same returns, just reordered. sorted_returns = pd.Series(sorted(vv_returns.values), index=vv_returns.index) cum_sorted_returns = get_cum_returns(sorted_returns) # Here you can see the cumulative return graphs. The sorted one looks very unusual, but in fact, the total return ends # up exactly the same! cum_sorted_returns.plot(figsize=(15, 10)) vv_cum_returns.plot()  total_return = get_total_return(sorted_returns) cagr = (total_return + 1)**(1 / 9) - 1 sharpe = backtest_statistics.sharpe_ratio(sorted_returns) drawdown, _ = backtest_statistics.drawdown_and_time_under_water(cum_sorted_returns + 1) mar_ratio = cagr / drawdown.max() pd.Series({'Total Return': f'{round(total_return * 100, 2)}%','CAGR': f'{round(cagr * 100, 2)}%', 'Sharpe Ratio': round(sharpe, 2), 'Maximum Drawdown': f'{round(drawdown.max() * 100, 2)}%', 'MAR Ratio': round(mar_ratio, 2)}) Total Return 267.74% CAGR 15.57% Sharpe Ratio 0.84 Maximum Drawdown 99.97% MAR Ratio 0.16 As you can see the total return, CAGR, and Sharpe ratio are all the same as the original return series! But the maximum drawdown is significantly higher. Obviously this is a worst case scenario, but it shows how drawdowns can drastically affect your portfolio performance over time. Volatility by itself doesn’t reflect all kinds of risk because it ignores path dependency. This again is a topic worth covering in more detail at a later date.\nConclusions  Even considering the backtest and attributes of this simple strategy shows deep complexity. In future, I want to compare this optimization strategy to others like the traditional mean-variance approach, hierarchical risk parity, minimum variance, and others. Along with that is discussing extensions like using models to provide forecasts for asset volatility and correlation.\nSo with all those things to think about, see you next time!\n",
+  "articleBody": "Alright, with this post I’m going to start a series on portfolio optimization techniques! This is one of my favorite topics in finance. This post is going to construct a portfolio based on the diversification ratio, which is outlined in the papers linked below. The basic idea is to maximize the Diversification ratio, which is defined as the weighted average volatilities of assets in the portfolio divided by the total portfolio volatility. This makes intuitive sense, by increasing diversification we lower portfolio volatility compared to the average volatility of the assets that make it up.\nChoueifaty, Y., \u0026 Coignard, Y. (2008). Toward Maximum Diversification. The Journal of Portfolio Management, 40-51. doi:https://doi.org/10.3905/JPM.2008.35.1.40\nChoueifaty, Y., Reynier, J., \u0026 Froidure, T. (2013). Properties of the Most Diversified Portfolio. Journal of Investment Strategies, 49-70. doi:http://doi.org/10.2139/ssrn.1895459\nThe assets I’m going to mainly focus on Vanguard ETFs as they have the lowest fees. For anything they don’t offer, I’m using iShares. I’m also limiting myself to funds with inception dates \u003e10 years ago for stability.\nHere’s the list: Symbol Description VGSH Short-term Treasury VGIT Mid-term Treasury VGLT Long-term Treasury TIP TIPS Treasury Bonds VMBS Agency MBS SUB Municipal Bonds VCSH Short-term Investment Grade Corporate Bonds VCIT Mid-term Investment Grade Corporate Bonds VCLT Long-term Investment Grade Corporate Bonds HYG High-yield Corporate Bonds EMB Emerging Markets Bonds IGOV International Treasuries VV Large Cap US Stocks VO Mid-Cap US Stocks VB Small-Cap US Stocks VWO Emerging Markets Stocks VEA Non-US Developed Markets Stocks IYR US Real Estate IFGL Non-US Real Estate Data All of this is the code to fetch historical data from QuantConnect and calculate returns.\nimport numpy as np import pandas as pd symbols = ['VGSH', 'VGIT', 'VGLT', 'TIP', 'VMBS', 'SUB', 'VCSH', 'VCIT', 'VCLT', 'HYG', 'EMB', 'IGOV', 'VV', 'VO', 'VB', 'VWO', 'VEA', 'IYR', 'IFGL'] qb = QuantBook() symbols_data = {symbol: qb.AddEquity(symbol) for symbol in symbols} from datetime import datetime # This is QuantConnect API code to get price history history = qb.History(qb.Securities.Keys, datetime(2009, 1, 1), datetime(2020, 12, 31), Resolution.Daily) history = history['close'].unstack(level=0).dropna() I’m using arithmetic returns here so I can easily weight the returns across assets when computing portfolio returns.\nreturns = (history / history.shift(1)) - 1 returns = returns.dropna() # Let's define some helper functions to get cumulative return series and the total return def get_cum_returns(returns): return (returns + 1).cumprod() - 1 def get_total_return(returns): return np.product(returns + 1) - 1 The Optimization This function calculates the diversification ratio for a portfolio given asset weights and their covariance matrix. This is from equation (1) (Choueifaty \u0026 Coignard, 2008).\ndef diverse_ratio(weights, covariance): # Standard deviation vector stds = np.sqrt(np.diagonal(covariance)) # Asset-weighted standard deviation num = np.dot(weights, stds) # Portfolio standard deviation denom = np.sqrt(weights @ covariance @ weights) return num / denom Now, to confirm that scipy minimize works as we expect for this problem, I’m going to test a bunch of randomized starting weights to confirm that the final weights end up the same. I increase the level of precision using the ‘ftol’ option because returns are fairly small decimal quantities and I want to ensure the optimization converges completely.\nfrom scipy.optimize import minimize cov = np.cov(returns.values.T) # Long-only constraint bounds = [(0, 1) for x in range(len(cov))] # Portfolio weights must sum to 1 constraints = ( {'type': 'eq', 'fun': lambda x: np.sum(x) - 1} ) results = [] for x in range(100): # Set initial weights randomly initial = np.random.random(len(cov)) # Use negative of objective function to maximize result = minimize(lambda x, y: -1 * diverse_ratio(x, y), initial, method='SLSQP', args=(cov), bounds=bounds, constraints=constraints, options={'ftol': 1e-10}) results.append(result.x) # Stack all optimized weight vectors, and round to 4 digits after the decimal results_array = np.round(np.stack(results), 4) # Let's look at the standard deviation of the asset weights accross the different optimizations stds = np.std(results_array, axis=0) # Looks like they're all zero or nearly zero! print(stds) [0.00000000e+00 3.12250226e-17 0.00000000e+00 1.24900090e-16 0.00000000e+00 0.00000000e+00 0.00000000e+00 4.16333634e-17 0.00000000e+00 0.00000000e+00 0.00000000e+00 2.08166817e-17 1.66533454e-16 1.38777878e-16 1.66533454e-16 0.00000000e+00 0.00000000e+00 1.24900090e-16 2.42861287e-17] Looks like the optimization converges to the same values every time regardless of starting point! This means it’s finding the true minimum (or maximum in this case). Let’s look the at the weights for each symbol.\n# I'll just grab the last optimization result this way weights_series = pd.Series(data=np.round(result.x, 4), index=returns.columns) print(weights_series) EMB 0.0000 HYG 0.0215 IFGL 0.0000 IGOV 0.0586 IYR 0.0000 SUB 0.2759 TIP 0.0000 VB 0.0336 VCIT 0.0000 VCLT 0.0000 VCSH 0.0000 VEA 0.0265 VGIT 0.1150 VGLT 0.1868 VGSH 0.1825 VMBS 0.0000 VO 0.0000 VV 0.0817 VWO 0.0179 # Let's drop everything with a zero weight final_weights = weights_series[weights_series \u003e 0] # Sort by weight for viewing ease print(final_weights.sort_values(ascending=False)) SUB 0.2759 VGLT 0.1868 VGSH 0.1825 VGIT 0.1150 VV 0.0817 IGOV 0.0586 VB 0.0336 VEA 0.0265 HYG 0.0215 VWO 0.0179 # Confirm everything sums to 1. Looks good! final_weights.sum() 0.9999999999999999 Backtest Results After doing some offscreen magic to implement this in QuantConnect, we get a dataframe tracking portfolio weights over each month. The algorithm starts at the beginning of 2011 and runs to the end of 2020. On the first trading day of each month it computes the portfolio using the code above using the past year of returns data for each ticker. Note that this is slightly different than the above that uses the entire return history in the optimization. Let’s take a closer look at a particular ETFs portfolio allocation over time. I’m going to use VGSH for this because it’s the least risky, most cash-like instrument under consideration.\nYou can see that the weight changes quite drastically over time, from near zero to nearly 90% in the later parts of 2020. This reflects the nature of how we are calculating asset variances and correlations using only the last 252 days of data. When volatilities or correlations change it causes changes in the allocation.\nweights_frame['VGSH'].plot(figsize=(15,10)) In this case, it’s caused by a large change in correlation for certain assets in early 2020. Shown in the graph below is the correlation between VGSH and the other ETFs over time. Note the large downward jump on the right side. This shows the weakness of using a rolling data approach like in the backtest. You get big market jumps that dramatically shift your allocation and then when they eventually fall out the backward-looking window, you get big jumps again. I want to come back to this topic some time in the future.\nrolling_corr = returns.rolling(252).corr() rolling_corr['VGSH'].unstack().plot(figsize=(15,10)) # let's reindex the monthly weights frame to daily with forward fill to match returns arra weights_frame = weights_frame.reindex(returns.index, method='ffill') # Now we can calculate portfolio returns by weight the returns and summing port_returns = (weights_frame.values * returns).sum(axis=1, skipna=False).dropna() # We can also calculate cumulative returns this way because we're working with logarithmic returns cum_port_returns = get_cum_returns(port_returns) Alright, plotted below are the cumulative returns for the strategy! Note this is without transaction costs factored in.\ncum_port_returns.plot(figsize=(15, 10)) Now let’s assemble some backtest statistics. We’re going to be using mlfinlab for this task.\nfrom mlfinlab import backtest_statistics total_return = get_total_return(port_returns) cagr = (total_return + 1)**(1 / 9) - 1 sharpe = backtest_statistics.sharpe_ratio(port_returns) drawdown, _ = backtest_statistics.drawdown_and_time_under_water(cum_port_returns + 1) mar_ratio = cagr / drawdown.max() pd.Series({'Total Return': f'{round(total_return * 100, 2)}%','CAGR': f'{round(cagr * 100, 2)}%', 'Sharpe Ratio': round(sharpe, 2), 'Maximum Drawdown': f'{round(drawdown.max() * 100, 2)}%', 'MAR Ratio': round(mar_ratio, 2)}) Total Return 29.77% CAGR 2.94% Sharpe Ratio 1.15 Maximum Drawdown 7.07% MAR Ratio 0.42 Let’s compare that to just US large cap stocks over the same period.\nvv_returns = returns['VV']['2011':] vv_cum_returns = get_cum_returns(vv_returns) total_return = get_total_return(vv_returns) cagr = (total_return + 1)**(1 / 9) - 1 sharpe = backtest_statistics.sharpe_ratio(vv_returns) drawdown, _ = backtest_statistics.drawdown_and_time_under_water(vv_cum_returns + 1) mar_ratio = cagr / drawdown.max() pd.Series({'Total Return': f'{round(total_return * 100, 2)}%','CAGR': f'{round(cagr * 100, 2)}%', 'Sharpe Ratio': round(sharpe, 2), 'Maximum Drawdown': f'{round(drawdown.max() * 100, 2)}%', 'MAR Ratio': round(mar_ratio, 2)}) Total Return 267.74% CAGR 15.57% Sharpe Ratio 0.84 Maximum Drawdown 34.28% MAR Ratio 0.45 Looks like the maximum diversification portfolio achieves a higher sharpe ratio! Although it comes at the cost of signficantly lower total returns. More interesting is the MAR ratio, defined as the CAGR over the maximum drawdown. This is a useful ratio because it gauges how much extra return you are getting for taking on heavier drawdown risk. It looks like large cap US stocks win out on this metric.\nIt gives a different perspective than the Sharpe ratio. The Sharpe ratio uses only standard deviation as a metric for risk. This can be very unrealistic because radically different equity curves can actually have the same Sharpe ratio and total return. That can be interestingly illustrated by reordering returns.\n# Okay, let's sort VV returns from least to greatest. Note that these are the same returns, just reordered. sorted_returns = pd.Series(sorted(vv_returns.values), index=vv_returns.index) cum_sorted_returns = get_cum_returns(sorted_returns) # Here you can see the cumulative return graphs. The sorted one looks very unusual, but in fact, the total return ends # up exactly the same! cum_sorted_returns.plot(figsize=(15, 10)) vv_cum_returns.plot() total_return = get_total_return(sorted_returns) cagr = (total_return + 1)**(1 / 9) - 1 sharpe = backtest_statistics.sharpe_ratio(sorted_returns) drawdown, _ = backtest_statistics.drawdown_and_time_under_water(cum_sorted_returns + 1) mar_ratio = cagr / drawdown.max() pd.Series({'Total Return': f'{round(total_return * 100, 2)}%','CAGR': f'{round(cagr * 100, 2)}%', 'Sharpe Ratio': round(sharpe, 2), 'Maximum Drawdown': f'{round(drawdown.max() * 100, 2)}%', 'MAR Ratio': round(mar_ratio, 2)}) Total Return 267.74% CAGR 15.57% Sharpe Ratio 0.84 Maximum Drawdown 99.97% MAR Ratio 0.16 As you can see the total return, CAGR, and Sharpe ratio are all the same as the original return series! But the maximum drawdown is significantly higher. Obviously this is a worst case scenario, but it shows how drawdowns can drastically affect your portfolio performance over time. Volatility by itself doesn’t reflect all kinds of risk because it ignores path dependency. This again is a topic worth covering in more detail at a later date.\nConclusions Even considering the backtest and attributes of this simple strategy shows deep complexity. In future, I want to compare this optimization strategy to others like the traditional mean-variance approach, hierarchical risk parity, minimum variance, and others. Along with that is discussing extensions like using models to provide forecasts for asset volatility and correlation.\nSo with all those things to think about, see you next time!\n",
   "wordCount" : "1684",
   "inLanguage": "en",
   "datePublished": "2021-01-07T00:00:00Z",
@@ -98,22 +106,13 @@
 </head>
 
 <body class="" id="top">
-<noscript>
-    <style type="text/css">
-        #theme-toggle,
-        .top-link {
-            display: none;
-        }
-
-    </style>
-</noscript>
 
 <header class="header">
     <nav class="nav">
         <div class="logo">
             <a href="http://eadains.github.io/OptionallyBayesHugo/" accesskey="h" title="Optionally Bayes (Alt + H)">Optionally Bayes</a>
-            <span class="logo-switches">
-            </span>
+            <div class="logo-switches">
+            </div>
         </div>
         <ul id="menu">
             <li>
@@ -147,7 +146,8 @@
     <h1 class="post-title">
       A Most Diversified ETF Portfolio
     </h1>
-    <div class="post-meta">January 7, 2021&nbsp;·&nbsp;Erik Dains
+    <div class="post-meta"><span title='2021-01-07 00:00:00 +0000 UTC'>January 7, 2021</span>&nbsp;·&nbsp;Erik Dains
+
 </div>
   </header> 
   <div class="post-content"><p>Alright, with this post I&rsquo;m going to start a series on portfolio optimization techniques! This is one of my favorite topics in finance. This post is going to construct a portfolio based on the diversification ratio, which is outlined in the papers linked below. The basic idea is to maximize the Diversification ratio, which is defined as the weighted average volatilities of assets in the portfolio divided by the total portfolio volatility. This makes intuitive sense, by increasing diversification we lower portfolio volatility compared to the average volatility of the assets that make it up.</p>
@@ -246,213 +246,213 @@
 <h1 id="data">Data<a hidden class="anchor" aria-hidden="true" href="#data">#</a></h1>
 <hr>
 <p>All of this is the code to fetch historical data from QuantConnect and calculate returns.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
-<span style="color:#f92672">import</span> pandas <span style="color:#66d9ef">as</span> pd
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">symbols <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#39;VGSH&#39;</span>,
-           <span style="color:#e6db74">&#39;VGIT&#39;</span>,
-           <span style="color:#e6db74">&#39;VGLT&#39;</span>,
-           <span style="color:#e6db74">&#39;TIP&#39;</span>,
-           <span style="color:#e6db74">&#39;VMBS&#39;</span>,
-           <span style="color:#e6db74">&#39;SUB&#39;</span>,
-           <span style="color:#e6db74">&#39;VCSH&#39;</span>,
-           <span style="color:#e6db74">&#39;VCIT&#39;</span>,
-           <span style="color:#e6db74">&#39;VCLT&#39;</span>,
-           <span style="color:#e6db74">&#39;HYG&#39;</span>,
-           <span style="color:#e6db74">&#39;EMB&#39;</span>,
-           <span style="color:#e6db74">&#39;IGOV&#39;</span>,
-           <span style="color:#e6db74">&#39;VV&#39;</span>,
-           <span style="color:#e6db74">&#39;VO&#39;</span>,
-           <span style="color:#e6db74">&#39;VB&#39;</span>,
-           <span style="color:#e6db74">&#39;VWO&#39;</span>,
-           <span style="color:#e6db74">&#39;VEA&#39;</span>,
-           <span style="color:#e6db74">&#39;IYR&#39;</span>,
-           <span style="color:#e6db74">&#39;IFGL&#39;</span>]
-
-qb <span style="color:#f92672">=</span> QuantBook()
-symbols_data <span style="color:#f92672">=</span> {symbol: qb<span style="color:#f92672">.</span>AddEquity(symbol) <span style="color:#66d9ef">for</span> symbol <span style="color:#f92672">in</span> symbols}
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> datetime <span style="color:#f92672">import</span> datetime
-<span style="color:#75715e"># This is QuantConnect API code to get price history</span>
-history <span style="color:#f92672">=</span> qb<span style="color:#f92672">.</span>History(qb<span style="color:#f92672">.</span>Securities<span style="color:#f92672">.</span>Keys, datetime(<span style="color:#ae81ff">2009</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>), datetime(<span style="color:#ae81ff">2020</span>, <span style="color:#ae81ff">12</span>, <span style="color:#ae81ff">31</span>), Resolution<span style="color:#f92672">.</span>Daily)
-history <span style="color:#f92672">=</span> history[<span style="color:#e6db74">&#39;close&#39;</span>]<span style="color:#f92672">.</span>unstack(level<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)<span style="color:#f92672">.</span>dropna()
-</code></pre></div><p>I&rsquo;m using arithmetic returns here so I can easily weight the returns across assets when computing portfolio returns.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">returns <span style="color:#f92672">=</span> (history <span style="color:#f92672">/</span> history<span style="color:#f92672">.</span>shift(<span style="color:#ae81ff">1</span>)) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
-returns <span style="color:#f92672">=</span> returns<span style="color:#f92672">.</span>dropna()
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Let&#39;s define some helper functions to get cumulative return series and the total return</span>
-<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_cum_returns</span>(returns):
-    <span style="color:#66d9ef">return</span> (returns <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>cumprod() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
-
-<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_total_return</span>(returns):
-    <span style="color:#66d9ef">return</span> np<span style="color:#f92672">.</span>product(returns <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
-</code></pre></div><h1 id="the-optimization">The Optimization<a hidden class="anchor" aria-hidden="true" href="#the-optimization">#</a></h1>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> pandas <span style="color:#66d9ef">as</span> pd
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>symbols <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#39;VGSH&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;VGIT&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;VGLT&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;TIP&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;VMBS&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;SUB&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;VCSH&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;VCIT&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;VCLT&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;HYG&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;EMB&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;IGOV&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;VV&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;VO&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;VB&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;VWO&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;VEA&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;IYR&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;IFGL&#39;</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>qb <span style="color:#f92672">=</span> QuantBook()
+</span></span><span style="display:flex;"><span>symbols_data <span style="color:#f92672">=</span> {symbol: qb<span style="color:#f92672">.</span>AddEquity(symbol) <span style="color:#66d9ef">for</span> symbol <span style="color:#f92672">in</span> symbols}
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> datetime <span style="color:#f92672">import</span> datetime
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># This is QuantConnect API code to get price history</span>
+</span></span><span style="display:flex;"><span>history <span style="color:#f92672">=</span> qb<span style="color:#f92672">.</span>History(qb<span style="color:#f92672">.</span>Securities<span style="color:#f92672">.</span>Keys, datetime(<span style="color:#ae81ff">2009</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>), datetime(<span style="color:#ae81ff">2020</span>, <span style="color:#ae81ff">12</span>, <span style="color:#ae81ff">31</span>), Resolution<span style="color:#f92672">.</span>Daily)
+</span></span><span style="display:flex;"><span>history <span style="color:#f92672">=</span> history[<span style="color:#e6db74">&#39;close&#39;</span>]<span style="color:#f92672">.</span>unstack(level<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)<span style="color:#f92672">.</span>dropna()
+</span></span></code></pre></div><p>I&rsquo;m using arithmetic returns here so I can easily weight the returns across assets when computing portfolio returns.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>returns <span style="color:#f92672">=</span> (history <span style="color:#f92672">/</span> history<span style="color:#f92672">.</span>shift(<span style="color:#ae81ff">1</span>)) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>returns <span style="color:#f92672">=</span> returns<span style="color:#f92672">.</span>dropna()
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># Let&#39;s define some helper functions to get cumulative return series and the total return</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_cum_returns</span>(returns):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> (returns <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)<span style="color:#f92672">.</span>cumprod() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_total_return</span>(returns):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> np<span style="color:#f92672">.</span>product(returns <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><h1 id="the-optimization">The Optimization<a hidden class="anchor" aria-hidden="true" href="#the-optimization">#</a></h1>
 <hr>
 <p>This function calculates the diversification ratio for a portfolio given asset weights and their covariance matrix. This is from equation (1) (Choueifaty &amp; Coignard, 2008).</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">diverse_ratio</span>(weights, covariance):
-    <span style="color:#75715e"># Standard deviation vector</span>
-    stds <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt(np<span style="color:#f92672">.</span>diagonal(covariance))
-    <span style="color:#75715e"># Asset-weighted standard deviation</span>
-    num <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>dot(weights, stds)
-    <span style="color:#75715e"># Portfolio standard deviation</span>
-    denom <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt(weights <span style="color:#f92672">@</span> covariance <span style="color:#f92672">@</span> weights)
-    <span style="color:#66d9ef">return</span> num <span style="color:#f92672">/</span> denom
-</code></pre></div><p>Now, to confirm that scipy minimize works as we expect for this problem, I&rsquo;m going to test a bunch of randomized starting weights to confirm that the final weights end up the same. I increase the level of precision using the &lsquo;ftol&rsquo; option because returns are fairly small decimal quantities and I want to ensure the optimization converges completely.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> scipy.optimize <span style="color:#f92672">import</span> minimize
-
-cov <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>cov(returns<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>T)
-<span style="color:#75715e"># Long-only constraint</span>
-bounds <span style="color:#f92672">=</span> [(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> range(len(cov))]
-<span style="color:#75715e"># Portfolio weights must sum to 1</span>
-constraints <span style="color:#f92672">=</span> (
-    {<span style="color:#e6db74">&#39;type&#39;</span>: <span style="color:#e6db74">&#39;eq&#39;</span>, <span style="color:#e6db74">&#39;fun&#39;</span>: <span style="color:#66d9ef">lambda</span> x: np<span style="color:#f92672">.</span>sum(x) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>}
-)
-
-results <span style="color:#f92672">=</span> []
-<span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">100</span>):
-    <span style="color:#75715e"># Set initial weights randomly</span>
-    initial <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>random(len(cov))
-    <span style="color:#75715e"># Use negative of objective function to maximize</span>
-    result <span style="color:#f92672">=</span> minimize(<span style="color:#66d9ef">lambda</span> x, y: <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">*</span> diverse_ratio(x, y), initial, method<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;SLSQP&#39;</span>, args<span style="color:#f92672">=</span>(cov),
-                      bounds<span style="color:#f92672">=</span>bounds, constraints<span style="color:#f92672">=</span>constraints, options<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#39;ftol&#39;</span>: <span style="color:#ae81ff">1e-10</span>})
-    results<span style="color:#f92672">.</span>append(result<span style="color:#f92672">.</span>x)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Stack all optimized weight vectors, and round to 4 digits after the decimal</span>
-results_array <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>round(np<span style="color:#f92672">.</span>stack(results), <span style="color:#ae81ff">4</span>)
-<span style="color:#75715e"># Let&#39;s look at the standard deviation of the asset weights accross the different optimizations</span>
-stds <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>std(results_array, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
-<span style="color:#75715e"># Looks like they&#39;re all zero or nearly zero!</span>
-print(stds)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">    [0.00000000e+00 3.12250226e-17 0.00000000e+00 1.24900090e-16
-     0.00000000e+00 0.00000000e+00 0.00000000e+00 4.16333634e-17
-     0.00000000e+00 0.00000000e+00 0.00000000e+00 2.08166817e-17
-     1.66533454e-16 1.38777878e-16 1.66533454e-16 0.00000000e+00
-     0.00000000e+00 1.24900090e-16 2.42861287e-17]
-</code></pre></div><p>Looks like the optimization converges to the same values every time regardless of starting point! This means it&rsquo;s finding the true minimum (or maximum in this case). Let&rsquo;s look the at the weights for each symbol.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># I&#39;ll just grab the last optimization result this way</span>
-weights_series <span style="color:#f92672">=</span> pd<span style="color:#f92672">.</span>Series(data<span style="color:#f92672">=</span>np<span style="color:#f92672">.</span>round(result<span style="color:#f92672">.</span>x, <span style="color:#ae81ff">4</span>), index<span style="color:#f92672">=</span>returns<span style="color:#f92672">.</span>columns)
-print(weights_series)
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">EMB     0.0000
-HYG     0.0215
-IFGL    0.0000
-IGOV    0.0586
-IYR     0.0000
-SUB     0.2759
-TIP     0.0000
-VB      0.0336
-VCIT    0.0000
-VCLT    0.0000
-VCSH    0.0000
-VEA     0.0265
-VGIT    0.1150
-VGLT    0.1868
-VGSH    0.1825
-VMBS    0.0000
-VO      0.0000
-VV      0.0817
-VWO     0.0179
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Let&#39;s drop everything with a zero weight</span>
-final_weights <span style="color:#f92672">=</span> weights_series[weights_series <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>]
-<span style="color:#75715e"># Sort by weight for viewing ease</span>
-print(final_weights<span style="color:#f92672">.</span>sort_values(ascending<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>))
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">SUB     0.2759
-VGLT    0.1868
-VGSH    0.1825
-VGIT    0.1150
-VV      0.0817
-IGOV    0.0586
-VB      0.0336
-VEA     0.0265
-HYG     0.0215
-VWO     0.0179
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Confirm everything sums to 1. Looks good!</span>
-final_weights<span style="color:#f92672">.</span>sum()
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">0.9999999999999999
-</code></pre></div><h1 id="backtest-results">Backtest Results<a hidden class="anchor" aria-hidden="true" href="#backtest-results">#</a></h1>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">diverse_ratio</span>(weights, covariance):
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Standard deviation vector</span>
+</span></span><span style="display:flex;"><span>    stds <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt(np<span style="color:#f92672">.</span>diagonal(covariance))
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Asset-weighted standard deviation</span>
+</span></span><span style="display:flex;"><span>    num <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>dot(weights, stds)
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Portfolio standard deviation</span>
+</span></span><span style="display:flex;"><span>    denom <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>sqrt(weights <span style="color:#f92672">@</span> covariance <span style="color:#f92672">@</span> weights)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> num <span style="color:#f92672">/</span> denom
+</span></span></code></pre></div><p>Now, to confirm that scipy minimize works as we expect for this problem, I&rsquo;m going to test a bunch of randomized starting weights to confirm that the final weights end up the same. I increase the level of precision using the &lsquo;ftol&rsquo; option because returns are fairly small decimal quantities and I want to ensure the optimization converges completely.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> scipy.optimize <span style="color:#f92672">import</span> minimize
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>cov <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>cov(returns<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>T)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Long-only constraint</span>
+</span></span><span style="display:flex;"><span>bounds <span style="color:#f92672">=</span> [(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> range(len(cov))]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Portfolio weights must sum to 1</span>
+</span></span><span style="display:flex;"><span>constraints <span style="color:#f92672">=</span> (
+</span></span><span style="display:flex;"><span>    {<span style="color:#e6db74">&#39;type&#39;</span>: <span style="color:#e6db74">&#39;eq&#39;</span>, <span style="color:#e6db74">&#39;fun&#39;</span>: <span style="color:#66d9ef">lambda</span> x: np<span style="color:#f92672">.</span>sum(x) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>}
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>results <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">100</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Set initial weights randomly</span>
+</span></span><span style="display:flex;"><span>    initial <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>random(len(cov))
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Use negative of objective function to maximize</span>
+</span></span><span style="display:flex;"><span>    result <span style="color:#f92672">=</span> minimize(<span style="color:#66d9ef">lambda</span> x, y: <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span> <span style="color:#f92672">*</span> diverse_ratio(x, y), initial, method<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;SLSQP&#39;</span>, args<span style="color:#f92672">=</span>(cov),
+</span></span><span style="display:flex;"><span>                      bounds<span style="color:#f92672">=</span>bounds, constraints<span style="color:#f92672">=</span>constraints, options<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#39;ftol&#39;</span>: <span style="color:#ae81ff">1e-10</span>})
+</span></span><span style="display:flex;"><span>    results<span style="color:#f92672">.</span>append(result<span style="color:#f92672">.</span>x)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># Stack all optimized weight vectors, and round to 4 digits after the decimal</span>
+</span></span><span style="display:flex;"><span>results_array <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>round(np<span style="color:#f92672">.</span>stack(results), <span style="color:#ae81ff">4</span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Let&#39;s look at the standard deviation of the asset weights accross the different optimizations</span>
+</span></span><span style="display:flex;"><span>stds <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>std(results_array, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Looks like they&#39;re all zero or nearly zero!</span>
+</span></span><span style="display:flex;"><span>print(stds)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>    [0.00000000e+00 3.12250226e-17 0.00000000e+00 1.24900090e-16
+</span></span><span style="display:flex;"><span>     0.00000000e+00 0.00000000e+00 0.00000000e+00 4.16333634e-17
+</span></span><span style="display:flex;"><span>     0.00000000e+00 0.00000000e+00 0.00000000e+00 2.08166817e-17
+</span></span><span style="display:flex;"><span>     1.66533454e-16 1.38777878e-16 1.66533454e-16 0.00000000e+00
+</span></span><span style="display:flex;"><span>     0.00000000e+00 1.24900090e-16 2.42861287e-17]
+</span></span></code></pre></div><p>Looks like the optimization converges to the same values every time regardless of starting point! This means it&rsquo;s finding the true minimum (or maximum in this case). Let&rsquo;s look the at the weights for each symbol.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># I&#39;ll just grab the last optimization result this way</span>
+</span></span><span style="display:flex;"><span>weights_series <span style="color:#f92672">=</span> pd<span style="color:#f92672">.</span>Series(data<span style="color:#f92672">=</span>np<span style="color:#f92672">.</span>round(result<span style="color:#f92672">.</span>x, <span style="color:#ae81ff">4</span>), index<span style="color:#f92672">=</span>returns<span style="color:#f92672">.</span>columns)
+</span></span><span style="display:flex;"><span>print(weights_series)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>EMB     0.0000
+</span></span><span style="display:flex;"><span>HYG     0.0215
+</span></span><span style="display:flex;"><span>IFGL    0.0000
+</span></span><span style="display:flex;"><span>IGOV    0.0586
+</span></span><span style="display:flex;"><span>IYR     0.0000
+</span></span><span style="display:flex;"><span>SUB     0.2759
+</span></span><span style="display:flex;"><span>TIP     0.0000
+</span></span><span style="display:flex;"><span>VB      0.0336
+</span></span><span style="display:flex;"><span>VCIT    0.0000
+</span></span><span style="display:flex;"><span>VCLT    0.0000
+</span></span><span style="display:flex;"><span>VCSH    0.0000
+</span></span><span style="display:flex;"><span>VEA     0.0265
+</span></span><span style="display:flex;"><span>VGIT    0.1150
+</span></span><span style="display:flex;"><span>VGLT    0.1868
+</span></span><span style="display:flex;"><span>VGSH    0.1825
+</span></span><span style="display:flex;"><span>VMBS    0.0000
+</span></span><span style="display:flex;"><span>VO      0.0000
+</span></span><span style="display:flex;"><span>VV      0.0817
+</span></span><span style="display:flex;"><span>VWO     0.0179
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># Let&#39;s drop everything with a zero weight</span>
+</span></span><span style="display:flex;"><span>final_weights <span style="color:#f92672">=</span> weights_series[weights_series <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Sort by weight for viewing ease</span>
+</span></span><span style="display:flex;"><span>print(final_weights<span style="color:#f92672">.</span>sort_values(ascending<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>))
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>SUB     0.2759
+</span></span><span style="display:flex;"><span>VGLT    0.1868
+</span></span><span style="display:flex;"><span>VGSH    0.1825
+</span></span><span style="display:flex;"><span>VGIT    0.1150
+</span></span><span style="display:flex;"><span>VV      0.0817
+</span></span><span style="display:flex;"><span>IGOV    0.0586
+</span></span><span style="display:flex;"><span>VB      0.0336
+</span></span><span style="display:flex;"><span>VEA     0.0265
+</span></span><span style="display:flex;"><span>HYG     0.0215
+</span></span><span style="display:flex;"><span>VWO     0.0179
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># Confirm everything sums to 1. Looks good!</span>
+</span></span><span style="display:flex;"><span>final_weights<span style="color:#f92672">.</span>sum()
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>0.9999999999999999
+</span></span></code></pre></div><h1 id="backtest-results">Backtest Results<a hidden class="anchor" aria-hidden="true" href="#backtest-results">#</a></h1>
 <hr>
 <p>After doing some offscreen magic to implement this in QuantConnect, we get a dataframe tracking portfolio weights over each month. The algorithm starts at the beginning of 2011 and runs to the end of 2020. On the first trading day of each month it computes the portfolio using the code above using the past year of returns data for each ticker. Note that this is slightly different than the above that uses the entire return history in the optimization.
 Let&rsquo;s take a closer look at a particular ETFs portfolio allocation over time. I&rsquo;m going to use VGSH for this because it&rsquo;s the least risky, most cash-like instrument under consideration.</p>
 <p>You can see that the weight changes quite drastically over time, from near zero to nearly 90% in the later parts of 2020. This reflects the nature of how we are calculating asset variances and correlations using only the last 252 days of data. When volatilities or correlations change it causes changes in the allocation.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">weights_frame[<span style="color:#e6db74">&#39;VGSH&#39;</span>]<span style="color:#f92672">.</span>plot(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">15</span>,<span style="color:#ae81ff">10</span>))
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>weights_frame[<span style="color:#e6db74">&#39;VGSH&#39;</span>]<span style="color:#f92672">.</span>plot(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">15</span>,<span style="color:#ae81ff">10</span>))
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_24_1.png#center"/> 
 </figure>
 
 <p>In this case, it&rsquo;s caused by a large change in correlation for certain assets in early 2020. Shown in the graph below is the correlation between VGSH and the other ETFs over time. Note the large downward jump on the right side. This shows the weakness of using a rolling data approach like in the backtest. You get big market jumps that dramatically shift your allocation and then when they eventually fall out the backward-looking window, you get big jumps again. I want to come back to this topic some time in the future.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">rolling_corr <span style="color:#f92672">=</span> returns<span style="color:#f92672">.</span>rolling(<span style="color:#ae81ff">252</span>)<span style="color:#f92672">.</span>corr()
-rolling_corr[<span style="color:#e6db74">&#39;VGSH&#39;</span>]<span style="color:#f92672">.</span>unstack()<span style="color:#f92672">.</span>plot(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">15</span>,<span style="color:#ae81ff">10</span>))
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>rolling_corr <span style="color:#f92672">=</span> returns<span style="color:#f92672">.</span>rolling(<span style="color:#ae81ff">252</span>)<span style="color:#f92672">.</span>corr()
+</span></span><span style="display:flex;"><span>rolling_corr[<span style="color:#e6db74">&#39;VGSH&#39;</span>]<span style="color:#f92672">.</span>unstack()<span style="color:#f92672">.</span>plot(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">15</span>,<span style="color:#ae81ff">10</span>))
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_26_1.png#center"/> 
 </figure>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># let&#39;s reindex the monthly weights frame to daily with forward fill to match returns arra</span>
-weights_frame <span style="color:#f92672">=</span> weights_frame<span style="color:#f92672">.</span>reindex(returns<span style="color:#f92672">.</span>index, method<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;ffill&#39;</span>)
-<span style="color:#75715e"># Now we can calculate portfolio returns by weight the returns and summing</span>
-port_returns <span style="color:#f92672">=</span> (weights_frame<span style="color:#f92672">.</span>values <span style="color:#f92672">*</span> returns)<span style="color:#f92672">.</span>sum(axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, skipna<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)<span style="color:#f92672">.</span>dropna()
-<span style="color:#75715e"># We can also calculate cumulative returns this way because we&#39;re working with logarithmic returns</span>
-cum_port_returns <span style="color:#f92672">=</span> get_cum_returns(port_returns)
-</code></pre></div><p>Alright, plotted below are the cumulative returns for the strategy! Note this is without transaction costs factored in.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">cum_port_returns<span style="color:#f92672">.</span>plot(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">15</span>, <span style="color:#ae81ff">10</span>))
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># let&#39;s reindex the monthly weights frame to daily with forward fill to match returns arra</span>
+</span></span><span style="display:flex;"><span>weights_frame <span style="color:#f92672">=</span> weights_frame<span style="color:#f92672">.</span>reindex(returns<span style="color:#f92672">.</span>index, method<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;ffill&#39;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Now we can calculate portfolio returns by weight the returns and summing</span>
+</span></span><span style="display:flex;"><span>port_returns <span style="color:#f92672">=</span> (weights_frame<span style="color:#f92672">.</span>values <span style="color:#f92672">*</span> returns)<span style="color:#f92672">.</span>sum(axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, skipna<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)<span style="color:#f92672">.</span>dropna()
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># We can also calculate cumulative returns this way because we&#39;re working with logarithmic returns</span>
+</span></span><span style="display:flex;"><span>cum_port_returns <span style="color:#f92672">=</span> get_cum_returns(port_returns)
+</span></span></code></pre></div><p>Alright, plotted below are the cumulative returns for the strategy! Note this is without transaction costs factored in.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>cum_port_returns<span style="color:#f92672">.</span>plot(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">15</span>, <span style="color:#ae81ff">10</span>))
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_29_1.png#center"/> 
 </figure>
 
 <p>Now let&rsquo;s assemble some backtest statistics. We&rsquo;re going to be using mlfinlab for this task.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> mlfinlab <span style="color:#f92672">import</span> backtest_statistics
-
-total_return <span style="color:#f92672">=</span> get_total_return(port_returns)
-cagr <span style="color:#f92672">=</span> (total_return <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)<span style="color:#f92672">**</span>(<span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> <span style="color:#ae81ff">9</span>) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
-sharpe <span style="color:#f92672">=</span> backtest_statistics<span style="color:#f92672">.</span>sharpe_ratio(port_returns)
-drawdown, _ <span style="color:#f92672">=</span> backtest_statistics<span style="color:#f92672">.</span>drawdown_and_time_under_water(cum_port_returns <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
-mar_ratio <span style="color:#f92672">=</span> cagr <span style="color:#f92672">/</span> drawdown<span style="color:#f92672">.</span>max()
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">pd<span style="color:#f92672">.</span>Series({<span style="color:#e6db74">&#39;Total Return&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(total_return <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>,<span style="color:#e6db74">&#39;CAGR&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(cagr <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>, 
-           <span style="color:#e6db74">&#39;Sharpe Ratio&#39;</span>: round(sharpe, <span style="color:#ae81ff">2</span>), <span style="color:#e6db74">&#39;Maximum Drawdown&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(drawdown<span style="color:#f92672">.</span>max() <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>,
-           <span style="color:#e6db74">&#39;MAR Ratio&#39;</span>: round(mar_ratio, <span style="color:#ae81ff">2</span>)})
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Total Return        29.77%
-CAGR                 2.94%
-Sharpe Ratio          1.15
-Maximum Drawdown     7.07%
-MAR Ratio             0.42
-</code></pre></div><p>Let&rsquo;s compare that to just US large cap stocks over the same period.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">vv_returns <span style="color:#f92672">=</span> returns[<span style="color:#e6db74">&#39;VV&#39;</span>][<span style="color:#e6db74">&#39;2011&#39;</span>:]
-vv_cum_returns <span style="color:#f92672">=</span> get_cum_returns(vv_returns)
-
-total_return <span style="color:#f92672">=</span> get_total_return(vv_returns)
-cagr <span style="color:#f92672">=</span> (total_return <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)<span style="color:#f92672">**</span>(<span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> <span style="color:#ae81ff">9</span>) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
-sharpe <span style="color:#f92672">=</span> backtest_statistics<span style="color:#f92672">.</span>sharpe_ratio(vv_returns)
-drawdown, _ <span style="color:#f92672">=</span> backtest_statistics<span style="color:#f92672">.</span>drawdown_and_time_under_water(vv_cum_returns <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
-mar_ratio <span style="color:#f92672">=</span> cagr <span style="color:#f92672">/</span> drawdown<span style="color:#f92672">.</span>max()
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">pd<span style="color:#f92672">.</span>Series({<span style="color:#e6db74">&#39;Total Return&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(total_return <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>,<span style="color:#e6db74">&#39;CAGR&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(cagr <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>, 
-           <span style="color:#e6db74">&#39;Sharpe Ratio&#39;</span>: round(sharpe, <span style="color:#ae81ff">2</span>), <span style="color:#e6db74">&#39;Maximum Drawdown&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(drawdown<span style="color:#f92672">.</span>max() <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>,
-           <span style="color:#e6db74">&#39;MAR Ratio&#39;</span>: round(mar_ratio, <span style="color:#ae81ff">2</span>)})
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Total Return        267.74%
-CAGR                 15.57%
-Sharpe Ratio           0.84
-Maximum Drawdown     34.28%
-MAR Ratio              0.45
-</code></pre></div><p>Looks like the maximum diversification portfolio achieves a higher sharpe ratio! Although it comes at the cost of signficantly lower total returns. More interesting is the MAR ratio, defined as the CAGR over the maximum drawdown. This is a useful ratio because it gauges how much extra return you are getting for taking on heavier drawdown risk. It looks like large cap US stocks win out on this metric.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> mlfinlab <span style="color:#f92672">import</span> backtest_statistics
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>total_return <span style="color:#f92672">=</span> get_total_return(port_returns)
+</span></span><span style="display:flex;"><span>cagr <span style="color:#f92672">=</span> (total_return <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)<span style="color:#f92672">**</span>(<span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> <span style="color:#ae81ff">9</span>) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>sharpe <span style="color:#f92672">=</span> backtest_statistics<span style="color:#f92672">.</span>sharpe_ratio(port_returns)
+</span></span><span style="display:flex;"><span>drawdown, _ <span style="color:#f92672">=</span> backtest_statistics<span style="color:#f92672">.</span>drawdown_and_time_under_water(cum_port_returns <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>mar_ratio <span style="color:#f92672">=</span> cagr <span style="color:#f92672">/</span> drawdown<span style="color:#f92672">.</span>max()
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>pd<span style="color:#f92672">.</span>Series({<span style="color:#e6db74">&#39;Total Return&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(total_return <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>,<span style="color:#e6db74">&#39;CAGR&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(cagr <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>, 
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;Sharpe Ratio&#39;</span>: round(sharpe, <span style="color:#ae81ff">2</span>), <span style="color:#e6db74">&#39;Maximum Drawdown&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(drawdown<span style="color:#f92672">.</span>max() <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;MAR Ratio&#39;</span>: round(mar_ratio, <span style="color:#ae81ff">2</span>)})
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Total Return        29.77%
+</span></span><span style="display:flex;"><span>CAGR                 2.94%
+</span></span><span style="display:flex;"><span>Sharpe Ratio          1.15
+</span></span><span style="display:flex;"><span>Maximum Drawdown     7.07%
+</span></span><span style="display:flex;"><span>MAR Ratio             0.42
+</span></span></code></pre></div><p>Let&rsquo;s compare that to just US large cap stocks over the same period.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>vv_returns <span style="color:#f92672">=</span> returns[<span style="color:#e6db74">&#39;VV&#39;</span>][<span style="color:#e6db74">&#39;2011&#39;</span>:]
+</span></span><span style="display:flex;"><span>vv_cum_returns <span style="color:#f92672">=</span> get_cum_returns(vv_returns)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>total_return <span style="color:#f92672">=</span> get_total_return(vv_returns)
+</span></span><span style="display:flex;"><span>cagr <span style="color:#f92672">=</span> (total_return <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)<span style="color:#f92672">**</span>(<span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> <span style="color:#ae81ff">9</span>) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>sharpe <span style="color:#f92672">=</span> backtest_statistics<span style="color:#f92672">.</span>sharpe_ratio(vv_returns)
+</span></span><span style="display:flex;"><span>drawdown, _ <span style="color:#f92672">=</span> backtest_statistics<span style="color:#f92672">.</span>drawdown_and_time_under_water(vv_cum_returns <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>mar_ratio <span style="color:#f92672">=</span> cagr <span style="color:#f92672">/</span> drawdown<span style="color:#f92672">.</span>max()
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>pd<span style="color:#f92672">.</span>Series({<span style="color:#e6db74">&#39;Total Return&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(total_return <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>,<span style="color:#e6db74">&#39;CAGR&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(cagr <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>, 
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;Sharpe Ratio&#39;</span>: round(sharpe, <span style="color:#ae81ff">2</span>), <span style="color:#e6db74">&#39;Maximum Drawdown&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(drawdown<span style="color:#f92672">.</span>max() <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;MAR Ratio&#39;</span>: round(mar_ratio, <span style="color:#ae81ff">2</span>)})
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Total Return        267.74%
+</span></span><span style="display:flex;"><span>CAGR                 15.57%
+</span></span><span style="display:flex;"><span>Sharpe Ratio           0.84
+</span></span><span style="display:flex;"><span>Maximum Drawdown     34.28%
+</span></span><span style="display:flex;"><span>MAR Ratio              0.45
+</span></span></code></pre></div><p>Looks like the maximum diversification portfolio achieves a higher sharpe ratio! Although it comes at the cost of signficantly lower total returns. More interesting is the MAR ratio, defined as the CAGR over the maximum drawdown. This is a useful ratio because it gauges how much extra return you are getting for taking on heavier drawdown risk. It looks like large cap US stocks win out on this metric.</p>
 <p>It gives a different perspective than the Sharpe ratio. The Sharpe ratio uses only standard deviation as a metric for risk. This can be very unrealistic because radically different equity curves can actually have the same Sharpe ratio and total return. That can be interestingly illustrated by reordering returns.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Okay, let&#39;s sort VV returns from least to greatest. Note that these are the same returns, just reordered.</span>
-sorted_returns <span style="color:#f92672">=</span> pd<span style="color:#f92672">.</span>Series(sorted(vv_returns<span style="color:#f92672">.</span>values), index<span style="color:#f92672">=</span>vv_returns<span style="color:#f92672">.</span>index)
-cum_sorted_returns <span style="color:#f92672">=</span> get_cum_returns(sorted_returns)
-<span style="color:#75715e"># Here you can see the cumulative return graphs. The sorted one looks very unusual, but in fact, the total return ends</span>
-<span style="color:#75715e"># up exactly the same!</span>
-cum_sorted_returns<span style="color:#f92672">.</span>plot(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">15</span>, <span style="color:#ae81ff">10</span>))
-vv_cum_returns<span style="color:#f92672">.</span>plot()
-</code></pre></div><figure class="align-center ">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># Okay, let&#39;s sort VV returns from least to greatest. Note that these are the same returns, just reordered.</span>
+</span></span><span style="display:flex;"><span>sorted_returns <span style="color:#f92672">=</span> pd<span style="color:#f92672">.</span>Series(sorted(vv_returns<span style="color:#f92672">.</span>values), index<span style="color:#f92672">=</span>vv_returns<span style="color:#f92672">.</span>index)
+</span></span><span style="display:flex;"><span>cum_sorted_returns <span style="color:#f92672">=</span> get_cum_returns(sorted_returns)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Here you can see the cumulative return graphs. The sorted one looks very unusual, but in fact, the total return ends</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># up exactly the same!</span>
+</span></span><span style="display:flex;"><span>cum_sorted_returns<span style="color:#f92672">.</span>plot(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">15</span>, <span style="color:#ae81ff">10</span>))
+</span></span><span style="display:flex;"><span>vv_cum_returns<span style="color:#f92672">.</span>plot()
+</span></span></code></pre></div><figure class="align-center ">
     <img loading="lazy" src="./output_37_1.png#center"/> 
 </figure>
 
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">total_return <span style="color:#f92672">=</span> get_total_return(sorted_returns)
-cagr <span style="color:#f92672">=</span> (total_return <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)<span style="color:#f92672">**</span>(<span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> <span style="color:#ae81ff">9</span>) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
-sharpe <span style="color:#f92672">=</span> backtest_statistics<span style="color:#f92672">.</span>sharpe_ratio(sorted_returns)
-drawdown, _ <span style="color:#f92672">=</span> backtest_statistics<span style="color:#f92672">.</span>drawdown_and_time_under_water(cum_sorted_returns <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
-mar_ratio <span style="color:#f92672">=</span> cagr <span style="color:#f92672">/</span> drawdown<span style="color:#f92672">.</span>max()
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">pd<span style="color:#f92672">.</span>Series({<span style="color:#e6db74">&#39;Total Return&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(total_return <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>,<span style="color:#e6db74">&#39;CAGR&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(cagr <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>, 
-           <span style="color:#e6db74">&#39;Sharpe Ratio&#39;</span>: round(sharpe, <span style="color:#ae81ff">2</span>), <span style="color:#e6db74">&#39;Maximum Drawdown&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(drawdown<span style="color:#f92672">.</span>max() <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>,
-           <span style="color:#e6db74">&#39;MAR Ratio&#39;</span>: round(mar_ratio, <span style="color:#ae81ff">2</span>)})
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Total Return        267.74%
-CAGR                 15.57%
-Sharpe Ratio           0.84
-Maximum Drawdown     99.97%
-MAR Ratio              0.16
-</code></pre></div><p>As you can see the total return, CAGR, and Sharpe ratio are all the same as the original return series! But the maximum drawdown is <em>significantly</em> higher. Obviously this is a worst case scenario, but it shows how drawdowns can drastically affect your portfolio performance over time. Volatility by itself doesn&rsquo;t reflect all kinds of risk because it ignores path dependency. This again is a topic worth covering in more detail at a later date.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>total_return <span style="color:#f92672">=</span> get_total_return(sorted_returns)
+</span></span><span style="display:flex;"><span>cagr <span style="color:#f92672">=</span> (total_return <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)<span style="color:#f92672">**</span>(<span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> <span style="color:#ae81ff">9</span>) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>sharpe <span style="color:#f92672">=</span> backtest_statistics<span style="color:#f92672">.</span>sharpe_ratio(sorted_returns)
+</span></span><span style="display:flex;"><span>drawdown, _ <span style="color:#f92672">=</span> backtest_statistics<span style="color:#f92672">.</span>drawdown_and_time_under_water(cum_sorted_returns <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>mar_ratio <span style="color:#f92672">=</span> cagr <span style="color:#f92672">/</span> drawdown<span style="color:#f92672">.</span>max()
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>pd<span style="color:#f92672">.</span>Series({<span style="color:#e6db74">&#39;Total Return&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(total_return <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>,<span style="color:#e6db74">&#39;CAGR&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(cagr <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>, 
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;Sharpe Ratio&#39;</span>: round(sharpe, <span style="color:#ae81ff">2</span>), <span style="color:#e6db74">&#39;Maximum Drawdown&#39;</span>: <span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>round(drawdown<span style="color:#f92672">.</span>max() <span style="color:#f92672">*</span> <span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">2</span>)<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#39;</span>,
+</span></span><span style="display:flex;"><span>           <span style="color:#e6db74">&#39;MAR Ratio&#39;</span>: round(mar_ratio, <span style="color:#ae81ff">2</span>)})
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Total Return        267.74%
+</span></span><span style="display:flex;"><span>CAGR                 15.57%
+</span></span><span style="display:flex;"><span>Sharpe Ratio           0.84
+</span></span><span style="display:flex;"><span>Maximum Drawdown     99.97%
+</span></span><span style="display:flex;"><span>MAR Ratio              0.16
+</span></span></code></pre></div><p>As you can see the total return, CAGR, and Sharpe ratio are all the same as the original return series! But the maximum drawdown is <em>significantly</em> higher. Obviously this is a worst case scenario, but it shows how drawdowns can drastically affect your portfolio performance over time. Volatility by itself doesn&rsquo;t reflect all kinds of risk because it ignores path dependency. This again is a topic worth covering in more detail at a later date.</p>
 <h1 id="conclusions">Conclusions<a hidden class="anchor" aria-hidden="true" href="#conclusions">#</a></h1>
 <hr>
 <p>Even considering the backtest and attributes of this simple strategy shows deep complexity. In future, I want to compare this optimization strategy to others like the traditional mean-variance approach, hierarchical risk parity, minimum variance, and others. Along with that is discussing extensions like using models to provide forecasts for asset volatility and correlation.</p>
@@ -460,6 +460,7 @@ MAR Ratio              0.16
 
 
   </div>
+
   <footer class="post-footer">
     <ul class="post-tags">
       <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/">portfolio-optimization</a></li>
@@ -471,27 +472,28 @@ MAR Ratio              0.16
   </footer>
 </article>
     </main>
-    <footer class="footer">
-    <span>&copy; 2022 <a href="http://eadains.github.io/OptionallyBayesHugo/">Optionally Bayes</a></span>
+    
+<footer class="footer">
+    <span>&copy; 2023 <a href="http://eadains.github.io/OptionallyBayesHugo/">Optionally Bayes</a></span>
     <span>
         Powered by
         <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
-        <a href="https://git.io/hugopapermod" rel="noopener" target="_blank">PaperMod</a>
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
     </span>
 </footer>
-<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)">
-    <button class="top-link" id="top-link" type="button" accesskey="g">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
-            <path d="M12 6H0l6-6z" />
-        </svg>
-    </button>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
 </a>
 
 <script>
     let menu = document.getElementById('menu')
-    menu.scrollLeft = localStorage.getItem("menu-scroll-position");
-    menu.onscroll = function () {
-        localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
     }
 
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
