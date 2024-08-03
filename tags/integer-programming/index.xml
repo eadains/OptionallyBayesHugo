@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>integer-programming on Optionally Bayes</title>
+    <title>Integer-Programming on Optionally Bayes</title>
     <link>http://eadains.github.io/OptionallyBayesHugo/tags/integer-programming/</link>
-    <description>Recent content in integer-programming on Optionally Bayes</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <description>Recent content in Integer-Programming on Optionally Bayes</description>
+    <generator>Hugo -- 0.131.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 06 Jul 2022 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/integer-programming/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 06 Jul 2022 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/integer-programming/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Integer Programming for Daily Fantasy Sports</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/intprog_dfs/</link>
       <pubDate>Wed, 06 Jul 2022 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/intprog_dfs/</guid>
       <description>Using Integer Programming to find Daily Fantasy Sports lineups with the highest expected points.</description>
     </item>
-    
   </channel>
 </rss>
