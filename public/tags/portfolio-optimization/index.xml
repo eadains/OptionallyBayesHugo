@@ -1,38 +1,33 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>portfolio-optimization on Optionally Bayes</title>
+    <title>Portfolio-Optimization on Optionally Bayes</title>
     <link>http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/</link>
-    <description>Recent content in portfolio-optimization on Optionally Bayes</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <description>Recent content in Portfolio-Optimization on Optionally Bayes</description>
+    <generator>Hugo -- 0.131.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 18 Dec 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 18 Dec 2021 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Exploring the Kelly Criterion: The Multi-Period Problem</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_multiperiod/</link>
       <pubDate>Sat, 18 Dec 2021 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_multiperiod/</guid>
       <description>Exploring how mean-variance methods and the Kelly Criterion compare in multi-period investments</description>
     </item>
-    
     <item>
       <title>Clustering ETFs for Optimally Diversified Portfolio</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/etf_clustering/</link>
       <pubDate>Sat, 28 Aug 2021 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/etf_clustering/</guid>
       <description>Using clustering algorithms for identifying optimal subset of ETFs for portfolio construction.</description>
     </item>
-    
     <item>
       <title>A Most Diversified ETF Portfolio</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/mdp_etf_portfolio/</link>
       <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/mdp_etf_portfolio/</guid>
       <description>Constructing a portfolio from a selection of ETFs to maximize the diversification ratio</description>
     </item>
-    
   </channel>
 </rss>

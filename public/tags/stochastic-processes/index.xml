@@ -1,20 +1,26 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>stochastic-processes on Optionally Bayes</title>
+    <title>Stochastic-Processes on Optionally Bayes</title>
     <link>http://eadains.github.io/OptionallyBayesHugo/tags/stochastic-processes/</link>
-    <description>Recent content in stochastic-processes on Optionally Bayes</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <description>Recent content in Stochastic-Processes on Optionally Bayes</description>
+    <generator>Hugo -- 0.131.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 10 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/stochastic-processes/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 03 Aug 2024 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/stochastic-processes/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Ergodicity Breaking and the Coin Toss Game</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/posts/ergo_breaking/</link>
+      <pubDate>Sat, 03 Aug 2024 00:00:00 +0000</pubDate>
+      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/ergo_breaking/</guid>
+      <description>Revealing the strangeness of ergodicity breaking with a simple game</description>
+    </item>
     <item>
       <title>Simulation of Stochastic Processes</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/stoch_proc/</link>
       <pubDate>Fri, 10 Feb 2023 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/stoch_proc/</guid>
       <description>Simulating Brownian Motion and two common stochastic processes.</description>
     </item>
-    
   </channel>
 </rss>

@@ -1,29 +1,26 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>forecasting on Optionally Bayes</title>
+    <title>Forecasting on Optionally Bayes</title>
     <link>http://eadains.github.io/OptionallyBayesHugo/tags/forecasting/</link>
-    <description>Recent content in forecasting on Optionally Bayes</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <description>Recent content in Forecasting on Optionally Bayes</description>
+    <generator>Hugo -- 0.131.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 07 Apr 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/forecasting/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 07 Apr 2021 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/forecasting/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Mixture Density Network for Forecasting Realized Volatility</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/vol_mdn/</link>
       <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/vol_mdn/</guid>
       <description>Using a mixture density neural network implemented in PyTorch to forecast the distribution of future realized volatility.</description>
     </item>
-    
     <item>
       <title>Bayesian Autoregressive Volatility Forecasting</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/vol_linear_model/</link>
       <pubDate>Wed, 17 Mar 2021 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/vol_linear_model/</guid>
       <description>Using a simple bayesian autoregressive model to forecast future volatility</description>
     </item>
-    
   </channel>
 </rss>

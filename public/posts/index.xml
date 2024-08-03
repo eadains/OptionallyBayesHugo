@@ -4,134 +4,114 @@
     <title>Posts on Optionally Bayes</title>
     <link>http://eadains.github.io/OptionallyBayesHugo/posts/</link>
     <description>Recent content in Posts on Optionally Bayes</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo -- 0.131.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 10 Feb 2023 00:00:00 +0000</lastBuildDate><atom:link href="http://eadains.github.io/OptionallyBayesHugo/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 03 Aug 2024 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://eadains.github.io/OptionallyBayesHugo/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Ergodicity Breaking and the Coin Toss Game</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/posts/ergo_breaking/</link>
+      <pubDate>Sat, 03 Aug 2024 00:00:00 +0000</pubDate>
+      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/ergo_breaking/</guid>
+      <description>Revealing the strangeness of ergodicity breaking with a simple game</description>
+    </item>
     <item>
       <title>Simulation of Stochastic Processes</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/stoch_proc/</link>
       <pubDate>Fri, 10 Feb 2023 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/stoch_proc/</guid>
       <description>Simulating Brownian Motion and two common stochastic processes.</description>
     </item>
-    
     <item>
       <title>Integer Programming for Daily Fantasy Sports</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/intprog_dfs/</link>
       <pubDate>Wed, 06 Jul 2022 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/intprog_dfs/</guid>
       <description>Using Integer Programming to find Daily Fantasy Sports lineups with the highest expected points.</description>
     </item>
-    
     <item>
       <title>Decomposing Volatility: Continuous and Jump Component</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/vol_decomp/</link>
       <pubDate>Wed, 11 May 2022 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/vol_decomp/</guid>
       <description>Illustrating how realized volatility can decomposed into a continuous and jump component, providing new modelling opportunities.</description>
     </item>
-    
     <item>
       <title>Exploring the Kelly Criterion: The Multi-Period Problem</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_multiperiod/</link>
       <pubDate>Sat, 18 Dec 2021 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_multiperiod/</guid>
       <description>Exploring how mean-variance methods and the Kelly Criterion compare in multi-period investments</description>
     </item>
-    
     <item>
       <title>Exploring the Kelly Criterion: Drawdown</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_drawdown/</link>
       <pubDate>Wed, 08 Dec 2021 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_drawdown/</guid>
       <description>Exploring the Kelly Criterion and its drawdown properties using Monte Carlo</description>
     </item>
-    
     <item>
       <title>Clustering ETFs for Optimally Diversified Portfolio</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/etf_clustering/</link>
       <pubDate>Sat, 28 Aug 2021 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/etf_clustering/</guid>
       <description>Using clustering algorithms for identifying optimal subset of ETFs for portfolio construction.</description>
     </item>
-    
     <item>
       <title>Stochastic Volatility Models in Stan</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/stoch_vol/</link>
       <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/stoch_vol/</guid>
       <description>Fitting 2 different Stochastic Volatility Models to S&amp;amp;P 500 returns and finding out which is better</description>
     </item>
-    
     <item>
       <title>Moving my Data to Amazon Web Services</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/aws_database/</link>
       <pubDate>Thu, 05 Aug 2021 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/aws_database/</guid>
       <description>Lessons learned migrating my data to AWS</description>
     </item>
-    
     <item>
       <title>A Note on Hugo</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/hugo_move/</link>
       <pubDate>Sun, 27 Jun 2021 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/hugo_move/</guid>
       <description>My comments on how Hugo compares to Pelican for static site generation</description>
     </item>
-    
     <item>
       <title>Monte Carlo Methods for Option Pricing and Greeks</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/option_pricing/</link>
       <pubDate>Sat, 01 May 2021 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/option_pricing/</guid>
       <description>Using PyTorch to easily compute Option Greeks first using Black-Scholes and then Monte Carlo methods.</description>
     </item>
-    
     <item>
       <title>Mixture Density Network for Forecasting Realized Volatility</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/vol_mdn/</link>
       <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/vol_mdn/</guid>
       <description>Using a mixture density neural network implemented in PyTorch to forecast the distribution of future realized volatility.</description>
     </item>
-    
     <item>
       <title>Bayesian Autoregressive Volatility Forecasting</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/vol_linear_model/</link>
       <pubDate>Wed, 17 Mar 2021 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/vol_linear_model/</guid>
       <description>Using a simple bayesian autoregressive model to forecast future volatility</description>
     </item>
-    
     <item>
       <title>Comparison of Volatility Estimators</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/vol_estimators/</link>
       <pubDate>Sun, 07 Mar 2021 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/vol_estimators/</guid>
       <description>Comparing Garman-Klass estimator to 5-minute Realized Volatility estimator.</description>
     </item>
-    
     <item>
       <title>A Most Diversified ETF Portfolio</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/mdp_etf_portfolio/</link>
       <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
-      
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/mdp_etf_portfolio/</guid>
       <description>Constructing a portfolio from a selection of ETFs to maximize the diversification ratio</description>
     </item>
-    
   </channel>
 </rss>
