@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><script src="/OptionallyBayesHugo/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=OptionallyBayesHugo/livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>Trending Filtering using CVXPY | Optionally Bayes</title>
+<meta name="keywords" content="trend-filtering, non-parametric-regression, machine-learning">
+<meta name="description" content="Fitting a Trend Filtering Model Using CVXPY">
+<meta name="author" content="Erik Dains">
+<link rel="canonical" href="http://localhost:1313/OptionallyBayesHugo/posts/09_15_2024/trend_filter/">
+<link crossorigin="anonymous" href="/OptionallyBayesHugo/assets/css/stylesheet.bcfc03792d6caa596ec2d6e8f4e36ba32f6840d6e52e04254b294666b3f67ad2.css" integrity="sha256-vPwDeS1sqlluwtbo9ONroy9oQNblLgQlSylGZrP2etI=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/OptionallyBayesHugo/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/OptionallyBayesHugo/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/OptionallyBayesHugo/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/OptionallyBayesHugo/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/OptionallyBayesHugo/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/OptionallyBayesHugo/posts/09_15_2024/trend_filter/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript>
+<script>
+    MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']]
+        }
+    };
+</script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+</script>
+
+</head>
+
+<body class="" id="top">
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:1313/OptionallyBayesHugo/" accesskey="h" title="Optionally Bayes (Alt + H)">Optionally Bayes</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:1313/OptionallyBayesHugo/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/OptionallyBayesHugo/tags/" title="Tags">
+                    <span>Tags</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/OptionallyBayesHugo/archives/" title="Archive">
+                    <span>Archive</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/OptionallyBayesHugo/search/" title="Search (Alt &#43; /)" accesskey=/>
+                    <span>Search</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Trending Filtering using CVXPY
+    </h1>
+    <div class="post-meta"><span title='2024-09-15 00:00:00 +0000 UTC'>September 15, 2024</span>&nbsp;·&nbsp;Erik Dains
+
+</div>
+  </header> 
+  <div class="post-content"><p>I&rsquo;ve recently come across a new-to-me, and generally relatively recently developed, method of non-parametric regression called trend filtering. There is a paper by Tibshirani (2014) that establishes nice theoretical results, namely that trend filtering achieves a better minimax convergence rate to the true underlying function than traditional smoothing splines. It is also very fast to fit in the mean squared error regime, as I will show below.</p>
+<h1 id="underlying-function">Underlying Function<a hidden class="anchor" aria-hidden="true" href="#underlying-function">#</a></h1>
+<p>As usual for these demos, we start by defining our true underlying function and take some noisy sample of it. Here, I&rsquo;m borrowing the example given in Politsch et al. (2020) which is a function that has a smooth global trend with some intermittent &ldquo;bumps&rdquo; given by some radial basis functions:</p>
+<p>$$
+f(t) = 6 \sum_{k=1}^3 (t - 0.5)^k + 2.5 \sum_{j=1}^4 (-1)^j \phi_j(t)
+$$</p>
+<p>where the $\phi_j$ are given by the Gaussian RBF:</p>
+<p>$$
+\phi_j(x) = \exp \left( - \left( \epsilon \left( x - \psi \right) \right)^2 \right)
+$$</p>
+<p>where $\psi$ is the center point and $\epsilon$ is the bandwidth. Here we set $\psi=0.2, 0.4, 0.6, 0.8$ and $\epsilon=50$. We take the inputs as $t_i \sim \text{Uniform}(0, 1)$</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#66d9ef">as</span> plt
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> functools <span style="color:#f92672">import</span> partial
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> cvxpy <span style="color:#66d9ef">as</span> cp
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> scipy
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>rng <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>default_rng()
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>t_i <span style="color:#f92672">=</span> rng<span style="color:#f92672">.</span>uniform(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">500</span>)
+</span></span><span style="display:flex;"><span>t_i<span style="color:#f92672">.</span>sort()
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">rbf</span>(x, center, epsilon):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> np<span style="color:#f92672">.</span>exp(<span style="color:#f92672">-</span>((epsilon <span style="color:#f92672">*</span> (x <span style="color:#f92672">-</span> center)) <span style="color:#f92672">**</span> <span style="color:#ae81ff">2</span>))
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>rbfs <span style="color:#f92672">=</span> [partial(rbf, center<span style="color:#f92672">=</span>i, epsilon<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>) <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> [<span style="color:#ae81ff">0.2</span>, <span style="color:#ae81ff">0.4</span>, <span style="color:#ae81ff">0.6</span>, <span style="color:#ae81ff">0.8</span>]]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>true_y <span style="color:#f92672">=</span> <span style="color:#ae81ff">6</span> <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>sum([(t_i <span style="color:#f92672">-</span> <span style="color:#ae81ff">0.5</span>) <span style="color:#f92672">**</span> k <span style="color:#66d9ef">for</span> k <span style="color:#f92672">in</span> [<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">3</span>]], axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>) <span style="color:#f92672">+</span> <span style="color:#ae81ff">2.5</span> <span style="color:#f92672">*</span> np<span style="color:#f92672">.</span>sum(
+</span></span><span style="display:flex;"><span>    [(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">**</span> j <span style="color:#f92672">*</span> rbfs[j <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>](t_i) <span style="color:#66d9ef">for</span> j <span style="color:#f92672">in</span> [<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">4</span>]], axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>obs_y <span style="color:#f92672">=</span> true_y <span style="color:#f92672">+</span> rng<span style="color:#f92672">.</span>normal(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0.5</span><span style="color:#f92672">**</span><span style="color:#ae81ff">2</span>, len(t_i))
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(t_i, true_y, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;r&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>scatter(t_i, obs_y, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.3</span>, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;t&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;y&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>legend([<span style="color:#e6db74">&#34;True Function&#34;</span>, <span style="color:#e6db74">&#34;Observed Values&#34;</span>])
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./trend_filtering_6_1.png#center"/> 
+</figure>
+
+<h1 id="trend-filtering-as-a-basis-expansion">Trend Filtering as a Basis Expansion<a hidden class="anchor" aria-hidden="true" href="#trend-filtering-as-a-basis-expansion">#</a></h1>
+<p>The first useful way to look at trend filtering is via a basis expansion perspective exactly like smoothing splines. Tibshirani prove that trend filtering has a basis function expansion given in equation (25), which I recreate here. Politsch et al. call this a <em>falling factorial</em> basis because of the iterated multiplicative form they take. Altering Tibshirani&rsquo;s notation slightly:</p>
+<p>$$
+j = 1, 2, \ldots, n \
+h_j(x) = x^{j-1} \quad \text{when} \quad j \leq k+1 \
+h_j(x) = \prod_{\ell=1}^k (x - x_{j-k-1+\ell}) * \mathbb{1}(x \ge x_{j-1}) \quad \text{when} \quad j \ge k+2
+$$</p>
+<p>where $n$ gives the total number of input points, and $k$ is the order of the trend filtering method. This number is related to the order of a smoothing spline in that it determines the degree of the piecewise polynomial that gets fitted to each segment of the input space. $k=0$ corresponds to a piecewise constant basis, $k=1$ to piecewise linear, and so on.</p>
+<p>Python ranges generating sequences from 0 to $n-1$ so let&rsquo;s adjust our $j$ index to account for this:</p>
+<p>$$
+i = j - 1 = 0, 1, \ldots, n-1 \
+h_i(x) = x^i \quad \text{when} \quad i \le k \
+h_i(x) = \prod_{\ell=1}^k (x - x_{i-k+\ell}) * \mathbb{1}(x \ge x_{i}) = \prod_{\ell=0}^{k-1} (x - x_{i-k+\ell+1}) * \mathbb{1}(x \ge x_{i})\quad \text{when} \quad i \ge k+1
+$$
+However, Python lists are also zero-indexed so we need another adjustment on our subscripts to account for that too:
+$$
+h_i(x) = \prod_{\ell=0}^{k-1} (x - x_{i-k+\ell}) * \mathbb{1}(x \ge x_{i-1})\quad \text{when} \quad i \ge k+1
+$$</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">tf_basis</span>(x, k, x_i):
+</span></span><span style="display:flex;"><span>    results <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>    n <span style="color:#f92672">=</span> len(x_i)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(n):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> i <span style="color:#f92672">&lt;=</span> k:
+</span></span><span style="display:flex;"><span>            h <span style="color:#f92672">=</span> x<span style="color:#f92672">**</span>i
+</span></span><span style="display:flex;"><span>            results<span style="color:#f92672">.</span>append(h)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">elif</span> i <span style="color:#f92672">&gt;=</span> k <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>:
+</span></span><span style="display:flex;"><span>            h <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">for</span> ell <span style="color:#f92672">in</span> range(k):
+</span></span><span style="display:flex;"><span>                h <span style="color:#f92672">*=</span> x <span style="color:#f92672">-</span> x_i[i <span style="color:#f92672">-</span> k <span style="color:#f92672">+</span> ell]
+</span></span><span style="display:flex;"><span>            h <span style="color:#f92672">*=</span> int(x <span style="color:#f92672">&gt;=</span> x_i[i <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>            results<span style="color:#f92672">.</span>append(h)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> results
+</span></span></code></pre></div><p>Now, we can visualize this on some sample points. Here we set $k=2$, take our data to be $x_i=0, 0.2, 0.4, 0.6, 0.8, 1$, and plot the basis functions evaluated over the range $[0, 1]$:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>x_i <span style="color:#f92672">=</span> [<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0.2</span>, <span style="color:#ae81ff">0.4</span>, <span style="color:#ae81ff">0.6</span>, <span style="color:#ae81ff">0.8</span>, <span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>xs <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">100</span>)
+</span></span><span style="display:flex;"><span>test <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array([tf_basis(x, <span style="color:#ae81ff">2</span>, x_i) <span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> xs])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> n <span style="color:#f92672">in</span> range(test<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">1</span>]):
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>plot(xs, test[:, n])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> x_i:
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>axvline(x, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.25</span>, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;x&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;y&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;k = 2&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./trend_filtering_10_1.png#center"/> 
+</figure>
+
+<p>We can also see how changing $k$ changes the type of basis functions we get. Namely, if we set $k=0$ then we get a piecewise constant set of basis functions:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>test <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array([tf_basis(x, <span style="color:#ae81ff">0</span>, x_i) <span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> xs])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> n <span style="color:#f92672">in</span> range(test<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">1</span>]):
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>plot(xs, test[:, n])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> x <span style="color:#f92672">in</span> x_i:
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>axvline(x, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.25</span>, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;x&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;y&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;k = 0&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./trend_filtering_12_1.png#center"/> 
+</figure>
+
+<h1 id="fitting-the-basis-function-approach">Fitting the Basis Function Approach<a hidden class="anchor" aria-hidden="true" href="#fitting-the-basis-function-approach">#</a></h1>
+<p>Now, we can express out model in the typical way as a function of the basis components:</p>
+<p>$$
+f(x) = \sum_{i=1}^n \alpha_i h_i(x)
+$$</p>
+<p>where $\alpha_i$ are our unknown coefficients. To fit this model we can form a design matrix where each row is the vector of the basis function outputs evaluated at the input point:</p>
+<p>$$
+\mathbf{X}_{i,j} = h_j(x_i) \quad \text{where} \quad i = 1, \ldots, n \quad j = 1, \ldots, n
+$$</p>
+<p>which gives us an $n \times n$ matrix. We can then form an $n \times 1$ coefficient vector and our regression becomes:</p>
+<p>$$
+y = \mathbf{X} \beta + \epsilon
+$$</p>
+<p>where if we assume that $\epsilon \sim \text{Normal}(0, \sigma^2)$ then we can use the standard least squares approach to find $\beta$. Note that because of the form of the basis expansion the first column of $\mathbf{X}$ will be all ones so we don&rsquo;t need to include a seperate intercept term.</p>
+<p>We can also include an $\ell_1$ regularization term to our $\beta$ vector to promote sparsity, which gives us the objective function:</p>
+<p>$$
+\hat{\beta} = \argmin_\beta \frac{1}{2} \Vert{y - \mathbf{X}\beta} \Vert_2^2 + \lambda \Vert \beta \Vert_1
+$$</p>
+<p>Letting $k=1$ for a piecewise linear basis, and $\lambda = 0.01$, we can easily fit this model using cvxpy because our objective is convex:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>k <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>basis_eval <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array([tf_basis(t, k, t_i) <span style="color:#66d9ef">for</span> t <span style="color:#f92672">in</span> t_i])
+</span></span><span style="display:flex;"><span>beta <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Variable(len(t_i))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>objective <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Minimize(
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">0.5</span> <span style="color:#f92672">*</span> cp<span style="color:#f92672">.</span>sum_squares(obs_y <span style="color:#f92672">-</span> basis_eval <span style="color:#f92672">@</span> beta) <span style="color:#f92672">+</span> <span style="color:#ae81ff">0.01</span> <span style="color:#f92672">*</span> cp<span style="color:#f92672">.</span>norm(beta[k <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> :], <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>prob <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Problem(objective)
+</span></span><span style="display:flex;"><span>results <span style="color:#f92672">=</span> prob<span style="color:#f92672">.</span>solve(solver<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;CLARABEL&#34;</span>, verbose<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>predict <span style="color:#f92672">=</span> basis_eval <span style="color:#f92672">@</span> beta<span style="color:#f92672">.</span>value<span style="color:#f92672">.</span>round(<span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(t_i, predict, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>scatter(t_i, obs_y, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.4</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;x&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;y&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>legend([<span style="color:#e6db74">&#34;Fitted Function&#34;</span>, <span style="color:#e6db74">&#34;Observed Values&#34;</span>])
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;k=1, lambda = 0.01&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./trend_filtering_15_1.png#center"/> 
+</figure>
+
+<p>We can look at our fitted coefficients to see how many non-zero coefficients we get:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>sum(np<span style="color:#f92672">.</span>abs(beta<span style="color:#f92672">.</span>value<span style="color:#f92672">.</span>round(<span style="color:#ae81ff">2</span>)) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>)
+</span></span></code></pre></div><pre><code>33
+</code></pre>
+<p>We can also see what happens when we increase our regularization parameter to $\lambda=5$:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>k <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>basis_eval <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array([tf_basis(t, k, t_i) <span style="color:#66d9ef">for</span> t <span style="color:#f92672">in</span> t_i])
+</span></span><span style="display:flex;"><span>beta <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Variable(len(t_i))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>objective <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Minimize(
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">0.5</span> <span style="color:#f92672">*</span> cp<span style="color:#f92672">.</span>sum_squares(obs_y <span style="color:#f92672">-</span> basis_eval <span style="color:#f92672">@</span> beta) <span style="color:#f92672">+</span> <span style="color:#ae81ff">5</span> <span style="color:#f92672">*</span> cp<span style="color:#f92672">.</span>norm(beta[k <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> :], <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>prob <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Problem(objective)
+</span></span><span style="display:flex;"><span>results <span style="color:#f92672">=</span> prob<span style="color:#f92672">.</span>solve(solver<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;CLARABEL&#34;</span>, verbose<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>predict <span style="color:#f92672">=</span> basis_eval <span style="color:#f92672">@</span> beta<span style="color:#f92672">.</span>value<span style="color:#f92672">.</span>round(<span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(t_i, predict, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>scatter(t_i, obs_y, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.4</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;x&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;y&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>legend([<span style="color:#e6db74">&#34;Fitted Function&#34;</span>, <span style="color:#e6db74">&#34;Observed Values&#34;</span>])
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;k=1, lambda = 5&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./trend_filtering_20_1.png#center"/> 
+</figure>
+
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>sum(np<span style="color:#f92672">.</span>abs(beta<span style="color:#f92672">.</span>value<span style="color:#f92672">.</span>round(<span style="color:#ae81ff">2</span>)) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>)
+</span></span></code></pre></div><pre><code>3
+</code></pre>
+<p>We see a dramatically fewer number of non-zero coefficients, and we can also see one of the nice features of trend filtering: the &ldquo;knots&rdquo; of the basis functions are chosen automatically, in a sense. If we look at <em>where</em> the $\beta$ coefficients are non-zero:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>np<span style="color:#f92672">.</span>where(np<span style="color:#f92672">.</span>abs(beta<span style="color:#f92672">.</span>value<span style="color:#f92672">.</span>round(<span style="color:#ae81ff">2</span>)) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>)
+</span></span></code></pre></div><pre><code>array([  0,   1, 281])
+</code></pre>
+<p>We can see that it&rsquo;s the first column, the intercept, and then another value along the domain of our input data. Essentially, the model has chosen to fit a piecewise linear function from the first value to this intermediate value, and another piecewise linear function over the rest of the domain. We can add the respective $x$-values of these points to our plot to see this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>predict <span style="color:#f92672">=</span> basis_eval <span style="color:#f92672">@</span> beta<span style="color:#f92672">.</span>value<span style="color:#f92672">.</span>round(<span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(t_i, predict, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>scatter(t_i, obs_y, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.4</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> np<span style="color:#f92672">.</span>where(np<span style="color:#f92672">.</span>abs(beta<span style="color:#f92672">.</span>value)<span style="color:#f92672">.</span>round(<span style="color:#ae81ff">2</span>) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>)[<span style="color:#ae81ff">0</span>]:
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>axvline(t_i[i], color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;red&#34;</span>, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.25</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;x&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;y&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>legend([<span style="color:#e6db74">&#34;Fitted Function&#34;</span>, <span style="color:#e6db74">&#34;Observed Values&#34;</span>, <span style="color:#e6db74">&#34;Knots&#34;</span>])
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;k=1, lambda = 5&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./trend_filtering_25_1.png#center"/> 
+</figure>
+
+<p>Where you can see that values where the $\beta$ coefficients are non-zero are the same places where the slope of the lines changes. As the regularization parameter gets smaller, more and more knot points are selected, creating more and more piecewise functions over different segments of the input domain. This is a huge plus for trend filtering compared to smoothing splines: the model selects the knot points automatically.</p>
+<h1 id="difference-operator-approach">Difference Operator Approach<a hidden class="anchor" aria-hidden="true" href="#difference-operator-approach">#</a></h1>
+<p>Now, the basis function approach is easy to interpret and understand, but it is very computationally expensive because we have to evaluate every basis function at every point. The size of our design matrix scales with the square of the number of inputs, which is untenable for even moderately sized datasets.</p>
+<p>Luckily, there is an easier way: we can still fit a unique parameter to each input data point, but we can adjust our regularization penalty so that it constrains <em>adjacent</em> coefficients to be the same as each other. As Tibshirani proves, this process is equivalent to the basis function approach, and, as we shall see, grants certain sparsity properties that make the model fitting process much faster.</p>
+<p>The first key to this is the <em>difference operator matrix</em>. This is what defines our regularization constraint. Let&rsquo;s first look at the case where $k=0$. Here, we want to constrain the first difference of our coefficients:</p>
+<p>$$
+\sum_{i=1}^{n-1} \vert \beta_i - \beta_{i+1} \vert
+$$</p>
+<p>and we can achieve this by creating this matrix given by equation (3) in Tibshirani:</p>
+<p>$$
+D^{(1)} = \begin{bmatrix} -1 &amp; 1 &amp; 0 &amp; \ldots &amp; 0 &amp; 0 \
+0 &amp; -1 &amp; 1 &amp; \ldots &amp; 0 &amp; 0 \
+\vdots \
+0 &amp; 0 &amp; 0 &amp; \ldots &amp; -1 &amp; 1
+\end{bmatrix} \in \mathbb{R}^{(n-1) \times n}
+$$</p>
+<p>and then we can see that:</p>
+<p>$$
+\Vert D^{(1)} \beta \Vert_1 = \sum_{i=1}^{n-1} \vert \beta_i - \beta_{i+1} \vert
+$$</p>
+<p>Defining our constraint like this gives us a huge computational speedup because the $D$ matrix is <em>banded</em>, meaning only specific values along the diagonal are non-zero and the rest are all exactly zero. This means that smart optimization algorithms can ignore the computations where it knows that there is a multiplication by zero, which don&rsquo;t contribute anything to the objective value.</p>
+<p>The first order difference matrix gives us the piecewise-constant basis, but you can construct higher order differences to get other bases for higher values of $k$. For instance, the second difference matrix when $k=1$ looks like this:</p>
+<p>$$
+D^{(2)} = \begin{bmatrix} 1 &amp; -2 &amp; 1 &amp; 0 &amp; \ldots &amp; 0 &amp; 0 \
+0 &amp; 1 &amp; -2 &amp; 1 &amp; \ldots &amp; 0 &amp; 0 \
+\vdots \
+0 &amp; 0 &amp; 0 &amp; \ldots &amp; 1 &amp; -2 &amp; 1
+\end{bmatrix} \in \mathbb{R}^{(n-2) \times n}
+$$</p>
+<p>There is one additional subtlety: these matrices only work when we have evenly space inputs, which is very often not the case in practice. In the supplement to Tibshirani (2014), an adjustment to these difference matrices is provided to account for unevenly space inputs. First, note that we can define the above difference matrices recursively:</p>
+<p>$$
+D^{(k+1)} = \hat{D}^{(1)} \cdot D^{(k)}
+$$</p>
+<p>where $\hat{D}^{(1)}$ in this formula is the $(n-k-1) \times (n-k)$ version of the $D^{(1)}$ matrix we defined above. So, for instance, if $k=1$ then we have:</p>
+<p>$$
+D^{(k+1)} = D^{(2)} = \hat{D}^{(1)} \cdot D^{(1)}
+$$</p>
+<p>where $\hat{D}^{(1)}$ has dimensions $(n-2) \times (n-1)$ and $D^{(1)}$ has dimension $(n-1) \times (n)$ so in the end we get a matrix with dimension $(n-2) \times (n)$ which is the desired form.</p>
+<p>Then, the adjustment for non-even spacing is given as:</p>
+<p>$$
+D^{(k+1)} = \hat{D}^{(1)} \cdot \text{diag} \left( \frac{k}{x_{k+1} - x_1}, \frac{k}{x_{k+2} - x_2}, \ldots, \frac{k}{x_n - x_{n-k}} \right) \cdot D^{(k)}
+$$</p>
+<p>So, in our case of $k=1$ we have:</p>
+<p>$$
+D^{(2)} = \hat{D}^{(1)} \cdot \text{diag} \left( \frac{k}{x_2 - x_1}, \frac{k}{x_3 - x_2}, \ldots, \frac{k}{x_n - x_{n-1}} \right) \cdot D^{(1)}
+$$</p>
+<p>Note that the case where $k=0$ requires no spacing adjustment.</p>
+<p>We can make a nice recursive function that computes this matrix as follows:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">make_D_matrix</span>(xs: np<span style="color:#f92672">.</span>ndarray, k: int, uneven: bool):
+</span></span><span style="display:flex;"><span>    n <span style="color:#f92672">=</span> xs<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>    ones <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>ones(n)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> k <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> scipy<span style="color:#f92672">.</span>sparse<span style="color:#f92672">.</span>spdiags(
+</span></span><span style="display:flex;"><span>            np<span style="color:#f92672">.</span>vstack([<span style="color:#f92672">-</span>ones, ones]), range(<span style="color:#ae81ff">2</span>), m<span style="color:#f92672">=</span>n <span style="color:#f92672">-</span> k <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>, n<span style="color:#f92672">=</span>n
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>        d_hat_1 <span style="color:#f92672">=</span> scipy<span style="color:#f92672">.</span>sparse<span style="color:#f92672">.</span>spdiags(
+</span></span><span style="display:flex;"><span>            np<span style="color:#f92672">.</span>vstack([<span style="color:#f92672">-</span>ones, ones]), range(<span style="color:#ae81ff">2</span>), m<span style="color:#f92672">=</span>n <span style="color:#f92672">-</span> k <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>, n<span style="color:#f92672">=</span>n <span style="color:#f92672">-</span> k
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> uneven:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> scipy<span style="color:#f92672">.</span>sparse<span style="color:#f92672">.</span>bsr_array(
+</span></span><span style="display:flex;"><span>                d_hat_1
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">@</span> np<span style="color:#f92672">.</span>diag(<span style="color:#ae81ff">1</span> <span style="color:#f92672">/</span> (t_i[k:] <span style="color:#f92672">-</span> t_i[:<span style="color:#f92672">-</span>k]))
+</span></span><span style="display:flex;"><span>                <span style="color:#f92672">@</span> make_D_matrix(xs, k <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>, uneven)
+</span></span><span style="display:flex;"><span>            )
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> d_hat_1 <span style="color:#f92672">@</span> make_D_matrix(xs, k <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>, uneven)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>D <span style="color:#f92672">=</span> make_D_matrix(t_i, k<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, uneven<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span></code></pre></div><p>We can then define our objective function as:</p>
+<p>$$
+\hat{\beta} = \argmin_\beta \frac{1}{2} \Vert y - \beta \Vert_2^2 + \lambda \Vert D^{(k+1)} \beta \Vert_1
+$$</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>beta <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Variable(len(t_i))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>objective <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Minimize(
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">0.5</span> <span style="color:#f92672">*</span> cp<span style="color:#f92672">.</span>sum_squares(obs_y <span style="color:#f92672">-</span> beta) <span style="color:#f92672">+</span> <span style="color:#ae81ff">5</span> <span style="color:#f92672">*</span> cp<span style="color:#f92672">.</span>norm(D <span style="color:#f92672">@</span> beta, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>prob <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Problem(objective)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>results <span style="color:#f92672">=</span> prob<span style="color:#f92672">.</span>solve(solver<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;CLARABEL&#34;</span>)
+</span></span></code></pre></div><p>We can see that we recover the same piecewise linear solution as we did above, although with one fewer breakpoint and a slightly different value for the other, likely because of small numerical differences:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(t_i, beta<span style="color:#f92672">.</span>value<span style="color:#f92672">.</span>round(<span style="color:#ae81ff">2</span>), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>scatter(t_i, obs_y, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.4</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> np<span style="color:#f92672">.</span>where(np<span style="color:#f92672">.</span>abs(D <span style="color:#f92672">@</span> beta<span style="color:#f92672">.</span>value)<span style="color:#f92672">.</span>round(<span style="color:#ae81ff">2</span>) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>)[<span style="color:#ae81ff">0</span>]:
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>axvline(t_i[i], color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;red&#34;</span>, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.25</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;x&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;y&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>legend([<span style="color:#e6db74">&#34;Fitted Function&#34;</span>, <span style="color:#e6db74">&#34;Observed Values&#34;</span>, <span style="color:#e6db74">&#34;Knots&#34;</span>])
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;k=1, lambda = 5&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./trend_filtering_33_1.png#center"/> 
+</figure>
+
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>np<span style="color:#f92672">.</span>where(np<span style="color:#f92672">.</span>abs(D <span style="color:#f92672">@</span> beta<span style="color:#f92672">.</span>value)<span style="color:#f92672">.</span>round(<span style="color:#ae81ff">2</span>) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>)
+</span></span></code></pre></div><pre><code>array([279])
+</code></pre>
+<p>We can also look at what a piecewise constant approach, with $k=0$, looks like:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># Note that the uneven parameter is redundant here</span>
+</span></span><span style="display:flex;"><span>D <span style="color:#f92672">=</span> make_D_matrix(t_i, k<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>, uneven<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>beta <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Variable(len(t_i))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>objective <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Minimize(
+</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">0.5</span> <span style="color:#f92672">*</span> cp<span style="color:#f92672">.</span>sum_squares(obs_y <span style="color:#f92672">-</span> beta) <span style="color:#f92672">+</span> <span style="color:#ae81ff">5</span> <span style="color:#f92672">*</span> cp<span style="color:#f92672">.</span>norm(D <span style="color:#f92672">@</span> beta, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>prob <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Problem(objective)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>results <span style="color:#f92672">=</span> prob<span style="color:#f92672">.</span>solve(solver<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;CLARABEL&#34;</span>)
+</span></span></code></pre></div><p>We can see that maintaining the same $\lambda$ value gives us a function with many more degrees of freedom, but each segment is a constant value:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(t_i, beta<span style="color:#f92672">.</span>value<span style="color:#f92672">.</span>round(<span style="color:#ae81ff">2</span>), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>scatter(t_i, obs_y, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.4</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> np<span style="color:#f92672">.</span>where(np<span style="color:#f92672">.</span>abs(D <span style="color:#f92672">@</span> beta<span style="color:#f92672">.</span>value)<span style="color:#f92672">.</span>round(<span style="color:#ae81ff">2</span>) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">0</span>)[<span style="color:#ae81ff">0</span>]:
+</span></span><span style="display:flex;"><span>    plt<span style="color:#f92672">.</span>axvline(t_i[i], color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;red&#34;</span>, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.25</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;x&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;y&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>legend([<span style="color:#e6db74">&#34;Fitted Function&#34;</span>, <span style="color:#e6db74">&#34;Observed Values&#34;</span>, <span style="color:#e6db74">&#34;Knots&#34;</span>])
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;k=0, lambda = 5&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./trend_filtering_39_1.png#center"/> 
+</figure>
+
+<h1 id="final-notes">Final Notes<a hidden class="anchor" aria-hidden="true" href="#final-notes">#</a></h1>
+<p>From my experimentation the difference matrix approach scales very well when you either have $k=0$ or evenly space inputs. If you have <em>unevenly</em> spaced inputs and set $k /ge 1$ then the optimization can fail depending on your regularization coefficient. This is because the scaling constants added in for the uneven spacing case can cause the result difference matrix to have quite large values. You can see this from the terms, where each is the multiplicative inverse of the difference between consecutive observed $x$ values. In cases where the difference is small, these values end up being large, which causes numerical instability when doing the optimization.</p>
+<p>However, sticking to the evenly-spaced case, or the piecewise constant case, results in optimizations that can be solved on the order of seconds even for more than 100,000 input points. Given this is a non-parametric approach the computational scaling is surprisingly nice, especially since I&rsquo;m using an off-the-shelf optimizer. Tibshirani and some other authors have implemented custom optimization procedures that could very well outperform what I&rsquo;m doing here.</p>
+<p>All-in-all I find this method to be theoretically quite appealing, from the minimax convergence properties to the &ldquo;automatic&rdquo; knot selection. Add to this an acceptable computational scaling, and this seems very promising to me, and I find it surprising that I&rsquo;m just now hearing about it. Admittedly, there are a number of practical implementation issues I can see:</p>
+<ul>
+<li>Doing out-of-sample predictions, whether new values inside of the training domain, or for values outside of it</li>
+<li>Handling real data where we have possibly many observations for a single given $x$ value</li>
+<li>Extension to the multivariate case</li>
+<li>Moving from MSE loss to the general maximum likelihood case</li>
+</ul>
+<p>Luckily, I think these are all issues that can be taken care of with enough clever software engineering.</p>
+<h1 id="references">References<a hidden class="anchor" aria-hidden="true" href="#references">#</a></h1>
+<p>Ryan J. Tibshirani. &ldquo;Adaptive piecewise polynomial estimation via trend filtering.&rdquo; The Annals of Statistics,
+42(1) 285-323 February 2014. <a href="https://doi.org/10.1214/13-AOS1189">https://doi.org/10.1214/13-AOS1189</a></p>
+<p>Collin A Politsch, Jessi Cisewski-Kehe, Rupert A C Croft, Larry Wasserman, Trend filtering – I. A modern statistical tool for time-domain astronomy and astronomical spectroscopy, Monthly Notices of the Royal Astronomical Society, Volume 492, Issue 3, March 2020, Pages 4005–4018, <a href="https://doi.org/10.1093/mnras/staa106">https://doi.org/10.1093/mnras/staa106</a></p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://localhost:1313/OptionallyBayesHugo/tags/trend-filtering/">Trend-Filtering</a></li>
+      <li><a href="http://localhost:1313/OptionallyBayesHugo/tags/non-parametric-regression/">Non-Parametric-Regression</a></li>
+      <li><a href="http://localhost:1313/OptionallyBayesHugo/tags/machine-learning/">Machine-Learning</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2024 <a href="http://localhost:1313/OptionallyBayesHugo/">Optionally Bayes</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+</body>
+
+</html>
