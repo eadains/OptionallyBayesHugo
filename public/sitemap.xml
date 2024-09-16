@@ -2,6 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/machine-learning/</loc>
+    <lastmod>2024-09-15T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/non-parametric-regression/</loc>
+    <lastmod>2024-09-15T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/</loc>
+    <lastmod>2024-09-15T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/</loc>
+    <lastmod>2024-09-15T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/</loc>
+    <lastmod>2024-09-15T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/trend-filtering/</loc>
+    <lastmod>2024-09-15T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/trend_filter/</loc>
+    <lastmod>2024-09-15T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/ergodicity/</loc>
     <lastmod>2024-08-03T00:00:00+00:00</lastmod>
   </url><url>
@@ -11,16 +32,7 @@
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/monte-carlo/</loc>
     <lastmod>2024-08-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/</loc>
-    <lastmod>2024-08-03T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/</loc>
-    <lastmod>2024-08-03T00:00:00+00:00</lastmod>
-  </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/stochastic-processes/</loc>
-    <lastmod>2024-08-03T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/</loc>
     <lastmod>2024-08-03T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/python/</loc>
@@ -129,9 +141,6 @@
     <lastmod>2021-05-01T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/forecasting/</loc>
-    <lastmod>2021-04-07T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/machine-learning/</loc>
     <lastmod>2021-04-07T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/posts/vol_mdn/</loc>
