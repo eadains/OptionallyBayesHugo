@@ -1,26 +1,19 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Stan on Optionally Bayes</title>
-    <link>http://eadains.github.io/OptionallyBayesHugo/tags/stan/</link>
-    <description>Recent content in Stan on Optionally Bayes</description>
+    <title>Insurance on Optionally Bayes</title>
+    <link>http://eadains.github.io/OptionallyBayesHugo/tags/insurance/</link>
+    <description>Recent content in Insurance on Optionally Bayes</description>
     <generator>Hugo -- 0.131.0</generator>
     <language>en-us</language>
     <lastBuildDate>Fri, 01 Nov 2024 00:00:00 +0000</lastBuildDate>
-    <atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/stan/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/insurance/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Experience Rating With Exponential Smoothing</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/exp_rating_exp_smooth/</link>
       <pubDate>Fri, 01 Nov 2024 00:00:00 +0000</pubDate>
       <guid>http://eadains.github.io/OptionallyBayesHugo/posts/exp_rating_exp_smooth/</guid>
       <description>Modeling baseball win rates using exponential smoothing to illustrate insurance experience rating</description>
-    </item>
-    <item>
-      <title>Stochastic Volatility Models in Stan</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/posts/stoch_vol/</link>
-      <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/stoch_vol/</guid>
-      <description>Fitting 2 different Stochastic Volatility Models to S&amp;amp;P 500 returns and finding out which is better</description>
     </item>
   </channel>
 </rss>

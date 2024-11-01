@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Experience Rating With Exponential Smoothing | Optionally Bayes</title>
+<meta name="keywords" content="exponential-smoothing, bayesian, stan, insurance">
+<meta name="description" content="Modeling baseball win rates using exponential smoothing to illustrate insurance experience rating">
+<meta name="author" content="Erik Dains">
+<link rel="canonical" href="http://eadains.github.io/OptionallyBayesHugo/posts/exp_rating_exp_smooth/">
+<link crossorigin="anonymous" href="/OptionallyBayesHugo/assets/css/stylesheet.bcfc03792d6caa596ec2d6e8f4e36ba32f6840d6e52e04254b294666b3f67ad2.css" integrity="sha256-vPwDeS1sqlluwtbo9ONroy9oQNblLgQlSylGZrP2etI=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://eadains.github.io/OptionallyBayesHugo/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://eadains.github.io/OptionallyBayesHugo/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://eadains.github.io/OptionallyBayesHugo/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://eadains.github.io/OptionallyBayesHugo/apple-touch-icon.png">
+<link rel="mask-icon" href="http://eadains.github.io/OptionallyBayesHugo/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://eadains.github.io/OptionallyBayesHugo/posts/exp_rating_exp_smooth/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript>
+<script>
+    MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']]
+        }
+    };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</script>
+
+  
+
+<meta property="og:title" content="Experience Rating With Exponential Smoothing" />
+<meta property="og:description" content="Modeling baseball win rates using exponential smoothing to illustrate insurance experience rating" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://eadains.github.io/OptionallyBayesHugo/posts/exp_rating_exp_smooth/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2024-11-01T00:00:00+00:00" />
+<meta property="article:modified_time" content="2024-11-01T00:00:00+00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Experience Rating With Exponential Smoothing"/>
+<meta name="twitter:description" content="Modeling baseball win rates using exponential smoothing to illustrate insurance experience rating"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "http://eadains.github.io/OptionallyBayesHugo/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Experience Rating With Exponential Smoothing",
+      "item": "http://eadains.github.io/OptionallyBayesHugo/posts/exp_rating_exp_smooth/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Experience Rating With Exponential Smoothing",
+  "name": "Experience Rating With Exponential Smoothing",
+  "description": "Modeling baseball win rates using exponential smoothing to illustrate insurance experience rating",
+  "keywords": [
+    "exponential-smoothing", "bayesian", "stan", "insurance"
+  ],
+  "articleBody": "Inspired by Mahler (1990) and the use of baseball win percentages as an illustrative example of how insurance experience ratemaking works, I wanted to provide an implementation of the exponential smoothing approach mentioned. The dataset contains data of the annual season loss percentages for 8 teams from 1901 to 1960. The notion is that in the same way you would use the past history of an insured to predict their forward policy losses, you can use the history of a team’s performance to predict their performance going forward. Compared to a real-life insurance example, this dataset is simple because it has the same number of individuals throughout and they are all observed at every time step.\nThe paper already does a good job covering many possible approaches to this problem. It notes that first we want to pick a method that puts heavier weight on more recent observations because of the inherent non-stationarity of the underlying process. Including far-away past years may actually worsen your estimate because the environment going forward may have shifted substantially. The author discusses multiple solutions: the estimate of every team is the grand average of the data, use the most recent years loss percentage for each team as the prediction, weighting together the most recent year and the overall average, etcetera. Here, however, I’m going to focus on what is to me the most elegant solution, which is exponential smoothing.\nFirst I’ll cover the exponential smoothing approach on the whole dataset as given, and then I’ll extend it to the more complex case of having differing numbers and placements of observations for each team through time.\nProperties of the Data The first question to ask is if there is any value in the first place to using previous observations of each team to predict their future loss rate. The paper answers the more basic question of whether the teams have meaningfully different overall loss rates compared to each other, so I’ll take that as given here. To answer the temporal question, we can look at the autocorrelation of the observations of each team.\nimport polars as pl import polars.selectors as cs import statsmodels.api as sm import matplotlib.pyplot as plt import cmdstanpy as stan import arviz as az import numpy as np from scipy import stats rng = np.random.default_rng() df = pl.read_csv(\"..//data//nl-data.csv\").sort(\"Year\") df shape: (60, 9)YearNL1NL2NL3NL4NL5NL6NL7NL8i64f64f64f64f64f64f64f64f6419010.50.4190.6190.6260.620.4070.3530.45719020.4670.4570.5040.50.6470.5910.2590.58219030.580.4850.4060.4680.3960.6370.350.68619040.6410.6340.3920.4250.3070.6580.4310.51319050.6690.6840.3990.4840.3140.4540.3730.623………………………19560.3960.4030.610.4090.5650.5390.5710.50619570.4550.3830.5970.4810.5520.50.5970.43519580.5390.4030.5320.5060.4810.5520.4550.53219590.4360.4490.5190.5190.4610.5840.4940.53919600.4680.4290.610.5650.4870.6170.3830.442 fig, axes = plt.subplots(2, 4, figsize=(15, 10)) for i in range(8): ax = axes.ravel()[i] sm.graphics.tsa.plot_acf(df[f\"NL{i+1}\"], ax=ax, zero=False) ax.set_title(f\"NL{i+1}\") The light blue areas are the 95% confidence intervals for the autocorrelations. We can obviously see significant autocorrelations for at least one lag for every team, meaning there is indeed valuable information to be gained by using past years data to make predictions.\nHomogenous Observations Case First, I’ll cover the original and more simple case where we observe loss rates for every team in every year. A basic univariate exponential smoothing model looks like this:\n$$ \\mu_t = \\alpha y_{t-1} + (1 - \\alpha) \\mu_{t-1} $$\nOur estimate for each time period $t$ is $\\mu_t$ and this is taken to be a weighted sum of the actually observed value from the last time period and our previous smoothed estimator. This does mean that you have to handle setting the first smoothed value $\\mu_0$, which I’m letting be a free parameter here.\nThe model here extends this simply by assuming this univariate form for each team separately:\n$$ \\mu_{i, t} = \\alpha y_{i, t-1} + (1 - \\alpha) \\mu_{i, t-1} $$\nwhere $i$ indexes over each team. Note that the smoothing parameter, $\\alpha$, is assumed to be the same for each team, although you could easily extend this to the case where it is allowed to vary.\nIn probabilistic terms, here is the full set of equations with priors:\n$$ \\begin{align*} k \u0026\\sim \\text{Exponential}(1) \\newline \\alpha \u0026\\sim \\text{Beta}(2, 2) \\newline \\mu_{i, 0} \u0026\\sim \\text{Beta}(2, 2) \\newline \\mu_{i, t} \u0026= \\alpha y_{i, t-1} + (1 - \\alpha) \\mu_{i, t-1} \\newline y_{i, t} \u0026\\sim \\text{Beta}(\\mu = \\mu_{i, t}, \\sigma^2 = k) \\end{align*} $$\nwhere $y_{i, t}$ is the loss rate observation for team $i$ at time $t$.\nI’m assuming that the prior for the first smoothed value and the smoothing strength parameter are $\\text{Beta}(2, 2)$ distributed, which looks like this:\nxs = np.linspace(0, 1, 100) plt.plot(xs, stats.beta.pdf(xs, 2, 2)) Here, $\\frac{1}{2}$ is the mode. By assuming this prior we are saying that it’s unlikely that either of these quantities assume very extreme values, which is reasonable in this case. For the initial smoothing value, we are saying a 50/50 win/loss performance is the most probable, and values close to 0 or 1 are unlikely, which is a sensible prior assumption. For the smoothing strength parameter we are assuming that the case where we evenly weight the last observed value and the last smoothed value is the most probable, and its unlikely that we want to put full weight on either one or the other, which, again, is a sensible prior assumption. I’ve chosen an exponential distribution for the outcome variance parameter because it’s the maximum entropy distribution for random variables bounded below by zero. In this case, the parameter for this prior variable has little effect on the results.\nThis can all be encoded in Stan as follows:\ndata { int N; // Number of teams int T; // Number of observations array[N] vector[T] L; // Observation vector for each team } parameters { real",
+  "wordCount" : "3013",
+  "inLanguage": "en",
+  "datePublished": "2024-11-01T00:00:00Z",
+  "dateModified": "2024-11-01T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "Erik Dains"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://eadains.github.io/OptionallyBayesHugo/posts/exp_rating_exp_smooth/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Optionally Bayes",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://eadains.github.io/OptionallyBayesHugo/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://eadains.github.io/OptionallyBayesHugo/" accesskey="h" title="Optionally Bayes (Alt + H)">Optionally Bayes</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/tags/" title="Tags">
+                    <span>Tags</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/archives/" title="Archive">
+                    <span>Archive</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/search/" title="Search (Alt &#43; /)" accesskey=/>
+                    <span>Search</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Experience Rating With Exponential Smoothing
+    </h1>
+    <div class="post-meta"><span title='2024-11-01 00:00:00 +0000 UTC'>November 1, 2024</span>&nbsp;·&nbsp;Erik Dains
+
+</div>
+  </header> 
+  <div class="post-content"><p>Inspired by Mahler (1990) and the use of baseball win percentages as an illustrative example of how insurance experience ratemaking works, I wanted to provide an implementation of the exponential smoothing approach mentioned. The dataset contains data of the annual season loss percentages for 8 teams from 1901 to 1960. The notion is that in the same way you would use the past history of an insured to predict their forward policy losses, you can use the history of a team&rsquo;s performance to predict their performance going forward. Compared to a real-life insurance example, this dataset is simple because it has the same number of individuals throughout and they are all observed at every time step.</p>
+<p>The paper already does a good job covering many possible approaches to this problem. It notes that first we want to pick a method that puts heavier weight on more recent observations because of the inherent non-stationarity of the underlying process. Including far-away past years may actually worsen your estimate because the environment going forward may have shifted substantially. The author discusses multiple solutions: the estimate of every team is the grand average of the data, use the most recent years loss percentage for each team as the prediction, weighting together the most recent year and the overall average, etcetera. Here, however, I&rsquo;m going to focus on what is to me the most elegant solution, which is exponential smoothing.</p>
+<p>First I&rsquo;ll cover the exponential smoothing approach on the whole dataset as given, and then I&rsquo;ll extend it to the more complex case of having differing numbers and placements of observations for each team through time.</p>
+<h1 id="properties-of-the-data">Properties of the Data<a hidden class="anchor" aria-hidden="true" href="#properties-of-the-data">#</a></h1>
+<p>The first question to ask is if there is any value in the first place to using previous observations of each team to predict their future loss rate. The paper answers the more basic question of whether the teams have meaningfully different overall loss rates compared to each other, so I&rsquo;ll take that as given here. To answer the temporal question, we can look at the autocorrelation of the observations of each team.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> polars <span style="color:#66d9ef">as</span> pl
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> polars.selectors <span style="color:#66d9ef">as</span> cs
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> statsmodels.api <span style="color:#66d9ef">as</span> sm
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#66d9ef">as</span> plt
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> cmdstanpy <span style="color:#66d9ef">as</span> stan
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> arviz <span style="color:#66d9ef">as</span> az
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> scipy <span style="color:#f92672">import</span> stats
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>rng <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>default_rng()
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>df <span style="color:#f92672">=</span> pl<span style="color:#f92672">.</span>read_csv(<span style="color:#e6db74">&#34;..//data//nl-data.csv&#34;</span>)<span style="color:#f92672">.</span>sort(<span style="color:#e6db74">&#34;Year&#34;</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>df
+</span></span></code></pre></div><div><style>
+.dataframe > thead > tr,
+.dataframe > tbody > tr {
+  text-align: right;
+  white-space: pre-wrap;
+}
+</style>
+<small>shape: (60, 9)</small><table border="1" class="dataframe"><thead><tr><th>Year</th><th>NL1</th><th>NL2</th><th>NL3</th><th>NL4</th><th>NL5</th><th>NL6</th><th>NL7</th><th>NL8</th></tr><tr><td>i64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td><td>f64</td></tr></thead><tbody><tr><td>1901</td><td>0.5</td><td>0.419</td><td>0.619</td><td>0.626</td><td>0.62</td><td>0.407</td><td>0.353</td><td>0.457</td></tr><tr><td>1902</td><td>0.467</td><td>0.457</td><td>0.504</td><td>0.5</td><td>0.647</td><td>0.591</td><td>0.259</td><td>0.582</td></tr><tr><td>1903</td><td>0.58</td><td>0.485</td><td>0.406</td><td>0.468</td><td>0.396</td><td>0.637</td><td>0.35</td><td>0.686</td></tr><tr><td>1904</td><td>0.641</td><td>0.634</td><td>0.392</td><td>0.425</td><td>0.307</td><td>0.658</td><td>0.431</td><td>0.513</td></tr><tr><td>1905</td><td>0.669</td><td>0.684</td><td>0.399</td><td>0.484</td><td>0.314</td><td>0.454</td><td>0.373</td><td>0.623</td></tr><tr><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td></tr><tr><td>1956</td><td>0.396</td><td>0.403</td><td>0.61</td><td>0.409</td><td>0.565</td><td>0.539</td><td>0.571</td><td>0.506</td></tr><tr><td>1957</td><td>0.455</td><td>0.383</td><td>0.597</td><td>0.481</td><td>0.552</td><td>0.5</td><td>0.597</td><td>0.435</td></tr><tr><td>1958</td><td>0.539</td><td>0.403</td><td>0.532</td><td>0.506</td><td>0.481</td><td>0.552</td><td>0.455</td><td>0.532</td></tr><tr><td>1959</td><td>0.436</td><td>0.449</td><td>0.519</td><td>0.519</td><td>0.461</td><td>0.584</td><td>0.494</td><td>0.539</td></tr><tr><td>1960</td><td>0.468</td><td>0.429</td><td>0.61</td><td>0.565</td><td>0.487</td><td>0.617</td><td>0.383</td><td>0.442</td></tr></tbody></table></div>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig, axes <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">4</span>, figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">15</span>, <span style="color:#ae81ff">10</span>))
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">8</span>):
+</span></span><span style="display:flex;"><span>    ax <span style="color:#f92672">=</span> axes<span style="color:#f92672">.</span>ravel()[i]
+</span></span><span style="display:flex;"><span>    sm<span style="color:#f92672">.</span>graphics<span style="color:#f92672">.</span>tsa<span style="color:#f92672">.</span>plot_acf(df[<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;NL</span><span style="color:#e6db74">{</span>i<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>], ax<span style="color:#f92672">=</span>ax, zero<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span><span style="display:flex;"><span>    ax<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;NL</span><span style="color:#e6db74">{</span>i<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./experience_rating_5_0.png#center"/> 
+</figure>
+
+<p>The light blue areas are the 95% confidence intervals for the autocorrelations. We can obviously see significant autocorrelations for at least one lag for every team, meaning there is indeed valuable information to be gained by using past years data to make predictions.</p>
+<h1 id="homogenous-observations-case">Homogenous Observations Case<a hidden class="anchor" aria-hidden="true" href="#homogenous-observations-case">#</a></h1>
+<p>First, I&rsquo;ll cover the original and more simple case where we observe loss rates for every team in every year. A basic univariate exponential smoothing model looks like this:</p>
+<p>$$
+\mu_t = \alpha y_{t-1} + (1 - \alpha) \mu_{t-1}
+$$</p>
+<p>Our estimate for each time period $t$ is $\mu_t$ and this is taken to be a weighted sum of the actually observed value from the last time period and our previous smoothed estimator. This does mean that you have to handle setting the first smoothed value $\mu_0$, which I&rsquo;m letting be a free parameter here.</p>
+<p>The model here extends this simply by assuming this univariate form for each team separately:</p>
+<p>$$
+\mu_{i, t} = \alpha y_{i, t-1} + (1 - \alpha) \mu_{i, t-1}
+$$</p>
+<p>where $i$ indexes over each team. Note that the smoothing parameter, $\alpha$, is assumed to be the same for each team, although you could easily extend this to the case where it is allowed to vary.</p>
+<p>In probabilistic terms, here is the full set of equations with priors:</p>
+<p>$$
+\begin{align*}
+k &amp;\sim \text{Exponential}(1) \newline
+\alpha &amp;\sim \text{Beta}(2, 2) \newline
+\mu_{i, 0} &amp;\sim \text{Beta}(2, 2) \newline
+\mu_{i, t} &amp;= \alpha y_{i, t-1} + (1 - \alpha) \mu_{i, t-1} \newline
+y_{i, t} &amp;\sim \text{Beta}(\mu = \mu_{i, t}, \sigma^2 = k)
+\end{align*}
+$$</p>
+<p>where $y_{i, t}$ is the loss rate observation for team $i$ at time $t$.</p>
+<p>I&rsquo;m assuming that the prior for the first smoothed value and the smoothing strength parameter are $\text{Beta}(2, 2)$ distributed, which looks like this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>xs <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">100</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(xs, stats<span style="color:#f92672">.</span>beta<span style="color:#f92672">.</span>pdf(xs, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">2</span>))
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./experience_rating_8_1.png#center"/> 
+</figure>
+
+<p>Here, $\frac{1}{2}$ is the mode. By assuming this prior we are saying that it&rsquo;s unlikely that either of these quantities assume very extreme values, which is reasonable in this case. For the initial smoothing value, we are saying a 50/50 win/loss performance is the most probable, and values close to 0 or 1 are unlikely, which is a sensible prior assumption. For the smoothing strength parameter we are assuming that the case where we evenly weight the last observed value and the last smoothed value is the most probable, and its unlikely that we want to put full weight on either one or the other, which, again, is a sensible prior assumption. I&rsquo;ve chosen an exponential distribution for the outcome variance parameter because it&rsquo;s the maximum entropy distribution for random variables bounded below by zero. In this case, the parameter for this prior variable has little effect on the results.</p>
+<p>This can all be encoded in Stan as follows:</p>
+<pre tabindex="0"><code>data {
+    int N; // Number of teams
+    int T; // Number of observations
+    array[N] vector[T] L; // Observation vector for each team
+}
+parameters {
+    real&lt;lower=0&gt; k;
+    real&lt;lower=0, upper=1&gt; alpha;
+    real&lt;lower=0, upper=1&gt; mu_zero;
+}
+transformed parameters {
+    array[N] vector[T] mu;
+    for (i in 1:N) {
+        mu[i][1] = mu_zero;
+    }
+    for (t in 2:T) {
+        for (i in 1:N) {
+            mu[i][t] = alpha * L[i][t-1] + (1 - alpha) * mu[i][t-1];
+        }
+    }
+}
+model {
+    k ~ exponential(1);
+    alpha ~ beta(2, 2);
+    mu_zero ~ beta(2, 2);
+    for (t in 1:T) {
+        for (i in 1:N) {
+            L[i][t] ~ beta_proportion(mu[i][t], k);
+        }
+    }
+}
+generated quantities {
+    array[N] vector[T] L_hat;
+    for (t in 1:T) {
+        for (i in 1:N) {
+            L_hat[i][t] = beta_proportion_rng(mu[i][t], k); // Posterior predictive
+        }
+    }
+}
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>model <span style="color:#f92672">=</span> stan<span style="color:#f92672">.</span>CmdStanModel(stan_file<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;../experience_rating/model.stan&#34;</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>data <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#34;N&#34;</span>: <span style="color:#ae81ff">8</span>, <span style="color:#e6db74">&#34;T&#34;</span>: len(df), <span style="color:#e6db74">&#34;L&#34;</span>: [df[<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;NL</span><span style="color:#e6db74">{</span>i<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>]<span style="color:#f92672">.</span>to_list() <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">9</span>)]}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fit <span style="color:#f92672">=</span> model<span style="color:#f92672">.</span>sample(data<span style="color:#f92672">=</span>data)
+</span></span></code></pre></div><p>Fitting this, we can check the summary statistic for our chain and convergence statistics:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fit<span style="color:#f92672">.</span>summary()[<span style="color:#e6db74">&#34;R_hat&#34;</span>]<span style="color:#f92672">.</span>describe()
+</span></span></code></pre></div><pre><code>count    964.000000
+mean       0.999956
+std        0.000440
+min        0.999100
+25%        0.999736
+50%        0.999888
+75%        1.000110
+max        1.002550
+Name: R_hat, dtype: float64
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>print(fit<span style="color:#f92672">.</span>diagnose())
+</span></span></code></pre></div><pre><code>Checking sampler transitions treedepth.
+Treedepth satisfactory for all transitions.
+
+Checking sampler transitions for divergences.
+No divergent transitions found.
+
+Checking E-BFMI - sampler transitions HMC potential energy.
+E-BFMI satisfactory.
+
+Effective sample size satisfactory.
+
+Split R-hat values satisfactory all parameters.
+
+Processing complete, no problems detected.
+</code></pre>
+<p>Everything looks normal here, let&rsquo;s look at the posterior distribution of our parameters:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>idata <span style="color:#f92672">=</span> az<span style="color:#f92672">.</span>from_cmdstanpy(
+</span></span><span style="display:flex;"><span>    fit,
+</span></span><span style="display:flex;"><span>    posterior_predictive<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;L_hat&#34;</span>,
+</span></span><span style="display:flex;"><span>    observed_data<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;L&#34;</span>: [df[<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;NL</span><span style="color:#e6db74">{</span>i<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>]<span style="color:#f92672">.</span>to_list() <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">9</span>)]},
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>az<span style="color:#f92672">.</span>plot_trace(idata, var_names<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#34;k&#34;</span>, <span style="color:#e6db74">&#34;alpha&#34;</span>, <span style="color:#e6db74">&#34;mu_zero&#34;</span>])
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./experience_rating_16_1.png#center"/> 
+</figure>
+
+<p>Again, this looks like healthy convergence.</p>
+<p>Now we can look at the actually fit of the model. I&rsquo;m not going to do a full-blown analysis here because this post is mainly meant to be a proof-of-concept, but we can make some general observations. First, let&rsquo;s look at the observed values and the smoothed values, $\mu$, for a given team:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>mu <span style="color:#f92672">=</span> az<span style="color:#f92672">.</span>extract(idata, var_names<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#34;mu&#34;</span>])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(mu[<span style="color:#ae81ff">0</span>, :, :]<span style="color:#f92672">.</span>mean(axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(df[<span style="color:#e6db74">&#34;NL1&#34;</span>])
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;t&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Loss Rate&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;NL1 Fit&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>legend([<span style="color:#e6db74">&#34;Smoothed Values&#34;</span>, <span style="color:#e6db74">&#34;Observed Values&#34;</span>])
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./experience_rating_18_1.png#center"/> 
+</figure>
+
+<p>We can see that the smoothed values are indeed capturing the behavior of the observed values.</p>
+<p>Next we can look at a posterior predictive plot to see how closely our distributional assumptions match the observed distribution of the data across all the teams:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>az<span style="color:#f92672">.</span>plot_ppc(
+</span></span><span style="display:flex;"><span>    idata,
+</span></span><span style="display:flex;"><span>    data_pairs<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;L&#34;</span>: <span style="color:#e6db74">&#34;L_hat&#34;</span>}
+</span></span><span style="display:flex;"><span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./experience_rating_20_1.png#center"/> 
+</figure>
+
+<p>We can see there is a fair bit of noise in the observed data, and maybe one could argue there is less kurtosis in the observed data than our model assumes, but we aren&rsquo;t too far off distributionally here. I imagine this could be fixed by changing the model to have a variance term that varies by team or maybe even over time. In the model present the variance is assumed to be constant for all teams and for all time periods.</p>
+<p>Next, we can look at the implied weights on lagged data points given from the $\alpha$ parameter. Our model for $\mu$ is again defined as:
+$$
+\mu_{i, t} = \alpha y_{i, t-1} + (1 - \alpha) \mu_{i, t-1}
+$$
+So, we can continue to expand the autoregressive terms to get this purely in terms of the lagged $y$ values:
+$$
+\begin{align*}
+\mu_{i, t} &amp;= \alpha y_{i, t-1} + (1 - \alpha) (\alpha y_{i, t-2} + (1 - \alpha) \mu_{i, t-2}) \newline
+&amp;= \alpha y_{i, t-1} + \alpha (1-\alpha) y_{i, t-2} + (1 - \alpha)^2 \mu_{i, t-2} \newline
+&amp;= \ldots \newline
+&amp;= \alpha \sum_{i=1}^\infty (1 - \alpha)^{i-1} y_{i, t-i}
+\end{align*}
+$$</p>
+<p>We can adjust the index term on the sum to make it into a standard geometric series:
+$$
+\mu_{i, t }= \alpha \sum_{i=0}^\infty (1 - \alpha)^{i} y_{i, t-i+1}
+$$</p>
+<p>If we then assume that $y_{i,t} = 1$ for all $t$ for the sake of argument then we can see that this series converges to
+$$
+\mu_{i, t} = \frac{\alpha}{1 - (1 - \alpha)} = \frac{\alpha}{\alpha} = 1
+$$</p>
+<p>So, our prediction is a weighted sum of infinitely many lagged observation values. We can plot these weights to see how quickly they decay:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>alpha <span style="color:#f92672">=</span> az<span style="color:#f92672">.</span>extract(idata, var_names<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#34;alpha&#34;</span>])<span style="color:#f92672">.</span>mean()<span style="color:#f92672">.</span>item()
+</span></span><span style="display:flex;"><span>L_coefs <span style="color:#f92672">=</span> [alpha <span style="color:#f92672">*</span> (<span style="color:#ae81ff">1</span> <span style="color:#f92672">-</span> alpha) <span style="color:#f92672">**</span> (i <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">15</span>)]
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(L_coefs)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Number of Lags&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Weight&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Lagged Observation Weights&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./experience_rating_22_1.png#center"/> 
+</figure>
+
+<p>So, we can see that a significant majority of the weight is being placed on observations in the 5 years. Since we know these weights also sum to 1, we can also see the cumulative total weight:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(np<span style="color:#f92672">.</span>cumsum(L_coefs))
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>axhline(<span style="color:#ae81ff">0.95</span>, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;red&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Number of Lags&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Cumulative Weight&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Cumulative Lagged Observation Weights&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./experience_rating_24_1.png#center"/> 
+</figure>
+
+<p>The red line is placed at 95% total weight, so we can see that 95% of the weight of our smoothed values come from data points in the last 3 seasons.</p>
+<p>Lastly, let&rsquo;s see if we have controlled for the autocorrelation effect we saw in the original data by looking to see if there is any remaining patterns in the residuals:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>resids <span style="color:#f92672">=</span> df<span style="color:#f92672">.</span>select(cs<span style="color:#f92672">.</span>contains(<span style="color:#e6db74">&#34;NL&#34;</span>))<span style="color:#f92672">.</span>to_numpy() <span style="color:#f92672">-</span> mu<span style="color:#f92672">.</span>mean(axis<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>)<span style="color:#f92672">.</span>values<span style="color:#f92672">.</span>T
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fig, axes <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">4</span>, figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">15</span>, <span style="color:#ae81ff">10</span>))
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">8</span>):
+</span></span><span style="display:flex;"><span>    ax <span style="color:#f92672">=</span> axes<span style="color:#f92672">.</span>ravel()[i]
+</span></span><span style="display:flex;"><span>    sm<span style="color:#f92672">.</span>graphics<span style="color:#f92672">.</span>tsa<span style="color:#f92672">.</span>plot_acf(resids[:, i], ax<span style="color:#f92672">=</span>ax, zero<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span><span style="display:flex;"><span>    ax<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;NL</span><span style="color:#e6db74">{</span>i<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./experience_rating_26_0.png#center"/> 
+</figure>
+
+<p>These autocorrelation plots now look much more random than they did originally, meaning we have captured much of the time-varying pattern present in the data.</p>
+<h1 id="heterogeneous-observations-case">Heterogeneous Observations Case<a hidden class="anchor" aria-hidden="true" href="#heterogeneous-observations-case">#</a></h1>
+<p>Now that we&rsquo;ve proven the concept of the model in the easy case, we can move on to the harder and more realistic case where we don&rsquo;t observe every individual at each time step. To accomplish this I&rsquo;m setting the starting date of each teams observations to be random uniform from 1901 to 1920 and their ending dates to be random uniform from 1941 to 1960. I&rsquo;m still making one simplifying observation which is that when do we observe a team we observe it every year for however long we do observe it for, which is not always true in real-life insurance datasets.</p>
+<p>So, these are the new starting and ending dates for each team:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>starting_years <span style="color:#f92672">=</span> rng<span style="color:#f92672">.</span>integers(<span style="color:#ae81ff">1901</span>, <span style="color:#ae81ff">1920</span>, <span style="color:#ae81ff">8</span>)
+</span></span><span style="display:flex;"><span>ending_years <span style="color:#f92672">=</span> rng<span style="color:#f92672">.</span>integers(<span style="color:#ae81ff">1941</span>, <span style="color:#ae81ff">1960</span>, <span style="color:#ae81ff">8</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Don&#39;t forget fencepost counting</span>
+</span></span><span style="display:flex;"><span>pl<span style="color:#f92672">.</span>DataFrame(
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;Team&#34;</span>: df<span style="color:#f92672">.</span>select(cs<span style="color:#f92672">.</span>contains(<span style="color:#e6db74">&#34;NL&#34;</span>))<span style="color:#f92672">.</span>columns,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;StartingYear&#34;</span>: starting_years,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;EndingYear&#34;</span>: ending_years,
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>)<span style="color:#f92672">.</span>with_columns(NumYears<span style="color:#f92672">=</span>(pl<span style="color:#f92672">.</span>col(<span style="color:#e6db74">&#34;EndingYear&#34;</span>) <span style="color:#f92672">-</span> pl<span style="color:#f92672">.</span>col(<span style="color:#e6db74">&#34;StartingYear&#34;</span>)) <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>)
+</span></span></code></pre></div><div><style>
+.dataframe > thead > tr,
+.dataframe > tbody > tr {
+  text-align: right;
+  white-space: pre-wrap;
+}
+</style>
+<small>shape: (8, 4)</small><table border="1" class="dataframe"><thead><tr><th>Team</th><th>StartingYear</th><th>EndingYear</th><th>NumYears</th></tr><tr><td>str</td><td>i64</td><td>i64</td><td>i64</td></tr></thead><tbody><tr><td>&quot;NL1&quot;</td><td>1917</td><td>1949</td><td>33</td></tr><tr><td>&quot;NL2&quot;</td><td>1918</td><td>1945</td><td>28</td></tr><tr><td>&quot;NL3&quot;</td><td>1910</td><td>1958</td><td>49</td></tr><tr><td>&quot;NL4&quot;</td><td>1903</td><td>1957</td><td>55</td></tr><tr><td>&quot;NL5&quot;</td><td>1919</td><td>1954</td><td>36</td></tr><tr><td>&quot;NL6&quot;</td><td>1919</td><td>1947</td><td>29</td></tr><tr><td>&quot;NL7&quot;</td><td>1911</td><td>1955</td><td>45</td></tr><tr><td>&quot;NL8&quot;</td><td>1907</td><td>1956</td><td>50</td></tr></tbody></table></div>
+<p>Now, the problem is that our observation vectors are of varying lengths, which means we cannot use the same data structure we used in the original model because it assume that each team&rsquo;s observation vector was the same length. Unfortunately, Stan does not currently support ragged arrays that would let us handle this natively, so we have to use some clever programming to make it work.</p>
+<p>The solution is to append every team&rsquo;s observation vector into one single longer vector and separately keep track of what entries in this new vector belong to each team. So, first we create the observation vectors for each team, and then I&rsquo;ve borrowed a nice function that creates a concatenated vector and returns the index of where each team&rsquo;s data ends:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>df2 <span style="color:#f92672">=</span> df<span style="color:#f92672">.</span>with_columns(
+</span></span><span style="display:flex;"><span>    [
+</span></span><span style="display:flex;"><span>        pl<span style="color:#f92672">.</span>when(<span style="color:#f92672">~</span>pl<span style="color:#f92672">.</span>col(<span style="color:#e6db74">&#34;Year&#34;</span>)<span style="color:#f92672">.</span>is_between(start, end))
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">.</span>then(<span style="color:#66d9ef">None</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">.</span>otherwise(pl<span style="color:#f92672">.</span>col(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;NL</span><span style="color:#e6db74">{</span>i<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>))
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">.</span>alias(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;NL</span><span style="color:#e6db74">{</span>i<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> i, (start, end) <span style="color:#f92672">in</span> enumerate(zip(starting_years, ending_years))
+</span></span><span style="display:flex;"><span>    ]
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>data_vectors <span style="color:#f92672">=</span> [df2[<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;NL</span><span style="color:#e6db74">{</span>i<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>]<span style="color:#f92672">.</span>drop_nulls() <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">8</span>)]
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># From https://tonysyu.github.io/ragged-arrays.html</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">stack_ragged</span>(arrays):
+</span></span><span style="display:flex;"><span>    lens <span style="color:#f92672">=</span> [len(array) <span style="color:#66d9ef">for</span> array <span style="color:#f92672">in</span> arrays]
+</span></span><span style="display:flex;"><span>    idx <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>cumsum(lens)
+</span></span><span style="display:flex;"><span>    stacked <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>concatenate(arrays)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> stacked, idx
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>stacked_data, data_idx <span style="color:#f92672">=</span> stack_ragged(data_vectors)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>stacked_data<span style="color:#f92672">.</span>shape
+</span></span></code></pre></div><pre><code>(325,)
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>data_idx
+</span></span></code></pre></div><pre><code>array([ 33,  61, 110, 165, 201, 230, 275, 325])
+</code></pre>
+<p>So, team 1&rsquo;s data is from index 0 to 32, team 2&rsquo;s is from 33 to 60, and so on. Note that in Python the range slicing using a colon is left-side <em>inclusive</em> and right-side <em>exclusive</em>. So in the indexing array the endpoint for team 1 is 33 because you would use <code>y[:33]</code> to select it, but this selection would <em>not</em> include the value at index 33, it would stop at index 32. You could then use <code>y[33:61]</code> to select the data for team 2.</p>
+<p>The next clever bit of programming comes in our Stan code to actually ingest these two structures. We are assuming the same model form, the only change we are making is the inconsistent observations, so, our model code now looks like this:</p>
+<pre tabindex="0"><code>data {
+    int N; // # of observations
+    int K; // # of teams
+    array[K] int idx; // Ending index for each team&#39;s observations
+    vector[N] ys; // Concatenated observation vector
+}
+parameters {
+    real&lt;lower=0&gt; sigma;
+    real&lt;lower=0, upper=1&gt; alpha;
+    real&lt;lower=0, upper=1&gt; mu_zero;
+}
+transformed parameters {
+    vector[N] mu;
+    {
+        int start_idx = 1;
+        for (k in 1:K) {
+            mu[start_idx] = mu_zero;
+            for (t in 1:(idx[k] - start_idx)) {
+                mu[start_idx + t] = alpha * ys[start_idx + t - 1] + (1 - alpha) * mu[start_idx + t - 1];
+            }
+            start_idx = idx[k] + 1;
+        }
+    }
+}
+model {
+    sigma ~ exponential(1);
+    alpha ~ beta(2, 2);
+    mu_zero ~ beta(2, 2);
+    ys ~ beta_proportion(mu, sigma);
+}
+</code></pre><p>All of the magic here happens in the transformed parameters block because once we have our $\mu$ vector the observation probabilities come directly from that. This is all made a bit more confusing because in Stan the starting index for arrays is 1 instead of 0 like in Python.</p>
+<p>To explain briefly:</p>
+<ol>
+<li>We start at the beginning of the array at start_idx = 1</li>
+<li>For each team:
+<ol>
+<li>Set the first value, which is t=0 <em>for this team</em> to mu_zero</li>
+<li>Then iterating over the index values corresponding to this team compute the exponential smoothing quantity in the normal way</li>
+<li>Set the new starting index for the next team to be the ending index for the current team plus 1</li>
+</ol>
+</li>
+</ol>
+<p>As an example for teams 1 and 2:</p>
+<ol>
+<li>start_idx = 1</li>
+<li>Set mu[1] to mu_zero</li>
+<li>For t in 1:32 (idx[k] = 33) compute the exponential smoothing quantity
+<ul>
+<li>start_idx is already 1 so start_idx + 1 = 2 when t = 1</li>
+<li>So, start_idx + t tracks the relative time sequence for the currently considered team</li>
+<li>Then, to get the lagged values you just need to subtract 1 from the current relative time value</li>
+</ul>
+</li>
+<li>Set start_idx = 34</li>
+<li>Set mu[34] to mu_zero because this is now t=0 for team 2</li>
+<li>For t in 1:28 (61 - 33 = 28) compute the smoothed quantity</li>
+<li>And so on up to the last team</li>
+</ol>
+<p>Essentially we want to go through time for each team as if we are starting at t=0 but we need to keep track of where we are in the overall vector so we apply the right computations to the right data.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>model2 <span style="color:#f92672">=</span> stan<span style="color:#f92672">.</span>CmdStanModel(stan_file<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;../experience_rating/model2.stan&#34;</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>data2 <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#34;N&#34;</span>: len(stacked_data), <span style="color:#e6db74">&#34;K&#34;</span>: <span style="color:#ae81ff">8</span>, <span style="color:#e6db74">&#34;idx&#34;</span>: data_idx, <span style="color:#e6db74">&#34;ys&#34;</span>: stacked_data}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fit2 <span style="color:#f92672">=</span> model2<span style="color:#f92672">.</span>sample(data<span style="color:#f92672">=</span>data2)
+</span></span></code></pre></div><p>We can look again at our convergence diagnostics:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>print(fit2<span style="color:#f92672">.</span>diagnose())
+</span></span></code></pre></div><pre><code>Checking sampler transitions treedepth.
+Treedepth satisfactory for all transitions.
+
+Checking sampler transitions for divergences.
+No divergent transitions found.
+
+Checking E-BFMI - sampler transitions HMC potential energy.
+E-BFMI satisfactory.
+
+Effective sample size satisfactory.
+
+Split R-hat values satisfactory all parameters.
+
+Processing complete, no problems detected.
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fit2<span style="color:#f92672">.</span>summary()[<span style="color:#e6db74">&#34;R_hat&#34;</span>]<span style="color:#f92672">.</span>describe()
+</span></span></code></pre></div><pre><code>count    654.000000
+mean       1.000096
+std        0.000442
+min        0.999109
+25%        0.999827
+50%        1.000125
+75%        1.000280
+max        1.002640
+Name: R_hat, dtype: float64
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>idata2 <span style="color:#f92672">=</span> az<span style="color:#f92672">.</span>from_cmdstanpy(
+</span></span><span style="display:flex;"><span>    fit2,
+</span></span><span style="display:flex;"><span>    posterior_predictive<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;ys_hat&#34;</span>,
+</span></span><span style="display:flex;"><span>    observed_data<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;ys&#34;</span>: stacked_data},
+</span></span><span style="display:flex;"><span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>az<span style="color:#f92672">.</span>plot_trace(idata2, var_names<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#34;sigma&#34;</span>, <span style="color:#e6db74">&#34;alpha&#34;</span>, <span style="color:#e6db74">&#34;mu_zero&#34;</span>])
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./experience_rating_42_1.png#center"/> 
+</figure>
+
+<p>Everything looks good, so we can move on to making our posterior checks:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>mu <span style="color:#f92672">=</span> az<span style="color:#f92672">.</span>extract(idata2, var_names<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#34;mu&#34;</span>])<span style="color:#f92672">.</span>mean(axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(mu[: data_idx[<span style="color:#ae81ff">0</span>]]<span style="color:#f92672">.</span>values)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>plot(df2[<span style="color:#e6db74">&#34;NL1&#34;</span>]<span style="color:#f92672">.</span>drop_nulls())
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;t&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Loss Rate&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;NL1 Fit&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>legend([<span style="color:#e6db74">&#34;Smoothed Values&#34;</span>, <span style="color:#e6db74">&#34;Observed Values&#34;</span>])
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./experience_rating_44_1.png#center"/> 
+</figure>
+
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>az<span style="color:#f92672">.</span>plot_ppc(
+</span></span><span style="display:flex;"><span>    idata2,
+</span></span><span style="display:flex;"><span>    data_pairs<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;ys&#34;</span>: <span style="color:#e6db74">&#34;ys_hat&#34;</span>}
+</span></span><span style="display:flex;"><span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./experience_rating_45_1.png#center"/> 
+</figure>
+
+<p>We can see here that again we are fitting the data as we were before.</p>
+<p>One interesting difference in the fit between this model and the previous are the values of the smoothing parameter $\alpha$:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>alpha1 <span style="color:#f92672">=</span> az<span style="color:#f92672">.</span>extract(idata, var_names<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#34;alpha&#34;</span>])
+</span></span><span style="display:flex;"><span>alpha2 <span style="color:#f92672">=</span> az<span style="color:#f92672">.</span>extract(idata2, var_names<span style="color:#f92672">=</span>[<span style="color:#e6db74">&#34;alpha&#34;</span>])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>az<span style="color:#f92672">.</span>plot_dist(alpha1, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>, label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;First Model&#34;</span>)
+</span></span><span style="display:flex;"><span>az<span style="color:#f92672">.</span>plot_dist(alpha2, color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;red&#34;</span>, label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Second Model&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>axvline(alpha1<span style="color:#f92672">.</span>mean(), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;black&#34;</span>, linestyle<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;dashed&#34;</span>, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.5</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>axvline(alpha2<span style="color:#f92672">.</span>mean(), color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;red&#34;</span>, linestyle<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;dashed&#34;</span>, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.5</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Alpha Value&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./experience_rating_47_1.png#center"/> 
+</figure>
+
+<p>We can see that the second model has a mean value for $\alpha$ that is smaller than for the first model, which implies that less weight is put on lagged observations and more weight is put on lagged smoothed values in the second model. This results in more smoothing overall compared to the first model. This is somewhat intuitive because our effective sample size is smaller in the second model because we have fewer observations for each team and varying numbers of them, so we get a nice bit of regularization here because the model selects a slightly more aggressive smoothing parameter.</p>
+<h1 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h1>
+<p>This was a small proof-of-concept to firstly provide an actual implementation of the exponential smoothing model presented in Mahler (1990), as well as provide the extension to the case where we have a heterogeneously observed sample which is very common in real insurance datasets. I think exponential smoothing models are a conceptually elegant way to handle time-series prediction problems like this because it implicitly chooses how many lagged values are relevant, in a sense, as compared to a standard autoregressive model where the number of lags to include is effectively a hyperparameter. This model can also be easily extended to incorporate exogenous variables, time-varying variances, a hierarchical model to allow parameters to vary by individual, etcetera.</p>
+<h1 id="references">References<a hidden class="anchor" aria-hidden="true" href="#references">#</a></h1>
+<p>Mahler, H. C. (1990). An Example of Credibility and Shifting Risk Parameters. Proceedings of the Casualty Actuarial Society, LXXX, 225–308.</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/exponential-smoothing/">Exponential-Smoothing</a></li>
+      <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/bayesian/">Bayesian</a></li>
+      <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/stan/">Stan</a></li>
+      <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/insurance/">Insurance</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2024 <a href="http://eadains.github.io/OptionallyBayesHugo/">Optionally Bayes</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+</body>
+
+</html>

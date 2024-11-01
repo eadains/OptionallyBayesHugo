@@ -2,19 +2,34 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/bayesian/</loc>
+    <lastmod>2024-11-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/exp_rating_exp_smooth/</loc>
+    <lastmod>2024-11-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/exponential-smoothing/</loc>
+    <lastmod>2024-11-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/insurance/</loc>
+    <lastmod>2024-11-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/</loc>
+    <lastmod>2024-11-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/</loc>
+    <lastmod>2024-11-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/stan/</loc>
+    <lastmod>2024-11-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/</loc>
+    <lastmod>2024-11-01T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/machine-learning/</loc>
     <lastmod>2024-09-15T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/non-parametric-regression/</loc>
-    <lastmod>2024-09-15T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/</loc>
-    <lastmod>2024-09-15T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/posts/</loc>
-    <lastmod>2024-09-15T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/</loc>
     <lastmod>2024-09-15T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/trend-filtering/</loc>
@@ -92,16 +107,10 @@
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/etf/</loc>
     <lastmod>2021-08-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/bayesian/</loc>
-    <lastmod>2021-08-07T00:00:00+00:00</lastmod>
-  </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/model-building/</loc>
     <lastmod>2021-08-07T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/tags/model-comparison/</loc>
-    <lastmod>2021-08-07T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://eadains.github.io/OptionallyBayesHugo/tags/stan/</loc>
     <lastmod>2021-08-07T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://eadains.github.io/OptionallyBayesHugo/posts/stoch_vol/</loc>

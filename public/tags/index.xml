@@ -6,8 +6,36 @@
     <description>Recent content in Tags on Optionally Bayes</description>
     <generator>Hugo -- 0.131.0</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 15 Sep 2024 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 01 Nov 2024 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Bayesian</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/bayesian/</link>
+      <pubDate>Fri, 01 Nov 2024 00:00:00 +0000</pubDate>
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/bayesian/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Exponential-Smoothing</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/exponential-smoothing/</link>
+      <pubDate>Fri, 01 Nov 2024 00:00:00 +0000</pubDate>
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/exponential-smoothing/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Insurance</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/insurance/</link>
+      <pubDate>Fri, 01 Nov 2024 00:00:00 +0000</pubDate>
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/insurance/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Stan</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/tags/stan/</link>
+      <pubDate>Fri, 01 Nov 2024 00:00:00 +0000</pubDate>
+      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/stan/</guid>
+      <description></description>
+    </item>
     <item>
       <title>Machine-Learning</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/tags/machine-learning/</link>
@@ -142,13 +170,6 @@
       <description></description>
     </item>
     <item>
-      <title>Bayesian</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/bayesian/</link>
-      <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/bayesian/</guid>
-      <description></description>
-    </item>
-    <item>
       <title>Model-Building</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/tags/model-building/</link>
       <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
@@ -160,13 +181,6 @@
       <link>http://eadains.github.io/OptionallyBayesHugo/tags/model-comparison/</link>
       <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
       <guid>http://eadains.github.io/OptionallyBayesHugo/tags/model-comparison/</guid>
-      <description></description>
-    </item>
-    <item>
-      <title>Stan</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/stan/</link>
-      <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/stan/</guid>
       <description></description>
     </item>
     <item>
