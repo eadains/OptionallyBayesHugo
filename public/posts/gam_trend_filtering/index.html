@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Extending Trend Filtering to the GAM Case | Optionally Bayes</title>
+<meta name="keywords" content="gam, trend-filtering, non-parametric-regression, machine-learning">
+<meta name="description" content="Extending the trend filtering approach to the multivariate additive case">
+<meta name="author" content="Erik Dains">
+<link rel="canonical" href="http://eadains.github.io/OptionallyBayesHugo/posts/gam_trend_filtering/">
+<link crossorigin="anonymous" href="/OptionallyBayesHugo/assets/css/stylesheet.bcfc03792d6caa596ec2d6e8f4e36ba32f6840d6e52e04254b294666b3f67ad2.css" integrity="sha256-vPwDeS1sqlluwtbo9ONroy9oQNblLgQlSylGZrP2etI=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://eadains.github.io/OptionallyBayesHugo/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://eadains.github.io/OptionallyBayesHugo/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://eadains.github.io/OptionallyBayesHugo/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://eadains.github.io/OptionallyBayesHugo/apple-touch-icon.png">
+<link rel="mask-icon" href="http://eadains.github.io/OptionallyBayesHugo/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://eadains.github.io/OptionallyBayesHugo/posts/gam_trend_filtering/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript>
+<script>
+    MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']]
+        }
+    };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</script>
+
+  
+
+<meta property="og:title" content="Extending Trend Filtering to the GAM Case" />
+<meta property="og:description" content="Extending the trend filtering approach to the multivariate additive case" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://eadains.github.io/OptionallyBayesHugo/posts/gam_trend_filtering/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2024-12-18T00:00:00+00:00" />
+<meta property="article:modified_time" content="2024-12-18T00:00:00+00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Extending Trend Filtering to the GAM Case"/>
+<meta name="twitter:description" content="Extending the trend filtering approach to the multivariate additive case"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "http://eadains.github.io/OptionallyBayesHugo/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Extending Trend Filtering to the GAM Case",
+      "item": "http://eadains.github.io/OptionallyBayesHugo/posts/gam_trend_filtering/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Extending Trend Filtering to the GAM Case",
+  "name": "Extending Trend Filtering to the GAM Case",
+  "description": "Extending the trend filtering approach to the multivariate additive case",
+  "keywords": [
+    "gam", "trend-filtering", "non-parametric-regression", "machine-learning"
+  ],
+  "articleBody": "In one of my previous posts I implemented a trend filtering model in the univariate case. This is useful on its own but I want to extend it to the multivariate additive case to make it more useful for real-world modeling. Here I’ll consider this model form: $$ y_i = \\alpha + f_1(x_{i, 1}) + f_2(x_{i, 2}) + \\ldots + f_k(x_{i, k}) + \\epsilon $$ So, we’re assuming that the value of $y$ is a linear function of functions of each of our input variables $x$. In this case each of the smoothing functions, $f_j$ will be fit using the trend filtering method. So, this is a traditional GAM where we’re changing the form of the smoothing functions. I’ll be again using a least squares fit for simplicity, so we’re assuming $\\epsilon$ is a standard normal random variable, but this probabilistic interpretation won’t matter much here because I’ll be focusing more on implementation.\nSynthetic Data I’ll be using synthetic data with a known additive functional form to make sure that the model fitting procedure can properly recover the true underlying function. The function is simple: $$ \\begin{align*} y_i \u0026= 5 + \\sin(x_{i, 1}) + \\exp(x_{i, 2}) + \\epsilon \\newline \\epsilon \u0026\\sim \\text{Normal}(\\mu = 0, \\sigma^2 = 0.5^2) \\end{align*} $$\nI’m also simulating the $x$ values in a specific way to ensure some behavior in the values to make sure I can handle common practical issues. Firstly, the total number of values I’m simulating is 10,000, but I’ll be sampling integers bounded in such a way that the total number of unique possibilities is smaller than the total number of values I’m sampling. By the pigeonhole principle, this guarantees that I will sample multiple of the same value which ensures that my fitting procedure can deal with data where there are repeated $x$ values. For example, I’m sampling $x_{i, 1}$ as integers from -100 to +100 and then dividing by 10 to get rational values between -10 and 10. There are only 200 unique values possible, but again, I’m sampling 10,000 points, and this guarantees repeated values. In other words, the number of unique values will always be less than 10,000.\nSecondly, I’m also making sure that the number of unique values differs between each of the $x$’s. For $x_{i, 1}$ there will be at most 200 unique values, and for $x_{i, 2}$ there will be at most 500. Technically, by random chance they could be the same, but this is exceedingly unlikely to happen given 10,000 sample points, so I’m ignoring this possibility. This behavior ensures that my fitting procedure can deal with each input feature having different numbers of unique values, necessitating individual treatment which we’ll see later.\nimport numpy as np import plotly.graph_objects as go import plotly.io as pio from plotly.subplots import make_subplots import scipy import cvxpy as cp rng = np.random.default_rng() pio.renderers.default = \"iframe\" n = 10000 X = np.hstack( [ rng.integers(-100, 100, size=(n, 1)) / 10, rng.integers(-250, 250, size=(n, 1)) / 250, ] ) true_y = 5 + np.sin(X[:, 0]) + np.exp(X[:, 1]) obs_y = true_y + 0.5 * rng.standard_normal(n) We can then plot our true function and some sampled values:\nplot_x = np.linspace(X[:, 0].min(), X[:, 0].max(), 100) plot_y = np.linspace(X[:, 1].min(), X[:, 1].max(), 100) x_grid, y_grid = np.meshgrid(plot_x, plot_y) Z = scipy.interpolate.griddata( (X[:, 0], X[:, 1]), true_y, (x_grid, y_grid), method=\"linear\" ) fig = go.Figure( data=[ go.Surface(x=plot_x, y=plot_y, z=Z), go.Scatter3d( x=X[:, 0], y=X[:, 1], z=obs_y, opacity=0.15, mode=\"markers\", marker={\"size\": 3, \"color\": \"black\"}, ), ] ) fig.update_layout(title=\"True Function with Sampled Values\") fig.show() We have our data now, so we can move on to fitted our trend filtering model. What we want to do is fit a separate smoothing function to each variable, so the below code creates a dictionary of dictionary that contains all of the information we need to keep track of for each variable to then construct our model.\nKeeping track of each variable separately immediately solves one of the problems outline above, namely that of differing numbers of unique values per input variable. The next challenge is dealing with the presence of duplicate values in our input data. The trend filtering fitting procedure will only work if our input data points are sorted and do not have any duplicate values. To handle this I construct two arrays for each variable: first is a sorted array containing all of the unique values, and the second is a reconstruction array containing indices that can reconstruct the entire original array of observations from the array of unique values.\nThis way we can then create our $D$ matrix which is used for applying to penalty to the parameters, as well as a fitted parameter vector, $\\beta$, the entires of which correspond to each unique observation value. In the model, then, we can reconstruct an array of equal length to our original observation vector by indexing $\\beta$ using the reconstruction indices we’ve precomputed.\ndef make_D_matrix(n): ones = np.ones(n) return scipy.sparse.spdiags(np.vstack([-ones, ones]), range(2), m=n - 1, n=n) params = {} for i in range(X.shape[1]): unique_vals, recon_idx = np.unique(X[:, i], return_inverse=True) params[i] = { \"sort_idx\": np.argsort(X[:, i]), # These are guaranteed to be sorted \"unique_vals\": unique_vals, \"recon_idx\": recon_idx, \"D_mat\": make_D_matrix(len(unique_vals)), \"beta_vec\": cp.Variable(len(unique_vals), name=f\"X_{i}\"), } So we have now precomputed the things we need to assemble our model. First, we create a variable for the intercept. Next, we can get our model predicted values by taking the intercept plus the values from the fitted $\\beta$ vector reassembled by using the reconstruction array for each input variable. Then, we can compute the penalty for each input variable by taking each of their $D$ matrices and matrix multiplying it with the corresponding $\\beta$ vector, norming, and summing.\nIn notation: $$ \\hat{y}i = \\alpha + \\sum{j=1}^k \\beta_{i,j} $$\nWhere $k$ is the total number of input variables, and $\\beta_{i,j}$ is the fitted value corresponding to data point $i$ for variable $j$. The array indexing I do below in the code is needed to fetch the correct $\\beta$ vector value for each data point, given that we have duplicated values and our original data is not sorted.\nOur total penalty term looks like this: $$ P = \\sum_{j=1}^k \\Vert D_j \\beta_j \\Vert_1 $$\nThis is just the sum of the $\\ell_1$ norm of the difference matrix applied to the parameter vector for each variable. See my last post on the univariate trend filtering case for more details about how this works. Here we are simply applying the univariate trend filtering penalty to each variable individually and combining them.\nSo, now that we have our model predicted values for each input as well as the penalty term, we can assemble it all together into our objective function, which is a simple least squares objective with a penalty term: $$ \\text{argmin}_{\\alpha, \\beta} \\frac{1}{2} \\Vert y - \\hat{y} \\Vert^2_2 + \\lambda P $$\nwhere $\\lambda$ is a free regularization parameter to be selected. From these equations you can start to see the appeal of this method: there is only 1 hyperparameter to be dealt with. Unlike splines, you don’t have to worry about selecting knots, because the trend filtering process does this implicitly for us.\nThere is only one more detail to be dealt with which is identifiability. This issue is already well known in the larger GAM literature, and the solution is simple, although not necessarily complete, as I’ll discuss later. The problem is that the space spanned by our smoothing functions includes a constant function, which means that each smoothing function also implicitly includes its own intercept term, along with the one we’ve explicitly added. This results in a problem where the intercept is not identifiable because the model is equivalent from a loss perspective whether the necessary constant terms get added to the intercept we’ve specified or whether it gets added to any of the implicit intercepts of any of the smoothing functions. For example, our synthetic data has a true intercept of 5, but our model may end up setting the intercept term to 6.5, and then offset this by moving one of the smoothing functions down by 1.5 everywhere. There are an infinite number of these possibilities, which means our model is not identifiable.\nTo fix this we add a constraint which is commonly used in the literature, which is to require that the total effect of each smoothing function across the entire input space sums to zero: $$ \\sum_i f(x_{i, j}) = 0 \\quad \\forall j $$\nIn our case, because the effect of our smoothing functions is totally defined by the $\\beta$ vectors this simplifies to: $$ \\sum_i \\beta_{i, j} = 0 \\quad \\forall j $$\nThis effectively constrains the implicit intercept of each smoothing function to be zero, which solves the identifiability problem, with some caveats.\nPutting all of this together, we can finally fit our model:\n# For each observed y value get the relevant beta coefficient for that X observation # by using the reconstruction index based on the unique values vector alpha = cp.Variable(name=\"alpha\") y_hat = alpha + cp.sum( [params[i][\"beta_vec\"][params[i][\"recon_idx\"]] for i in params.keys()] ) # Compute separate l1 norms for each input variable and sum penalty = cp.sum( [cp.norm(params[i][\"D_mat\"] @ params[i][\"beta_vec\"], 1) for i in params.keys()] ) lam = 5 objective = cp.Minimize(0.5 * cp.sum_squares(obs_y - y_hat) + lam * penalty) # Sum to zero constraint to fix identifiability problems constraints = [cp.sum(params[i][\"beta_vec\"]) == 0 for i in params.keys()] prob = cp.Problem(objective, constraints) results = prob.solve(solver=\"CLARABEL\") Then we can compare our fitted function to the true function:\nZ_fitted = scipy.interpolate.griddata( (X[:, 0], X[:, 1]), y_hat.value, (x_grid, y_grid), method=\"nearest\" ) fig = make_subplots( rows=1, cols=2, specs=[[{\"is_3d\": True}, {\"is_3d\": True}]], subplot_titles=[ \"True Function\", \"Fitted Piecewise Function\", ], ) fig.add_trace(go.Surface(x=plot_x, y=plot_y, z=Z), row=1, col=1) fig.add_trace(go.Surface(x=plot_x, y=plot_y, z=Z_fitted), row=1, col=2) fig.show() We can see this is working. We can also look at the marginal relationship for each input variable:\nplot_x_0 = np.linspace( params[0][\"unique_vals\"].min(), params[0][\"unique_vals\"].max(), len(params[0][\"unique_vals\"]), ) fig = go.Figure( [ go.Scatter(x=plot_x_0, y=np.sin(plot_x_0), name=\"True Function\"), go.Scatter( x=params[0][\"unique_vals\"], y=params[0][\"beta_vec\"].value, name=\"Fitted Function\", ), ], ) fig.update_layout(title=\"Marginal Relationship for First Variable\") fig.show() plot_x_1 = np.linspace( params[1][\"unique_vals\"].min(), params[1][\"unique_vals\"].max(), len(params[1][\"unique_vals\"]), ) fig = go.Figure( [ go.Scatter(x=plot_x_1, y=np.exp(plot_x_1), name=\"True Function\"), go.Scatter( x=params[1][\"unique_vals\"], y=params[1][\"beta_vec\"].value, name=\"Fitted Function\", ), ], ) fig.update_layout(title=\"Marginal Relationship for Second Variable\") fig.show() We can see that for the first variable, the sine relationship is capture very well, but for the second variable, our fitted graph has the right shape but is shifted down. Let’s look at the fitted intercept value:\nalpha.value array(6.17078177) It’s not 5 as we would expect. In fact, this is the identifiability problem rearing its head. If we take the difference between this $\\alpha$ value and 5 we can see that it is very close to the gap between the true function value and our fitted curve for the second variable:\n# Average distance between true and fitted curve print(np.mean(np.exp(plot_x_1) - params[1][\"beta_vec\"].value)) # Distance between fitted and true intercept values print(alpha.value - 5) 1.1728523581910208 1.1707817719249132 The model has “moved” some of the intercept value to the marginal relationship for the second variable. Now, this has no effect when we look at our predictions, $\\hat{y}$, because the effect naturally washes out, so our predicted vs actual surfaces above are very close. But we obviously don’t recover the true intercept or the true marginal relationship for the second variable.\nAs far as I can tell, this is because the second variable follows an exponential curve. This means that the additive term for this variable will always be positive. You can see how this is an issue because we’ve constrained the model to have the total marginal effect sum to zero, when we expect the true total marginal effect to always be positive. If you replace the exponential function in the synthetic data code with something else that takes positive and negative values you can recover the correct intercept and marginal relationships. I have yet to work out if there is a better way to deal with this, or if some cases like the exponential are not fixable from this perspective. I’m not too worried about it because all of this only matters up to an additive constant, so the shape of the marginal relationship is correct, and predictions are unaffected, but it would be nice to be able to perfectly recover the true parameters in general. There may be a more clever way to handle the identifiability constraint that resolves this problem, but I don’t know it.\nInput Standardization One question that may arise with this model is whether we need to standardize our data beforehand like you have to in a normal ridge or lasso penalty setting. In those settings, if your model coefficients need to be on different scales the regularization penalty will improperly penalize larger variables more so than smaller ones, so you standardize the variables in advance so the penalty applied “equally” to everything.\nMy speculation is that it would make no difference here, although this is based on an argument that is very mathematically hand-wavy and I’m not confident in it. First, let’s start with our assumption of the true model form: $$ y_i = \\alpha + f(x_{1, i}) + g(x_{2, i}) + \\epsilon $$ Our $\\beta$ coefficients seek to estimate the values of the true functions at our sample points (we want our estimated functions $\\hat{f}$ and $\\hat{g}$ to be close to the true $f$ and $g$): $$ \\begin{align*} \\beta_{1, i} \u0026= \\hat{f}(x_{1, i}) \\newline \\beta_{2, i} \u0026= \\hat{g}(x_{2, i}) \\end{align*} $$ Our penalty is then: $$ \\begin{align} \\vert \\beta_{1, i+1} - \\beta_{1, i} \\vert \u0026= \\vert \\hat{f}(x_{1, i+1}) - \\hat{f}(x_{1, i}) \\vert \\newline \u0026= \\vert \\hat{f}(x_{1, i} + h) - \\hat{f}(x_{1, i}) \\vert \\newline \u0026= \\vert h \\hat{f}’(x_{1, i}) \\vert \\end{align} $$ Where we get the second line by assuming that our input points are evenly spaced and close by and we get to the third line by using the usual limit definition of a derivative. You can easily make this same argument for $g$. Buying this, we can see that our penalty is based on the first derivative of our estimated function. This qualitatively means that larger regularization values will promote flatter estimated functions that converge to a constant function (a constant function has zero derivative), which is the behavior we see:\nlams = np.logspace(1, 3, 5) betas = [] for lam in lams: # For each observed y value get the relevant beta coefficient for that X observation # by using the reconstruction index based on the unique values vector alpha = cp.Variable(name=\"alpha\") y_hat = alpha + cp.sum( [params[i][\"beta_vec\"][params[i][\"recon_idx\"]] for i in params.keys()] ) # Compute separate l1 norms for each input variable and sum penalty = cp.sum( [cp.norm(params[i][\"D_mat\"] @ params[i][\"beta_vec\"], 1) for i in params.keys()] ) objective = cp.Minimize(0.5 * cp.sum_squares(obs_y - y_hat) + lam * penalty) # Sum to zero constraint to fix identifiability problems constraints = [cp.sum(params[i][\"beta_vec\"]) == 0 for i in params.keys()] prob = cp.Problem(objective, constraints) results = prob.solve(solver=\"CLARABEL\") betas.append(params[0][\"beta_vec\"].value) fig = go.Figure( [ go.Scatter( x=params[1][\"unique_vals\"], y=betas[i], name=f\"Lambda Value: {lams[i]:.0f}\", ) for i in range(len(lams)) ], ) fig.update_layout(title=\"First Variable Betas by Regularization Penalty\") fig.show() Note that our sum-to-zero constraint ensures that the function we fit converges to a constant zero. Moving back to our original problem, we can see from this: $$ \\vert h \\hat{f}’(x_{1, i}) \\vert $$ that the only thing we will change by standardizing our $x$ values beforehand is the thing that goes inside the derivative of our fitted function. If we do this for our first and second variable, the relative magnitudes of the penalties will still depend on the exact form and magnitude of the first derivatives of our fitted functions, which should largely match with the true underlying function. In particular, given our first variable’s true function is $sin(x)$ the derivative is $cos(x)$ so the magnitude of these values won’t change at all whether we standardize or not:\nstandard_X = (X - np.mean(X, axis=0)) / np.std(X, axis=0) sort_idx = np.argsort(X[:, 0]) fig = go.Figure( [ go.Scatter(x=X[:, 0][sort_idx], y=np.sin(X[:, 0][sort_idx]), name=\"Original Values\"), go.Scatter( x=standard_X[:, 0][sort_idx], y=np.cos(standard_X[:, 0][sort_idx]), name=\"Standardized Values\", ), ], ) fig.update_layout(title=\"Original vs Transformed x Values for First Variable\") fig.show() So, we condense the range of $x$ values that are being supplied, but the magnitude of those values is the same. This is even more striking for our second variable because the derivative of the exponential is itself, so the values we get back are identical, but just evaluated over a smaller range of $x$ values.\nAll of this is to say that I don’t think that standardizing the input values will help with the differing magnitude of penalty values across different variables. I do think that having a separate regularization term for each variable would be more correct but obviously this causes a more complicated hyper-parameter search scheme. At least for this problem, using a single regularization term seems to work, so I can somewhat confidently say that this issue is less significant in this setting than in the normal linear setting, but it certainly still matters. If you can afford the computation, you may get slightly better results giving each variable a separate regularization parameter.\nConclusion With this I think the basic mathematical and conceptual setup for extending trend filtering to GAMs is set. I still have some uncertainty about the need for applying separate penalty terms to each variable, but the general outline of how to make this work seems pretty clear. The only extension I would like to get around to eventually is covering a two-variate interaction case. You can imagine that instead of $\\beta$ vectors you would end up with matrices and the penalty matrices would need another dimension.\n",
+  "wordCount" : "2927",
+  "inLanguage": "en",
+  "datePublished": "2024-12-18T00:00:00Z",
+  "dateModified": "2024-12-18T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "Erik Dains"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://eadains.github.io/OptionallyBayesHugo/posts/gam_trend_filtering/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Optionally Bayes",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://eadains.github.io/OptionallyBayesHugo/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://eadains.github.io/OptionallyBayesHugo/" accesskey="h" title="Optionally Bayes (Alt + H)">Optionally Bayes</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/tags/" title="Tags">
+                    <span>Tags</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/archives/" title="Archive">
+                    <span>Archive</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://eadains.github.io/OptionallyBayesHugo/search/" title="Search (Alt &#43; /)" accesskey=/>
+                    <span>Search</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Extending Trend Filtering to the GAM Case
+    </h1>
+    <div class="post-meta"><span title='2024-12-18 00:00:00 +0000 UTC'>December 18, 2024</span>&nbsp;·&nbsp;Erik Dains
+
+</div>
+  </header> 
+  <div class="post-content"><p>In one of my previous posts I implemented a trend filtering model in the univariate case. This is useful on its own but I want to extend it to the multivariate additive case to make it more useful for real-world modeling. Here I&rsquo;ll consider this model form:
+$$
+y_i = \alpha + f_1(x_{i, 1}) + f_2(x_{i, 2}) + \ldots + f_k(x_{i, k}) + \epsilon
+$$
+So, we&rsquo;re assuming that the value of $y$ is a linear function of functions of each of our input variables $x$. In this case each of the smoothing functions, $f_j$ will be fit using the trend filtering method. So, this is a traditional GAM where we&rsquo;re changing the form of the smoothing functions. I&rsquo;ll be again using a least squares fit for simplicity, so we&rsquo;re assuming $\epsilon$ is a standard normal random variable, but this probabilistic interpretation won&rsquo;t matter much here because I&rsquo;ll be focusing more on implementation.</p>
+<h1 id="synthetic-data">Synthetic Data<a hidden class="anchor" aria-hidden="true" href="#synthetic-data">#</a></h1>
+<p>I&rsquo;ll be using synthetic data with a known additive functional form to make sure that the model fitting procedure can properly recover the true underlying function. The function is simple:
+$$
+\begin{align*}
+y_i &amp;= 5 + \sin(x_{i, 1}) + \exp(x_{i, 2}) + \epsilon \newline
+\epsilon &amp;\sim \text{Normal}(\mu = 0, \sigma^2 = 0.5^2)
+\end{align*}
+$$</p>
+<p>I&rsquo;m also simulating the $x$ values in a specific way to ensure some behavior in the values to make sure I can handle common practical issues. Firstly, the total number of values I&rsquo;m simulating is 10,000, but I&rsquo;ll be sampling integers bounded in such a way that the total number of unique possibilities is smaller than the total number of values I&rsquo;m sampling. By the pigeonhole principle, this guarantees that I will sample multiple of the same value which ensures that my fitting procedure can deal with data where there are repeated $x$ values. For example, I&rsquo;m sampling $x_{i, 1}$ as integers from -100 to +100 and then dividing by 10 to get rational values between -10 and 10. There are only 200 unique values possible, but again, I&rsquo;m sampling 10,000 points, and this guarantees repeated values. In other words, the number of unique values will always be less than 10,000.</p>
+<p>Secondly, I&rsquo;m also making sure that the number of unique values differs between each of the $x$&rsquo;s. For $x_{i, 1}$ there will be at most 200 unique values, and for $x_{i, 2}$ there will be at most 500. Technically, by random chance they could be the same, but this is <em>exceedingly</em> unlikely to happen given 10,000 sample points, so I&rsquo;m ignoring this possibility. This behavior ensures that my fitting procedure can deal with each input feature having different numbers of unique values, necessitating individual treatment which we&rsquo;ll see later.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> plotly.graph_objects <span style="color:#66d9ef">as</span> go
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> plotly.io <span style="color:#66d9ef">as</span> pio
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> plotly.subplots <span style="color:#f92672">import</span> make_subplots
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> scipy
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> cvxpy <span style="color:#66d9ef">as</span> cp
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>rng <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>default_rng()
+</span></span><span style="display:flex;"><span>pio<span style="color:#f92672">.</span>renderers<span style="color:#f92672">.</span>default <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;iframe&#34;</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>n <span style="color:#f92672">=</span> <span style="color:#ae81ff">10000</span>
+</span></span><span style="display:flex;"><span>X <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>hstack(
+</span></span><span style="display:flex;"><span>    [
+</span></span><span style="display:flex;"><span>        rng<span style="color:#f92672">.</span>integers(<span style="color:#f92672">-</span><span style="color:#ae81ff">100</span>, <span style="color:#ae81ff">100</span>, size<span style="color:#f92672">=</span>(n, <span style="color:#ae81ff">1</span>)) <span style="color:#f92672">/</span> <span style="color:#ae81ff">10</span>,
+</span></span><span style="display:flex;"><span>        rng<span style="color:#f92672">.</span>integers(<span style="color:#f92672">-</span><span style="color:#ae81ff">250</span>, <span style="color:#ae81ff">250</span>, size<span style="color:#f92672">=</span>(n, <span style="color:#ae81ff">1</span>)) <span style="color:#f92672">/</span> <span style="color:#ae81ff">250</span>,
+</span></span><span style="display:flex;"><span>    ]
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>true_y <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span> <span style="color:#f92672">+</span> np<span style="color:#f92672">.</span>sin(X[:, <span style="color:#ae81ff">0</span>]) <span style="color:#f92672">+</span> np<span style="color:#f92672">.</span>exp(X[:, <span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span>obs_y <span style="color:#f92672">=</span> true_y <span style="color:#f92672">+</span> <span style="color:#ae81ff">0.5</span> <span style="color:#f92672">*</span> rng<span style="color:#f92672">.</span>standard_normal(n)
+</span></span></code></pre></div><p>We can then plot our true function and some sampled values:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plot_x <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(X[:, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>min(), X[:, <span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>max(), <span style="color:#ae81ff">100</span>)
+</span></span><span style="display:flex;"><span>plot_y <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(X[:, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>min(), X[:, <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>max(), <span style="color:#ae81ff">100</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>x_grid, y_grid <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>meshgrid(plot_x, plot_y)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Z <span style="color:#f92672">=</span> scipy<span style="color:#f92672">.</span>interpolate<span style="color:#f92672">.</span>griddata(
+</span></span><span style="display:flex;"><span>    (X[:, <span style="color:#ae81ff">0</span>], X[:, <span style="color:#ae81ff">1</span>]), true_y, (x_grid, y_grid), method<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;linear&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig <span style="color:#f92672">=</span> go<span style="color:#f92672">.</span>Figure(
+</span></span><span style="display:flex;"><span>    data<span style="color:#f92672">=</span>[
+</span></span><span style="display:flex;"><span>        go<span style="color:#f92672">.</span>Surface(x<span style="color:#f92672">=</span>plot_x, y<span style="color:#f92672">=</span>plot_y, z<span style="color:#f92672">=</span>Z),
+</span></span><span style="display:flex;"><span>        go<span style="color:#f92672">.</span>Scatter3d(
+</span></span><span style="display:flex;"><span>            x<span style="color:#f92672">=</span>X[:, <span style="color:#ae81ff">0</span>],
+</span></span><span style="display:flex;"><span>            y<span style="color:#f92672">=</span>X[:, <span style="color:#ae81ff">1</span>],
+</span></span><span style="display:flex;"><span>            z<span style="color:#f92672">=</span>obs_y,
+</span></span><span style="display:flex;"><span>            opacity<span style="color:#f92672">=</span><span style="color:#ae81ff">0.15</span>,
+</span></span><span style="display:flex;"><span>            mode<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;markers&#34;</span>,
+</span></span><span style="display:flex;"><span>            marker<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;size&#34;</span>: <span style="color:#ae81ff">3</span>, <span style="color:#e6db74">&#34;color&#34;</span>: <span style="color:#e6db74">&#34;black&#34;</span>},
+</span></span><span style="display:flex;"><span>        ),
+</span></span><span style="display:flex;"><span>    ]
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>fig<span style="color:#f92672">.</span>update_layout(title<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;True Function with Sampled Values&#34;</span>)
+</span></span><span style="display:flex;"><span>fig<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div>
+
+<iframe src="figure_4.html" width="100%" frameborder="0" height="550" scrolling="yes"></iframe>
+
+<p>We have our data now, so we can move on to fitted our trend filtering model. What we want to do is fit a separate smoothing function to each variable, so the below code creates a dictionary of dictionary that contains all of the information we need to keep track of for each variable to then construct our model.</p>
+<p>Keeping track of each variable separately immediately solves one of the problems outline above, namely that of differing numbers of unique values per input variable. The next challenge is dealing with the presence of duplicate values in our input data. The trend filtering fitting procedure will only work if our input data points are sorted and do not have any duplicate values. To handle this I construct two arrays for each variable: first is a sorted array containing all of the unique values, and the second is a reconstruction array containing indices that can reconstruct the entire original array of observations from the array of unique values.</p>
+<p>This way we can then create our $D$ matrix which is used for applying to penalty to the parameters, as well as a fitted parameter vector, $\beta$, the entires of which correspond to each unique observation value. In the model, then, we can reconstruct an array of equal length to our original observation vector by indexing $\beta$ using the reconstruction indices we&rsquo;ve precomputed.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">make_D_matrix</span>(n):
+</span></span><span style="display:flex;"><span>    ones <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>ones(n)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> scipy<span style="color:#f92672">.</span>sparse<span style="color:#f92672">.</span>spdiags(np<span style="color:#f92672">.</span>vstack([<span style="color:#f92672">-</span>ones, ones]), range(<span style="color:#ae81ff">2</span>), m<span style="color:#f92672">=</span>n <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>, n<span style="color:#f92672">=</span>n)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>params <span style="color:#f92672">=</span> {}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(X<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">1</span>]):
+</span></span><span style="display:flex;"><span>    unique_vals, recon_idx <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>unique(X[:, i], return_inverse<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    params[i] <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;sort_idx&#34;</span>: np<span style="color:#f92672">.</span>argsort(X[:, i]),
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e"># These are guaranteed to be sorted</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;unique_vals&#34;</span>: unique_vals,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;recon_idx&#34;</span>: recon_idx,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;D_mat&#34;</span>: make_D_matrix(len(unique_vals)),
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;beta_vec&#34;</span>: cp<span style="color:#f92672">.</span>Variable(len(unique_vals), name<span style="color:#f92672">=</span><span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;X_</span><span style="color:#e6db74">{</span>i<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>),
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><p>So we have now precomputed the things we need to assemble our model. First, we create a variable for the intercept. Next, we can get our model predicted values by taking the intercept plus the values from the fitted $\beta$ vector reassembled by using the reconstruction array for each input variable. Then, we can compute the penalty for each input variable by taking each of their $D$ matrices and matrix multiplying it with the corresponding $\beta$ vector, norming, and summing.</p>
+<p>In notation:
+$$
+\hat{y}<em>i = \alpha + \sum</em>{j=1}^k \beta_{i,j}
+$$</p>
+<p>Where $k$ is the total number of input variables, and $\beta_{i,j}$ is the fitted value corresponding to data point $i$ for variable $j$. The array indexing I do below in the code is needed to fetch the correct $\beta$ vector value for each data point, given that we have duplicated values and our original data is not sorted.</p>
+<p>Our total penalty term looks like this:
+$$
+P = \sum_{j=1}^k \Vert D_j \beta_j \Vert_1
+$$</p>
+<p>This is just the sum of the $\ell_1$ norm of the difference matrix applied to the parameter vector for each variable. See my last post on the univariate trend filtering case for more details about how this works. Here we are simply applying the univariate trend filtering penalty to each variable individually and combining them.</p>
+<p>So, now that we have our model predicted values for each input as well as the penalty term, we can assemble it all together into our objective function, which is a simple least squares objective with a penalty term:
+$$
+\text{argmin}_{\alpha, \beta} \frac{1}{2} \Vert y - \hat{y} \Vert^2_2 + \lambda P
+$$</p>
+<p>where $\lambda$ is a free regularization parameter to be selected. From these equations you can start to see the appeal of this method: there is only 1 hyperparameter to be dealt with. Unlike splines, you don&rsquo;t have to worry about selecting knots, because the trend filtering process does this implicitly for us.</p>
+<p>There is only one more detail to be dealt with which is identifiability. This issue is already well known in the larger GAM literature, and the solution is simple, although not necessarily complete, as I&rsquo;ll discuss later. The problem is that the space spanned by our smoothing functions includes a constant function, which means that each smoothing function also implicitly includes its own intercept term, along with the one we&rsquo;ve explicitly added. This results in a problem where the intercept is not identifiable because the model is equivalent from a loss perspective whether the necessary constant terms get added to the intercept we&rsquo;ve specified or whether it gets added to any of the implicit intercepts of any of the smoothing functions. For example, our synthetic data has a true intercept of 5, but our model may end up setting the intercept term to 6.5, and then offset this by moving one of the smoothing functions down by 1.5 everywhere. There are an infinite number of these possibilities, which means our model is not identifiable.</p>
+<p>To fix this we add a constraint which is commonly used in the literature, which is to require that the total effect of each smoothing function across the entire input space sums to zero:
+$$
+\sum_i f(x_{i, j}) = 0 \quad \forall j
+$$</p>
+<p>In our case, because the effect of our smoothing functions is totally defined by the $\beta$ vectors this simplifies to:
+$$
+\sum_i \beta_{i, j} = 0 \quad \forall j
+$$</p>
+<p>This effectively constrains the implicit intercept of each smoothing function to be zero, which solves the identifiability problem, with some caveats.</p>
+<p>Putting all of this together, we can finally fit our model:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># For each observed y value get the relevant beta coefficient for that X observation</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># by using the reconstruction index based on the unique values vector</span>
+</span></span><span style="display:flex;"><span>alpha <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Variable(name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;alpha&#34;</span>)
+</span></span><span style="display:flex;"><span>y_hat <span style="color:#f92672">=</span> alpha <span style="color:#f92672">+</span> cp<span style="color:#f92672">.</span>sum(
+</span></span><span style="display:flex;"><span>    [params[i][<span style="color:#e6db74">&#34;beta_vec&#34;</span>][params[i][<span style="color:#e6db74">&#34;recon_idx&#34;</span>]] <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> params<span style="color:#f92672">.</span>keys()]
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Compute separate l1 norms for each input variable and sum</span>
+</span></span><span style="display:flex;"><span>penalty <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>sum(
+</span></span><span style="display:flex;"><span>    [cp<span style="color:#f92672">.</span>norm(params[i][<span style="color:#e6db74">&#34;D_mat&#34;</span>] <span style="color:#f92672">@</span> params[i][<span style="color:#e6db74">&#34;beta_vec&#34;</span>], <span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> params<span style="color:#f92672">.</span>keys()]
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>lam <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>objective <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Minimize(<span style="color:#ae81ff">0.5</span> <span style="color:#f92672">*</span> cp<span style="color:#f92672">.</span>sum_squares(obs_y <span style="color:#f92672">-</span> y_hat) <span style="color:#f92672">+</span> lam <span style="color:#f92672">*</span> penalty)
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Sum to zero constraint to fix identifiability problems</span>
+</span></span><span style="display:flex;"><span>constraints <span style="color:#f92672">=</span> [cp<span style="color:#f92672">.</span>sum(params[i][<span style="color:#e6db74">&#34;beta_vec&#34;</span>]) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> params<span style="color:#f92672">.</span>keys()]
+</span></span><span style="display:flex;"><span>prob <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Problem(objective, constraints)
+</span></span><span style="display:flex;"><span>results <span style="color:#f92672">=</span> prob<span style="color:#f92672">.</span>solve(solver<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;CLARABEL&#34;</span>)
+</span></span></code></pre></div><p>Then we can compare our fitted function to the true function:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>Z_fitted <span style="color:#f92672">=</span> scipy<span style="color:#f92672">.</span>interpolate<span style="color:#f92672">.</span>griddata(
+</span></span><span style="display:flex;"><span>    (X[:, <span style="color:#ae81ff">0</span>], X[:, <span style="color:#ae81ff">1</span>]), y_hat<span style="color:#f92672">.</span>value, (x_grid, y_grid), method<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;nearest&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fig <span style="color:#f92672">=</span> make_subplots(
+</span></span><span style="display:flex;"><span>    rows<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>    cols<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>,
+</span></span><span style="display:flex;"><span>    specs<span style="color:#f92672">=</span>[[{<span style="color:#e6db74">&#34;is_3d&#34;</span>: <span style="color:#66d9ef">True</span>}, {<span style="color:#e6db74">&#34;is_3d&#34;</span>: <span style="color:#66d9ef">True</span>}]],
+</span></span><span style="display:flex;"><span>    subplot_titles<span style="color:#f92672">=</span>[
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;True Function&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;Fitted Piecewise Function&#34;</span>,
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fig<span style="color:#f92672">.</span>add_trace(go<span style="color:#f92672">.</span>Surface(x<span style="color:#f92672">=</span>plot_x, y<span style="color:#f92672">=</span>plot_y, z<span style="color:#f92672">=</span>Z), row<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, col<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>fig<span style="color:#f92672">.</span>add_trace(go<span style="color:#f92672">.</span>Surface(x<span style="color:#f92672">=</span>plot_x, y<span style="color:#f92672">=</span>plot_y, z<span style="color:#f92672">=</span>Z_fitted), row<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, col<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fig<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div>
+
+<iframe src="figure_7.html" width="100%" frameborder="0" height="550" scrolling="yes"></iframe>
+
+<p>We can see this is working. We can also look at the marginal relationship for each input variable:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plot_x_0 <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(
+</span></span><span style="display:flex;"><span>    params[<span style="color:#ae81ff">0</span>][<span style="color:#e6db74">&#34;unique_vals&#34;</span>]<span style="color:#f92672">.</span>min(),
+</span></span><span style="display:flex;"><span>    params[<span style="color:#ae81ff">0</span>][<span style="color:#e6db74">&#34;unique_vals&#34;</span>]<span style="color:#f92672">.</span>max(),
+</span></span><span style="display:flex;"><span>    len(params[<span style="color:#ae81ff">0</span>][<span style="color:#e6db74">&#34;unique_vals&#34;</span>]),
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fig <span style="color:#f92672">=</span> go<span style="color:#f92672">.</span>Figure(
+</span></span><span style="display:flex;"><span>    [
+</span></span><span style="display:flex;"><span>        go<span style="color:#f92672">.</span>Scatter(x<span style="color:#f92672">=</span>plot_x_0, y<span style="color:#f92672">=</span>np<span style="color:#f92672">.</span>sin(plot_x_0), name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;True Function&#34;</span>),
+</span></span><span style="display:flex;"><span>        go<span style="color:#f92672">.</span>Scatter(
+</span></span><span style="display:flex;"><span>            x<span style="color:#f92672">=</span>params[<span style="color:#ae81ff">0</span>][<span style="color:#e6db74">&#34;unique_vals&#34;</span>],
+</span></span><span style="display:flex;"><span>            y<span style="color:#f92672">=</span>params[<span style="color:#ae81ff">0</span>][<span style="color:#e6db74">&#34;beta_vec&#34;</span>]<span style="color:#f92672">.</span>value,
+</span></span><span style="display:flex;"><span>            name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Fitted Function&#34;</span>,
+</span></span><span style="display:flex;"><span>        ),
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>fig<span style="color:#f92672">.</span>update_layout(title<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Marginal Relationship for First Variable&#34;</span>)
+</span></span><span style="display:flex;"><span>fig<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div>
+
+<iframe src="figure_8.html" width="100%" frameborder="0" height="550" scrolling="yes"></iframe>
+
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plot_x_1 <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(
+</span></span><span style="display:flex;"><span>    params[<span style="color:#ae81ff">1</span>][<span style="color:#e6db74">&#34;unique_vals&#34;</span>]<span style="color:#f92672">.</span>min(),
+</span></span><span style="display:flex;"><span>    params[<span style="color:#ae81ff">1</span>][<span style="color:#e6db74">&#34;unique_vals&#34;</span>]<span style="color:#f92672">.</span>max(),
+</span></span><span style="display:flex;"><span>    len(params[<span style="color:#ae81ff">1</span>][<span style="color:#e6db74">&#34;unique_vals&#34;</span>]),
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fig <span style="color:#f92672">=</span> go<span style="color:#f92672">.</span>Figure(
+</span></span><span style="display:flex;"><span>    [
+</span></span><span style="display:flex;"><span>        go<span style="color:#f92672">.</span>Scatter(x<span style="color:#f92672">=</span>plot_x_1, y<span style="color:#f92672">=</span>np<span style="color:#f92672">.</span>exp(plot_x_1), name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;True Function&#34;</span>),
+</span></span><span style="display:flex;"><span>        go<span style="color:#f92672">.</span>Scatter(
+</span></span><span style="display:flex;"><span>            x<span style="color:#f92672">=</span>params[<span style="color:#ae81ff">1</span>][<span style="color:#e6db74">&#34;unique_vals&#34;</span>],
+</span></span><span style="display:flex;"><span>            y<span style="color:#f92672">=</span>params[<span style="color:#ae81ff">1</span>][<span style="color:#e6db74">&#34;beta_vec&#34;</span>]<span style="color:#f92672">.</span>value,
+</span></span><span style="display:flex;"><span>            name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Fitted Function&#34;</span>,
+</span></span><span style="display:flex;"><span>        ),
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>fig<span style="color:#f92672">.</span>update_layout(title<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Marginal Relationship for Second Variable&#34;</span>)
+</span></span><span style="display:flex;"><span>fig<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div>
+
+<iframe src="figure_9.html" width="100%" frameborder="0" height="550" scrolling="yes"></iframe>
+
+<p>We can see that for the first variable, the sine relationship is capture very well, but for the second variable, our fitted graph has the right shape but is shifted down. Let&rsquo;s look at the fitted intercept value:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>alpha<span style="color:#f92672">.</span>value
+</span></span></code></pre></div><pre><code>array(6.17078177)
+</code></pre>
+<p>It&rsquo;s not 5 as we would expect. In fact, this is the identifiability problem rearing its head. If we take the difference between this $\alpha$ value and 5 we can see that it is very close to the gap between the true function value and our fitted curve for the second variable:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># Average distance between true and fitted curve</span>
+</span></span><span style="display:flex;"><span>print(np<span style="color:#f92672">.</span>mean(np<span style="color:#f92672">.</span>exp(plot_x_1) <span style="color:#f92672">-</span> params[<span style="color:#ae81ff">1</span>][<span style="color:#e6db74">&#34;beta_vec&#34;</span>]<span style="color:#f92672">.</span>value))
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Distance between fitted and true intercept values</span>
+</span></span><span style="display:flex;"><span>print(alpha<span style="color:#f92672">.</span>value <span style="color:#f92672">-</span> <span style="color:#ae81ff">5</span>)
+</span></span></code></pre></div><pre><code>1.1728523581910208
+1.1707817719249132
+</code></pre>
+<p>The model has &ldquo;moved&rdquo; some of the intercept value to the marginal relationship for the second variable. Now, this has no effect when we look at our predictions, $\hat{y}$, because the effect naturally washes out, so our predicted vs actual surfaces above are very close. But we obviously don&rsquo;t recover the true intercept or the true marginal relationship for the second variable.</p>
+<p>As far as I can tell, this is because the second variable follows an exponential curve. This means that the additive term for this variable will always be positive. You can see how this is an issue because we&rsquo;ve constrained the model to have the total marginal effect sum to zero, when we expect the true total marginal effect to always be positive. If you replace the exponential function in the synthetic data code with something else that takes positive and negative values you can recover the correct intercept and marginal relationships. I have yet to work out if there is a better way to deal with this, or if some cases like the exponential are not fixable from this perspective. I&rsquo;m not too worried about it because all of this only matters up to an additive constant, so the <em>shape</em> of the marginal relationship is correct, and predictions are unaffected, but it would be nice to be able to perfectly recover the true parameters in general. There may be a more clever way to handle the identifiability constraint that resolves this problem, but I don&rsquo;t know it.</p>
+<h1 id="input-standardization">Input Standardization<a hidden class="anchor" aria-hidden="true" href="#input-standardization">#</a></h1>
+<p>One question that may arise with this model is whether we need to standardize our data beforehand like you have to in a normal ridge or lasso penalty setting. In those settings, if your model coefficients need to be on different scales the regularization penalty will improperly penalize larger variables more so than smaller ones, so you standardize the variables in advance so the penalty applied &ldquo;equally&rdquo; to everything.</p>
+<p>My speculation is that it would make no difference here, although this is based on an argument that is very mathematically hand-wavy and I&rsquo;m not confident in it. First, let&rsquo;s start with our assumption of the true model form:
+$$
+y_i = \alpha + f(x_{1, i}) + g(x_{2, i}) + \epsilon
+$$
+Our $\beta$ coefficients seek to estimate the values of the true functions at our sample points (we want our estimated functions $\hat{f}$ and $\hat{g}$ to be close to the true $f$ and $g$):
+$$
+\begin{align*}
+\beta_{1, i} &amp;= \hat{f}(x_{1, i}) \newline
+\beta_{2, i} &amp;= \hat{g}(x_{2, i})
+\end{align*}
+$$
+Our penalty is then:
+$$
+\begin{align}
+\vert \beta_{1, i+1} - \beta_{1, i} \vert &amp;= \vert \hat{f}(x_{1, i+1}) - \hat{f}(x_{1, i}) \vert \newline
+&amp;= \vert \hat{f}(x_{1, i} + h) - \hat{f}(x_{1, i}) \vert \newline
+&amp;= \vert h \hat{f}&rsquo;(x_{1, i}) \vert
+\end{align}
+$$
+Where we get the second line by assuming that our input points are evenly spaced and close by and we get to the third line by using the usual limit definition of a derivative. You can easily make this same argument for $g$. Buying this, we can see that our penalty is based on the first derivative of our estimated function. This qualitatively means that larger regularization values will promote flatter estimated functions that converge to a constant function (a constant function has zero derivative), which is the behavior we see:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>lams <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>logspace(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">5</span>)
+</span></span><span style="display:flex;"><span>betas <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> lam <span style="color:#f92672">in</span> lams:
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># For each observed y value get the relevant beta coefficient for that X observation</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># by using the reconstruction index based on the unique values vector</span>
+</span></span><span style="display:flex;"><span>    alpha <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Variable(name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;alpha&#34;</span>)
+</span></span><span style="display:flex;"><span>    y_hat <span style="color:#f92672">=</span> alpha <span style="color:#f92672">+</span> cp<span style="color:#f92672">.</span>sum(
+</span></span><span style="display:flex;"><span>        [params[i][<span style="color:#e6db74">&#34;beta_vec&#34;</span>][params[i][<span style="color:#e6db74">&#34;recon_idx&#34;</span>]] <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> params<span style="color:#f92672">.</span>keys()]
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Compute separate l1 norms for each input variable and sum</span>
+</span></span><span style="display:flex;"><span>    penalty <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>sum(
+</span></span><span style="display:flex;"><span>        [cp<span style="color:#f92672">.</span>norm(params[i][<span style="color:#e6db74">&#34;D_mat&#34;</span>] <span style="color:#f92672">@</span> params[i][<span style="color:#e6db74">&#34;beta_vec&#34;</span>], <span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> params<span style="color:#f92672">.</span>keys()]
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    objective <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Minimize(<span style="color:#ae81ff">0.5</span> <span style="color:#f92672">*</span> cp<span style="color:#f92672">.</span>sum_squares(obs_y <span style="color:#f92672">-</span> y_hat) <span style="color:#f92672">+</span> lam <span style="color:#f92672">*</span> penalty)
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Sum to zero constraint to fix identifiability problems</span>
+</span></span><span style="display:flex;"><span>    constraints <span style="color:#f92672">=</span> [cp<span style="color:#f92672">.</span>sum(params[i][<span style="color:#e6db74">&#34;beta_vec&#34;</span>]) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> params<span style="color:#f92672">.</span>keys()]
+</span></span><span style="display:flex;"><span>    prob <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Problem(objective, constraints)
+</span></span><span style="display:flex;"><span>    results <span style="color:#f92672">=</span> prob<span style="color:#f92672">.</span>solve(solver<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;CLARABEL&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    betas<span style="color:#f92672">.</span>append(params[<span style="color:#ae81ff">0</span>][<span style="color:#e6db74">&#34;beta_vec&#34;</span>]<span style="color:#f92672">.</span>value)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig <span style="color:#f92672">=</span> go<span style="color:#f92672">.</span>Figure(
+</span></span><span style="display:flex;"><span>    [
+</span></span><span style="display:flex;"><span>        go<span style="color:#f92672">.</span>Scatter(
+</span></span><span style="display:flex;"><span>            x<span style="color:#f92672">=</span>params[<span style="color:#ae81ff">1</span>][<span style="color:#e6db74">&#34;unique_vals&#34;</span>],
+</span></span><span style="display:flex;"><span>            y<span style="color:#f92672">=</span>betas[i],
+</span></span><span style="display:flex;"><span>            name<span style="color:#f92672">=</span><span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Lambda Value: </span><span style="color:#e6db74">{</span>lams[i]<span style="color:#e6db74">:</span><span style="color:#e6db74">.0f</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>,
+</span></span><span style="display:flex;"><span>        ) <span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(len(lams))
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>fig<span style="color:#f92672">.</span>update_layout(title<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;First Variable Betas by Regularization Penalty&#34;</span>)
+</span></span><span style="display:flex;"><span>fig<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div>
+
+<iframe src="figure_13.html" width="100%" frameborder="0" height="550" scrolling="yes"></iframe>
+
+<p>Note that our sum-to-zero constraint ensures that the function we fit converges to a constant zero. Moving back to our original problem, we can see from this:
+$$
+\vert h \hat{f}&rsquo;(x_{1, i}) \vert
+$$
+that the only thing we will change by standardizing our $x$ values beforehand is the thing that goes <em>inside</em> the derivative of our fitted function. If we do this for our first and second variable, the relative magnitudes of the penalties will still depend on the exact form and magnitude of the first derivatives of our fitted functions, which should largely match with the true underlying function. In particular, given our first variable&rsquo;s true function is $sin(x)$ the derivative is $cos(x)$ so the magnitude of these values won&rsquo;t change at all whether we standardize or not:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>standard_X <span style="color:#f92672">=</span> (X <span style="color:#f92672">-</span> np<span style="color:#f92672">.</span>mean(X, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)) <span style="color:#f92672">/</span> np<span style="color:#f92672">.</span>std(X, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>sort_idx <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>argsort(X[:, <span style="color:#ae81ff">0</span>])
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fig <span style="color:#f92672">=</span> go<span style="color:#f92672">.</span>Figure(
+</span></span><span style="display:flex;"><span>    [
+</span></span><span style="display:flex;"><span>        go<span style="color:#f92672">.</span>Scatter(x<span style="color:#f92672">=</span>X[:, <span style="color:#ae81ff">0</span>][sort_idx], y<span style="color:#f92672">=</span>np<span style="color:#f92672">.</span>sin(X[:, <span style="color:#ae81ff">0</span>][sort_idx]), name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Original Values&#34;</span>),
+</span></span><span style="display:flex;"><span>        go<span style="color:#f92672">.</span>Scatter(
+</span></span><span style="display:flex;"><span>            x<span style="color:#f92672">=</span>standard_X[:, <span style="color:#ae81ff">0</span>][sort_idx],
+</span></span><span style="display:flex;"><span>            y<span style="color:#f92672">=</span>np<span style="color:#f92672">.</span>cos(standard_X[:, <span style="color:#ae81ff">0</span>][sort_idx]),
+</span></span><span style="display:flex;"><span>            name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Standardized Values&#34;</span>,
+</span></span><span style="display:flex;"><span>        ),
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>fig<span style="color:#f92672">.</span>update_layout(title<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Original vs Transformed x Values for First Variable&#34;</span>)
+</span></span><span style="display:flex;"><span>fig<span style="color:#f92672">.</span>show()
+</span></span></code></pre></div>
+
+<iframe src="figure_14.html" width="100%" frameborder="0" height="550" scrolling="yes"></iframe>
+
+<p>So, we condense the range of $x$ values that are being supplied, but the magnitude of those values is the same. This is even more striking for our second variable because the derivative of the exponential is itself, so the values we get back are identical, but just evaluated over a smaller range of $x$ values.</p>
+<p>All of this is to say that I don&rsquo;t think that standardizing the input values will help with the differing magnitude of penalty values across different variables. I do think that having a separate regularization term for each variable would be more correct but obviously this causes a more complicated hyper-parameter search scheme. At least for this problem, using a single regularization term seems to work, so I can somewhat confidently say that this issue is <em>less</em> significant in this setting than in the normal linear setting, but it certainly still matters. If you can afford the computation, you may get slightly better results giving each variable a separate regularization parameter.</p>
+<h1 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h1>
+<p>With this I think the basic mathematical and conceptual setup for extending trend filtering to GAMs is set. I still have some uncertainty about the need for applying separate penalty terms to each variable, but the general outline of how to make this work seems pretty clear. The only extension I would like to get around to eventually is covering a two-variate interaction case. You can imagine that instead of $\beta$ <em>vectors</em> you would end up with matrices and the penalty matrices would need another dimension.</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/gam/">Gam</a></li>
+      <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/trend-filtering/">Trend-Filtering</a></li>
+      <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/non-parametric-regression/">Non-Parametric-Regression</a></li>
+      <li><a href="http://eadains.github.io/OptionallyBayesHugo/tags/machine-learning/">Machine-Learning</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2024 <a href="http://eadains.github.io/OptionallyBayesHugo/">Optionally Bayes</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+</body>
+
+</html>

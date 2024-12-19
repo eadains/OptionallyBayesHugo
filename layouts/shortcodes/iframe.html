@@ -1,0 +1,4 @@
+{{ with .Page.Resources.Get ( .Get 0) }}
+{{ (.Content | resources.FromString .Path).Publish }}
+<iframe src="{{ .Name }}" width="100%" frameborder="0" height="{{ $.Get 1 }}" scrolling="yes"></iframe>
+{{ end }}
