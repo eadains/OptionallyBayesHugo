@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 hugo
 git add *
-printf "Commit Message:"
+printf "Commit Message: "
 read m
 git commit -m "$m"
 git push origin master

@@ -117,7 +117,7 @@ So we have now precomputed the things we need to assemble our model. First, we c
 
 In notation:
 $$
-\hat{y}_i = \alpha + \sum_{j=1}^k \beta_{i,j}
+\hat{y_i} = \alpha + \sum_{j=1}^k \beta_{i,j}
 $$
 
 Where $k$ is the total number of input variables, and $\beta_{i,j}$ is the fitted value corresponding to data point $i$ for variable $j$. The array indexing I do below in the code is needed to fetch the correct $\beta$ vector value for each data point, given that we have duplicated values and our original data is not sorted.
@@ -131,7 +131,7 @@ This is just the sum of the $\ell_1$ norm of the difference matrix applied to th
 
 So, now that we have our model predicted values for each input as well as the penalty term, we can assemble it all together into our objective function, which is a simple least squares objective with a penalty term:
 $$
-\text{argmin}_{\alpha, \beta} \frac{1}{2} \Vert y - \hat{y} \Vert^2_2 + \lambda P
+\underset{\alpha, \beta}{\text{argmin}} \frac{1}{2} \Vert y - \hat{y} \Vert^2_2 + \lambda P
 $$
 
 where $\lambda$ is a free regularization parameter to be selected. From these equations you can start to see the appeal of this method: there is only 1 hyperparameter to be dealt with. Unlike splines, you don't have to worry about selecting knots, because the trend filtering process does this implicitly for us.
