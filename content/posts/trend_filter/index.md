@@ -1,5 +1,5 @@
 ---
-title: Trending Filtering using CVXPY
+title: Trend Filtering using CVXPY
 date: 2024-09-15
 tags: ["trend-filtering", "non-parametric-regression", "machine-learning"]
 summary: Fitting a Trend Filtering Model Using CVXPY
