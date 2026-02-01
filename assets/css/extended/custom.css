@@ -1,0 +1,4 @@
+:root {
+    --main-width: min(55vw, 1200px);
+    --nav-width: min(65vw, 1400px);
+}
