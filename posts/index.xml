@@ -4,10 +4,17 @@
     <title>Posts on Optionally Bayes</title>
     <link>http://eadains.github.io/OptionallyBayesHugo/posts/</link>
     <description>Recent content in Posts on Optionally Bayes</description>
-    <generator>Hugo -- 0.131.0</generator>
+    <generator>Hugo -- 0.152.2</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 18 Dec 2024 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 31 Jan 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://eadains.github.io/OptionallyBayesHugo/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Bayesian Method for Insurance Policy Resampling</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/posts/insurance_resampling/</link>
+      <pubDate>Sat, 31 Jan 2026 00:00:00 +0000</pubDate>
+      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/insurance_resampling/</guid>
+      <description>Using pymc to build a model to provide posterior samples of policy-level claim and severity estimates</description>
+    </item>
     <item>
       <title>Extending Trend Filtering to the GAM Case</title>
       <link>http://eadains.github.io/OptionallyBayesHugo/posts/gam_trend_filtering/</link>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Pymc on Optionally Bayes</title>
+    <link>http://eadains.github.io/OptionallyBayesHugo/tags/pymc/</link>
+    <description>Recent content in Pymc on Optionally Bayes</description>
+    <generator>Hugo -- 0.152.2</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 31 Jan 2026 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/pymc/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Bayesian Method for Insurance Policy Resampling</title>
+      <link>http://eadains.github.io/OptionallyBayesHugo/posts/insurance_resampling/</link>
+      <pubDate>Sat, 31 Jan 2026 00:00:00 +0000</pubDate>
+      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/insurance_resampling/</guid>
+      <description>Using pymc to build a model to provide posterior samples of policy-level claim and severity estimates</description>
+    </item>
+  </channel>
+</rss>
