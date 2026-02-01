@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 hugo
 git add *
 printf "Commit Message: "

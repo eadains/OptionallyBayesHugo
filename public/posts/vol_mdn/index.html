@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="auto">
+<html lang="en" dir="auto" data-theme="light">
 
 <head><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -10,7 +10,7 @@
 <meta name="description" content="Using a mixture density neural network implemented in PyTorch to forecast the distribution of future realized volatility.">
 <meta name="author" content="Erik Dains">
 <link rel="canonical" href="http://eadains.github.io/OptionallyBayesHugo/posts/vol_mdn/">
-<link crossorigin="anonymous" href="/OptionallyBayesHugo/assets/css/stylesheet.bcfc03792d6caa596ec2d6e8f4e36ba32f6840d6e52e04254b294666b3f67ad2.css" integrity="sha256-vPwDeS1sqlluwtbo9ONroy9oQNblLgQlSylGZrP2etI=" rel="preload stylesheet" as="style">
+<link crossorigin="anonymous" href="/OptionallyBayesHugo/assets/css/stylesheet.c9234ac2d086ecbdd4818d8373c4b7dcc4c7e8da6f8d5ff01f3e2b24a8b382ab.css" integrity="sha256-ySNKwtCG7L3UgY2Dc8S33MTH6NpvjV/wHz4rJKizgqs=" rel="preload stylesheet" as="style">
 <link rel="icon" href="http://eadains.github.io/OptionallyBayesHugo/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="http://eadains.github.io/OptionallyBayesHugo/favicon-16x16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="http://eadains.github.io/OptionallyBayesHugo/favicon-32x32.png">
@@ -37,19 +37,24 @@
 </script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </script>
-
-  
-
-<meta property="og:title" content="Mixture Density Network for Forecasting Realized Volatility" />
-<meta property="og:description" content="Using a mixture density neural network implemented in PyTorch to forecast the distribution of future realized volatility." />
-<meta property="og:type" content="article" />
-<meta property="og:url" content="http://eadains.github.io/OptionallyBayesHugo/posts/vol_mdn/" /><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2021-04-07T00:00:00+00:00" />
-<meta property="article:modified_time" content="2021-04-07T00:00:00+00:00" />
-
-<meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Mixture Density Network for Forecasting Realized Volatility"/>
-<meta name="twitter:description" content="Using a mixture density neural network implemented in PyTorch to forecast the distribution of future realized volatility."/>
+<meta property="og:url" content="http://eadains.github.io/OptionallyBayesHugo/posts/vol_mdn/">
+  <meta property="og:site_name" content="Optionally Bayes">
+  <meta property="og:title" content="Mixture Density Network for Forecasting Realized Volatility">
+  <meta property="og:description" content="Using a mixture density neural network implemented in PyTorch to forecast the distribution of future realized volatility.">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2021-04-07T00:00:00+00:00">
+    <meta property="article:modified_time" content="2021-04-07T00:00:00+00:00">
+    <meta property="article:tag" content="Volatility">
+    <meta property="article:tag" content="Forecasting">
+    <meta property="article:tag" content="Mixture-Density-Network">
+    <meta property="article:tag" content="Machine-Learning">
+    <meta property="article:tag" content="Pytorch">
+    <meta property="article:tag" content="Model-Building">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Mixture Density Network for Forecasting Realized Volatility">
+<meta name="twitter:description" content="Using a mixture density neural network implemented in PyTorch to forecast the distribution of future realized volatility.">
 
 
 <script type="application/ld+json">
@@ -106,10 +111,8 @@
 }
 </script>
 </head>
-
-<body class="" id="top">
-
-<header class="header">
+<body id="top">
+    <header class="header">
     <nav class="nav">
         <div class="logo">
             <a href="http://eadains.github.io/OptionallyBayesHugo/" accesskey="h" title="Optionally Bayes (Alt + H)">Optionally Bayes</a>
@@ -148,7 +151,7 @@
     <h1 class="post-title entry-hint-parent">
       Mixture Density Network for Forecasting Realized Volatility
     </h1>
-    <div class="post-meta"><span title='2021-04-07 00:00:00 +0000 UTC'>April 7, 2021</span>&nbsp;·&nbsp;Erik Dains
+    <div class="post-meta"><span title='2021-04-07 00:00:00 +0000 UTC'>April 7, 2021</span>&nbsp;·&nbsp;<span>Erik Dains</span>
 
 </div>
   </header> 
@@ -217,8 +220,8 @@
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>torch<span style="color:#f92672">.</span>set_default_dtype(torch<span style="color:#f92672">.</span>float64)
 </span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">MDN</span>(nn<span style="color:#f92672">.</span>Module):
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self, in_dim, out_dim, hidden_dim, n_components):
-</span></span><span style="display:flex;"><span>        super()<span style="color:#f92672">.</span>__init__()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">__init__</span>(self, in_dim, out_dim, hidden_dim, n_components):
+</span></span><span style="display:flex;"><span>        super()<span style="color:#f92672">.</span><span style="color:#a6e22e">__init__</span>()
 </span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>n_components <span style="color:#f92672">=</span> n_components
 </span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Last layer output dimension rationale:</span>
 </span></span><span style="display:flex;"><span>        <span style="color:#75715e"># Need two parameters for each distributionm thus 2 * n_components.</span>
@@ -326,12 +329,12 @@
 </span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>    Number of exceedences: 0.04477611940298507
 </span></span></code></pre></div><p>Further testing the distribution accuracy, let&rsquo;s see if doing a probability integral transform yields a uniform.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ECDF</span>:
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __init__(self, data):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">__init__</span>(self, data):
 </span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>sorted <span style="color:#f92672">=</span> data
 </span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>sorted<span style="color:#f92672">.</span>sort()
 </span></span><span style="display:flex;"><span>        self<span style="color:#f92672">.</span>y <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>arange(<span style="color:#ae81ff">1</span>, len(self<span style="color:#f92672">.</span>sorted) <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">/</span> len(self<span style="color:#f92672">.</span>sorted)
 </span></span><span style="display:flex;"><span>        
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> __call__(self, x):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">__call__</span>(self, x):
 </span></span><span style="display:flex;"><span>        ind <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>searchsorted(self<span style="color:#f92672">.</span>sorted, x) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
 </span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> self<span style="color:#f92672">.</span>y[ind]
 </span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>values <span style="color:#f92672">=</span> []
@@ -367,7 +370,7 @@
     </main>
     
 <footer class="footer">
-        <span>&copy; 2025 <a href="http://eadains.github.io/OptionallyBayesHugo/">Optionally Bayes</a></span> · 
+        <span>&copy; 2026 <a href="http://eadains.github.io/OptionallyBayesHugo/">Optionally Bayes</a></span> · 
 
     <span>
         Powered by
@@ -382,9 +385,14 @@
 </a>
 
 <script>
-    let menu = document.getElementById('menu')
+    let menu = document.getElementById('menu');
     if (menu) {
-        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
         menu.onscroll = function () {
             localStorage.setItem("menu-scroll-position", menu.scrollLeft);
         }
