@@ -1,7 +1,8 @@
 baseURL: http://eadains.github.io/OptionallyBayesHugo/
 languageCode: en-us
 title: Optionally Bayes
-paginate: 6
+pagination:
+  pagerSize: 6
 theme: "PaperMod"
 
 params:
