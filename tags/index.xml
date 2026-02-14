@@ -2,304 +2,304 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Tags on Optionally Bayes</title>
-    <link>http://eadains.github.io/OptionallyBayesHugo/tags/</link>
+    <link>http://optionallybayes.com/tags/</link>
     <description>Recent content in Tags on Optionally Bayes</description>
     <generator>Hugo -- 0.152.2</generator>
     <language>en-us</language>
     <lastBuildDate>Sat, 31 Jan 2026 00:00:00 +0000</lastBuildDate>
-    <atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://optionallybayes.com/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Arviz</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/arviz/</link>
+      <link>http://optionallybayes.com/tags/arviz/</link>
       <pubDate>Sat, 31 Jan 2026 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/arviz/</guid>
+      <guid>http://optionallybayes.com/tags/arviz/</guid>
       <description></description>
     </item>
     <item>
       <title>Bayesian</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/bayesian/</link>
+      <link>http://optionallybayes.com/tags/bayesian/</link>
       <pubDate>Sat, 31 Jan 2026 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/bayesian/</guid>
+      <guid>http://optionallybayes.com/tags/bayesian/</guid>
       <description></description>
     </item>
     <item>
       <title>Insurance</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/insurance/</link>
+      <link>http://optionallybayes.com/tags/insurance/</link>
       <pubDate>Sat, 31 Jan 2026 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/insurance/</guid>
+      <guid>http://optionallybayes.com/tags/insurance/</guid>
       <description></description>
     </item>
     <item>
       <title>Pymc</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/pymc/</link>
+      <link>http://optionallybayes.com/tags/pymc/</link>
       <pubDate>Sat, 31 Jan 2026 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/pymc/</guid>
+      <guid>http://optionallybayes.com/tags/pymc/</guid>
       <description></description>
     </item>
     <item>
       <title>Python</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/python/</link>
+      <link>http://optionallybayes.com/tags/python/</link>
       <pubDate>Sat, 31 Jan 2026 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/python/</guid>
+      <guid>http://optionallybayes.com/tags/python/</guid>
       <description></description>
     </item>
     <item>
       <title>Gam</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/gam/</link>
+      <link>http://optionallybayes.com/tags/gam/</link>
       <pubDate>Wed, 18 Dec 2024 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/gam/</guid>
+      <guid>http://optionallybayes.com/tags/gam/</guid>
       <description></description>
     </item>
     <item>
       <title>Machine-Learning</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/machine-learning/</link>
+      <link>http://optionallybayes.com/tags/machine-learning/</link>
       <pubDate>Wed, 18 Dec 2024 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/machine-learning/</guid>
+      <guid>http://optionallybayes.com/tags/machine-learning/</guid>
       <description></description>
     </item>
     <item>
       <title>Non-Parametric-Regression</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/non-parametric-regression/</link>
+      <link>http://optionallybayes.com/tags/non-parametric-regression/</link>
       <pubDate>Wed, 18 Dec 2024 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/non-parametric-regression/</guid>
+      <guid>http://optionallybayes.com/tags/non-parametric-regression/</guid>
       <description></description>
     </item>
     <item>
       <title>Trend-Filtering</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/trend-filtering/</link>
+      <link>http://optionallybayes.com/tags/trend-filtering/</link>
       <pubDate>Wed, 18 Dec 2024 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/trend-filtering/</guid>
+      <guid>http://optionallybayes.com/tags/trend-filtering/</guid>
       <description></description>
     </item>
     <item>
       <title>Exponential-Smoothing</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/exponential-smoothing/</link>
+      <link>http://optionallybayes.com/tags/exponential-smoothing/</link>
       <pubDate>Fri, 01 Nov 2024 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/exponential-smoothing/</guid>
+      <guid>http://optionallybayes.com/tags/exponential-smoothing/</guid>
       <description></description>
     </item>
     <item>
       <title>Stan</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/stan/</link>
+      <link>http://optionallybayes.com/tags/stan/</link>
       <pubDate>Fri, 01 Nov 2024 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/stan/</guid>
+      <guid>http://optionallybayes.com/tags/stan/</guid>
       <description></description>
     </item>
     <item>
       <title>Ergodicity</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/ergodicity/</link>
+      <link>http://optionallybayes.com/tags/ergodicity/</link>
       <pubDate>Sat, 03 Aug 2024 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/ergodicity/</guid>
+      <guid>http://optionallybayes.com/tags/ergodicity/</guid>
       <description></description>
     </item>
     <item>
       <title>Monte-Carlo</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/monte-carlo/</link>
+      <link>http://optionallybayes.com/tags/monte-carlo/</link>
       <pubDate>Sat, 03 Aug 2024 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/monte-carlo/</guid>
+      <guid>http://optionallybayes.com/tags/monte-carlo/</guid>
       <description></description>
     </item>
     <item>
       <title>Stochastic-Processes</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/stochastic-processes/</link>
+      <link>http://optionallybayes.com/tags/stochastic-processes/</link>
       <pubDate>Sat, 03 Aug 2024 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/stochastic-processes/</guid>
+      <guid>http://optionallybayes.com/tags/stochastic-processes/</guid>
       <description></description>
     </item>
     <item>
       <title>Daily-Fantasy-Sports</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/daily-fantasy-sports/</link>
+      <link>http://optionallybayes.com/tags/daily-fantasy-sports/</link>
       <pubDate>Wed, 06 Jul 2022 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/daily-fantasy-sports/</guid>
+      <guid>http://optionallybayes.com/tags/daily-fantasy-sports/</guid>
       <description></description>
     </item>
     <item>
       <title>Integer-Programming</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/integer-programming/</link>
+      <link>http://optionallybayes.com/tags/integer-programming/</link>
       <pubDate>Wed, 06 Jul 2022 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/integer-programming/</guid>
+      <guid>http://optionallybayes.com/tags/integer-programming/</guid>
       <description></description>
     </item>
     <item>
       <title>Julia</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/julia/</link>
+      <link>http://optionallybayes.com/tags/julia/</link>
       <pubDate>Wed, 06 Jul 2022 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/julia/</guid>
+      <guid>http://optionallybayes.com/tags/julia/</guid>
       <description></description>
     </item>
     <item>
       <title>Optimization</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/optimization/</link>
+      <link>http://optionallybayes.com/tags/optimization/</link>
       <pubDate>Wed, 06 Jul 2022 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/optimization/</guid>
+      <guid>http://optionallybayes.com/tags/optimization/</guid>
       <description></description>
     </item>
     <item>
       <title>Jump</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/jump/</link>
+      <link>http://optionallybayes.com/tags/jump/</link>
       <pubDate>Wed, 11 May 2022 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/jump/</guid>
+      <guid>http://optionallybayes.com/tags/jump/</guid>
       <description></description>
     </item>
     <item>
       <title>Volatility</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/volatility/</link>
+      <link>http://optionallybayes.com/tags/volatility/</link>
       <pubDate>Wed, 11 May 2022 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/volatility/</guid>
+      <guid>http://optionallybayes.com/tags/volatility/</guid>
       <description></description>
     </item>
     <item>
       <title>Kelly</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/kelly/</link>
+      <link>http://optionallybayes.com/tags/kelly/</link>
       <pubDate>Sat, 18 Dec 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/kelly/</guid>
+      <guid>http://optionallybayes.com/tags/kelly/</guid>
       <description></description>
     </item>
     <item>
       <title>Portfolio-Optimization</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/</link>
+      <link>http://optionallybayes.com/tags/portfolio-optimization/</link>
       <pubDate>Sat, 18 Dec 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/portfolio-optimization/</guid>
+      <guid>http://optionallybayes.com/tags/portfolio-optimization/</guid>
       <description></description>
     </item>
     <item>
       <title>Drawdown</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/drawdown/</link>
+      <link>http://optionallybayes.com/tags/drawdown/</link>
       <pubDate>Wed, 08 Dec 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/drawdown/</guid>
+      <guid>http://optionallybayes.com/tags/drawdown/</guid>
       <description></description>
     </item>
     <item>
       <title>Clustering</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/clustering/</link>
+      <link>http://optionallybayes.com/tags/clustering/</link>
       <pubDate>Sat, 28 Aug 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/clustering/</guid>
+      <guid>http://optionallybayes.com/tags/clustering/</guid>
       <description></description>
     </item>
     <item>
       <title>Diversification</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/diversification/</link>
+      <link>http://optionallybayes.com/tags/diversification/</link>
       <pubDate>Sat, 28 Aug 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/diversification/</guid>
+      <guid>http://optionallybayes.com/tags/diversification/</guid>
       <description></description>
     </item>
     <item>
       <title>ETF</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/etf/</link>
+      <link>http://optionallybayes.com/tags/etf/</link>
       <pubDate>Sat, 28 Aug 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/etf/</guid>
+      <guid>http://optionallybayes.com/tags/etf/</guid>
       <description></description>
     </item>
     <item>
       <title>Model-Building</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/model-building/</link>
+      <link>http://optionallybayes.com/tags/model-building/</link>
       <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/model-building/</guid>
+      <guid>http://optionallybayes.com/tags/model-building/</guid>
       <description></description>
     </item>
     <item>
       <title>Model-Comparison</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/model-comparison/</link>
+      <link>http://optionallybayes.com/tags/model-comparison/</link>
       <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/model-comparison/</guid>
+      <guid>http://optionallybayes.com/tags/model-comparison/</guid>
       <description></description>
     </item>
     <item>
       <title>AWS</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/aws/</link>
+      <link>http://optionallybayes.com/tags/aws/</link>
       <pubDate>Thu, 05 Aug 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/aws/</guid>
+      <guid>http://optionallybayes.com/tags/aws/</guid>
       <description></description>
     </item>
     <item>
       <title>Data</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/data/</link>
+      <link>http://optionallybayes.com/tags/data/</link>
       <pubDate>Thu, 05 Aug 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/data/</guid>
+      <guid>http://optionallybayes.com/tags/data/</guid>
       <description></description>
     </item>
     <item>
       <title>Postgresql</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/postgresql/</link>
+      <link>http://optionallybayes.com/tags/postgresql/</link>
       <pubDate>Thu, 05 Aug 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/postgresql/</guid>
+      <guid>http://optionallybayes.com/tags/postgresql/</guid>
       <description></description>
     </item>
     <item>
       <title>Hugo</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/hugo/</link>
+      <link>http://optionallybayes.com/tags/hugo/</link>
       <pubDate>Sun, 27 Jun 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/hugo/</guid>
+      <guid>http://optionallybayes.com/tags/hugo/</guid>
       <description></description>
     </item>
     <item>
       <title>Static-Sites</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/static-sites/</link>
+      <link>http://optionallybayes.com/tags/static-sites/</link>
       <pubDate>Sun, 27 Jun 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/static-sites/</guid>
+      <guid>http://optionallybayes.com/tags/static-sites/</guid>
       <description></description>
     </item>
     <item>
       <title>Options</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/options/</link>
+      <link>http://optionallybayes.com/tags/options/</link>
       <pubDate>Sat, 01 May 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/options/</guid>
+      <guid>http://optionallybayes.com/tags/options/</guid>
       <description></description>
     </item>
     <item>
       <title>Pricing</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/pricing/</link>
+      <link>http://optionallybayes.com/tags/pricing/</link>
       <pubDate>Sat, 01 May 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/pricing/</guid>
+      <guid>http://optionallybayes.com/tags/pricing/</guid>
       <description></description>
     </item>
     <item>
       <title>Pytorch</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/pytorch/</link>
+      <link>http://optionallybayes.com/tags/pytorch/</link>
       <pubDate>Sat, 01 May 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/pytorch/</guid>
+      <guid>http://optionallybayes.com/tags/pytorch/</guid>
       <description></description>
     </item>
     <item>
       <title>Forecasting</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/forecasting/</link>
+      <link>http://optionallybayes.com/tags/forecasting/</link>
       <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/forecasting/</guid>
+      <guid>http://optionallybayes.com/tags/forecasting/</guid>
       <description></description>
     </item>
     <item>
       <title>Mixture-Density-Network</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/mixture-density-network/</link>
+      <link>http://optionallybayes.com/tags/mixture-density-network/</link>
       <pubDate>Wed, 07 Apr 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/mixture-density-network/</guid>
+      <guid>http://optionallybayes.com/tags/mixture-density-network/</guid>
       <description></description>
     </item>
     <item>
       <title>Realized-Volatility</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/realized-volatility/</link>
+      <link>http://optionallybayes.com/tags/realized-volatility/</link>
       <pubDate>Sun, 07 Mar 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/realized-volatility/</guid>
+      <guid>http://optionallybayes.com/tags/realized-volatility/</guid>
       <description></description>
     </item>
     <item>
       <title>Diversification-Ratio</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/diversification-ratio/</link>
+      <link>http://optionallybayes.com/tags/diversification-ratio/</link>
       <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/diversification-ratio/</guid>
+      <guid>http://optionallybayes.com/tags/diversification-ratio/</guid>
       <description></description>
     </item>
     <item>
       <title>ETFs</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/etfs/</link>
+      <link>http://optionallybayes.com/tags/etfs/</link>
       <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/etfs/</guid>
+      <guid>http://optionallybayes.com/tags/etfs/</guid>
       <description></description>
     </item>
     <item>
       <title>Performance-Measurement</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/tags/performance-measurement/</link>
+      <link>http://optionallybayes.com/tags/performance-measurement/</link>
       <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/tags/performance-measurement/</guid>
+      <guid>http://optionallybayes.com/tags/performance-measurement/</guid>
       <description></description>
     </item>
   </channel>

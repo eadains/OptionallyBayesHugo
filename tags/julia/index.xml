@@ -2,38 +2,38 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Julia on Optionally Bayes</title>
-    <link>http://eadains.github.io/OptionallyBayesHugo/tags/julia/</link>
+    <link>http://optionallybayes.com/tags/julia/</link>
     <description>Recent content in Julia on Optionally Bayes</description>
     <generator>Hugo -- 0.152.2</generator>
     <language>en-us</language>
     <lastBuildDate>Wed, 06 Jul 2022 00:00:00 +0000</lastBuildDate>
-    <atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/julia/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://optionallybayes.com/tags/julia/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Integer Programming for Daily Fantasy Sports</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/posts/intprog_dfs/</link>
+      <link>http://optionallybayes.com/posts/intprog_dfs/</link>
       <pubDate>Wed, 06 Jul 2022 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/intprog_dfs/</guid>
+      <guid>http://optionallybayes.com/posts/intprog_dfs/</guid>
       <description>Using Integer Programming to find Daily Fantasy Sports lineups with the highest expected points.</description>
     </item>
     <item>
       <title>Decomposing Volatility: Continuous and Jump Component</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/posts/vol_decomp/</link>
+      <link>http://optionallybayes.com/posts/vol_decomp/</link>
       <pubDate>Wed, 11 May 2022 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/vol_decomp/</guid>
+      <guid>http://optionallybayes.com/posts/vol_decomp/</guid>
       <description>Illustrating how realized volatility can decomposed into a continuous and jump component, providing new modelling opportunities.</description>
     </item>
     <item>
       <title>Exploring the Kelly Criterion: The Multi-Period Problem</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_multiperiod/</link>
+      <link>http://optionallybayes.com/posts/kelly_multiperiod/</link>
       <pubDate>Sat, 18 Dec 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_multiperiod/</guid>
+      <guid>http://optionallybayes.com/posts/kelly_multiperiod/</guid>
       <description>Exploring how mean-variance methods and the Kelly Criterion compare in multi-period investments</description>
     </item>
     <item>
       <title>Exploring the Kelly Criterion: Drawdown</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_drawdown/</link>
+      <link>http://optionallybayes.com/posts/kelly_drawdown/</link>
       <pubDate>Wed, 08 Dec 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_drawdown/</guid>
+      <guid>http://optionallybayes.com/posts/kelly_drawdown/</guid>
       <description>Exploring the Kelly Criterion and its drawdown properties using Monte Carlo</description>
     </item>
   </channel>

@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Options on Optionally Bayes</title>
-    <link>http://eadains.github.io/OptionallyBayesHugo/tags/options/</link>
+    <link>http://optionallybayes.com/tags/options/</link>
     <description>Recent content in Options on Optionally Bayes</description>
     <generator>Hugo -- 0.152.2</generator>
     <language>en-us</language>
     <lastBuildDate>Sat, 01 May 2021 00:00:00 +0000</lastBuildDate>
-    <atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/options/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://optionallybayes.com/tags/options/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Monte Carlo Methods for Option Pricing and Greeks</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/posts/option_pricing/</link>
+      <link>http://optionallybayes.com/posts/option_pricing/</link>
       <pubDate>Sat, 01 May 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/option_pricing/</guid>
+      <guid>http://optionallybayes.com/posts/option_pricing/</guid>
       <description>Using PyTorch to easily compute Option Greeks first using Black-Scholes and then Monte Carlo methods.</description>
     </item>
   </channel>
