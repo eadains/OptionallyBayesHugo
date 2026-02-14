@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Gam on Optionally Bayes</title>
-    <link>http://eadains.github.io/OptionallyBayesHugo/tags/gam/</link>
+    <link>http://optionallybayes.com/tags/gam/</link>
     <description>Recent content in Gam on Optionally Bayes</description>
     <generator>Hugo -- 0.152.2</generator>
     <language>en-us</language>
     <lastBuildDate>Wed, 18 Dec 2024 00:00:00 +0000</lastBuildDate>
-    <atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/gam/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://optionallybayes.com/tags/gam/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Extending Trend Filtering to the GAM Case</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/posts/gam_trend_filtering/</link>
+      <link>http://optionallybayes.com/posts/gam_trend_filtering/</link>
       <pubDate>Wed, 18 Dec 2024 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/gam_trend_filtering/</guid>
+      <guid>http://optionallybayes.com/posts/gam_trend_filtering/</guid>
       <description>Extending the trend filtering approach to the multivariate additive case</description>
     </item>
   </channel>

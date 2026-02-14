@@ -2,24 +2,24 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Drawdown on Optionally Bayes</title>
-    <link>http://eadains.github.io/OptionallyBayesHugo/tags/drawdown/</link>
+    <link>http://optionallybayes.com/tags/drawdown/</link>
     <description>Recent content in Drawdown on Optionally Bayes</description>
     <generator>Hugo -- 0.152.2</generator>
     <language>en-us</language>
     <lastBuildDate>Wed, 08 Dec 2021 00:00:00 +0000</lastBuildDate>
-    <atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/drawdown/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://optionallybayes.com/tags/drawdown/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Exploring the Kelly Criterion: Drawdown</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_drawdown/</link>
+      <link>http://optionallybayes.com/posts/kelly_drawdown/</link>
       <pubDate>Wed, 08 Dec 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/kelly_drawdown/</guid>
+      <guid>http://optionallybayes.com/posts/kelly_drawdown/</guid>
       <description>Exploring the Kelly Criterion and its drawdown properties using Monte Carlo</description>
     </item>
     <item>
       <title>A Most Diversified ETF Portfolio</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/posts/mdp_etf_portfolio/</link>
+      <link>http://optionallybayes.com/posts/mdp_etf_portfolio/</link>
       <pubDate>Thu, 07 Jan 2021 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/mdp_etf_portfolio/</guid>
+      <guid>http://optionallybayes.com/posts/mdp_etf_portfolio/</guid>
       <description>Constructing a portfolio from a selection of ETFs to maximize the diversification ratio</description>
     </item>
   </channel>

@@ -2,24 +2,24 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Python on Optionally Bayes</title>
-    <link>http://eadains.github.io/OptionallyBayesHugo/tags/python/</link>
+    <link>http://optionallybayes.com/tags/python/</link>
     <description>Recent content in Python on Optionally Bayes</description>
     <generator>Hugo -- 0.152.2</generator>
     <language>en-us</language>
     <lastBuildDate>Sat, 31 Jan 2026 00:00:00 +0000</lastBuildDate>
-    <atom:link href="http://eadains.github.io/OptionallyBayesHugo/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://optionallybayes.com/tags/python/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Bayesian Method for Insurance Policy Resampling</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/posts/insurance_resampling/</link>
+      <link>http://optionallybayes.com/posts/insurance_resampling/</link>
       <pubDate>Sat, 31 Jan 2026 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/insurance_resampling/</guid>
+      <guid>http://optionallybayes.com/posts/insurance_resampling/</guid>
       <description>Using pymc to build a model to provide posterior samples of policy-level claim and severity estimates</description>
     </item>
     <item>
       <title>Simulation of Stochastic Processes</title>
-      <link>http://eadains.github.io/OptionallyBayesHugo/posts/stoch_proc/</link>
+      <link>http://optionallybayes.com/posts/stoch_proc/</link>
       <pubDate>Fri, 10 Feb 2023 00:00:00 +0000</pubDate>
-      <guid>http://eadains.github.io/OptionallyBayesHugo/posts/stoch_proc/</guid>
+      <guid>http://optionallybayes.com/posts/stoch_proc/</guid>
       <description>Simulating Brownian Motion and two common stochastic processes.</description>
     </item>
   </channel>
