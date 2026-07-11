@@ -6,8 +6,43 @@
     <description>Recent content in Tags on Optionally Bayes</description>
     <generator>Hugo -- 0.152.2</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 31 Jan 2026 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 11 Jul 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://optionallybayes.com/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Exposures</title>
+      <link>http://optionallybayes.com/tags/exposures/</link>
+      <pubDate>Sat, 11 Jul 2026 00:00:00 +0000</pubDate>
+      <guid>http://optionallybayes.com/tags/exposures/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Glm</title>
+      <link>http://optionallybayes.com/tags/glm/</link>
+      <pubDate>Sat, 11 Jul 2026 00:00:00 +0000</pubDate>
+      <guid>http://optionallybayes.com/tags/glm/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Insurance</title>
+      <link>http://optionallybayes.com/tags/insurance/</link>
+      <pubDate>Sat, 11 Jul 2026 00:00:00 +0000</pubDate>
+      <guid>http://optionallybayes.com/tags/insurance/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Python</title>
+      <link>http://optionallybayes.com/tags/python/</link>
+      <pubDate>Sat, 11 Jul 2026 00:00:00 +0000</pubDate>
+      <guid>http://optionallybayes.com/tags/python/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Weights</title>
+      <link>http://optionallybayes.com/tags/weights/</link>
+      <pubDate>Sat, 11 Jul 2026 00:00:00 +0000</pubDate>
+      <guid>http://optionallybayes.com/tags/weights/</guid>
+      <description></description>
+    </item>
     <item>
       <title>Arviz</title>
       <link>http://optionallybayes.com/tags/arviz/</link>
@@ -23,24 +58,10 @@
       <description></description>
     </item>
     <item>
-      <title>Insurance</title>
-      <link>http://optionallybayes.com/tags/insurance/</link>
-      <pubDate>Sat, 31 Jan 2026 00:00:00 +0000</pubDate>
-      <guid>http://optionallybayes.com/tags/insurance/</guid>
-      <description></description>
-    </item>
-    <item>
       <title>Pymc</title>
       <link>http://optionallybayes.com/tags/pymc/</link>
       <pubDate>Sat, 31 Jan 2026 00:00:00 +0000</pubDate>
       <guid>http://optionallybayes.com/tags/pymc/</guid>
-      <description></description>
-    </item>
-    <item>
-      <title>Python</title>
-      <link>http://optionallybayes.com/tags/python/</link>
-      <pubDate>Sat, 31 Jan 2026 00:00:00 +0000</pubDate>
-      <guid>http://optionallybayes.com/tags/python/</guid>
       <description></description>
     </item>
     <item>

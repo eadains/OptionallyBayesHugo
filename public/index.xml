@@ -6,8 +6,15 @@
     <description>Recent content on Optionally Bayes</description>
     <generator>Hugo -- 0.152.2</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 31 Jan 2026 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 11 Jul 2026 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://optionallybayes.com/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Handling Exposures in Insurance Modeling</title>
+      <link>http://optionallybayes.com/posts/insurance_exposures/</link>
+      <pubDate>Sat, 11 Jul 2026 00:00:00 +0000</pubDate>
+      <guid>http://optionallybayes.com/posts/insurance_exposures/</guid>
+      <description>Exploring how exposures in insurance modeling can be applied as either an offset or as a weight.</description>
+    </item>
     <item>
       <title>Bayesian Method for Insurance Policy Resampling</title>
       <link>http://optionallybayes.com/posts/insurance_resampling/</link>
