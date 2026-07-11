@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="light">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Handling Exposures in Insurance Modeling | Optionally Bayes</title>
+<meta name="keywords" content="python, insurance, exposures, glm, weights">
+<meta name="description" content="Exploring how exposures in insurance modeling can be applied as either an offset or as a weight.">
+<meta name="author" content="Erik Dains">
+<link rel="canonical" href="http://optionallybayes.com/posts/insurance_exposures/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.c9234ac2d086ecbdd4818d8373c4b7dcc4c7e8da6f8d5ff01f3e2b24a8b382ab.css" integrity="sha256-ySNKwtCG7L3UgY2Dc8S33MTH6NpvjV/wHz4rJKizgqs=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://optionallybayes.com/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://optionallybayes.com/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://optionallybayes.com/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://optionallybayes.com/apple-touch-icon.png">
+<link rel="mask-icon" href="http://optionallybayes.com/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://optionallybayes.com/posts/insurance_exposures/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript>
+<script>
+    MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']]
+        }
+    };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</script>
+<meta property="og:url" content="http://optionallybayes.com/posts/insurance_exposures/">
+  <meta property="og:site_name" content="Optionally Bayes">
+  <meta property="og:title" content="Handling Exposures in Insurance Modeling">
+  <meta property="og:description" content="Exploring how exposures in insurance modeling can be applied as either an offset or as a weight.">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2026-07-11T00:00:00+00:00">
+    <meta property="article:modified_time" content="2026-07-11T00:00:00+00:00">
+    <meta property="article:tag" content="Python">
+    <meta property="article:tag" content="Insurance">
+    <meta property="article:tag" content="Exposures">
+    <meta property="article:tag" content="Glm">
+    <meta property="article:tag" content="Weights">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Handling Exposures in Insurance Modeling">
+<meta name="twitter:description" content="Exploring how exposures in insurance modeling can be applied as either an offset or as a weight.">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "http://optionallybayes.com/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Handling Exposures in Insurance Modeling",
+      "item": "http://optionallybayes.com/posts/insurance_exposures/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Handling Exposures in Insurance Modeling",
+  "name": "Handling Exposures in Insurance Modeling",
+  "description": "Exploring how exposures in insurance modeling can be applied as either an offset or as a weight.",
+  "keywords": [
+    "python", "insurance", "exposures", "glm", "weights"
+  ],
+  "articleBody": "In this post I want to go through a simplified simulation and some mathematics revolving around handling exposures in insurance data, particularly in the GLM case because it makes things easier.\nimport numpy as np from sklearn.linear_model import GammaRegressor import matplotlib.pyplot as plt import cvxpy as cp rng = np.random.default_rng() First, the data generating process. Here we assume a Poisson distribution for claim counts and an independent Log-Normal distribution for claim amounts. We assume that the average number of claims is proportional to exposure and we add a random risk multiplier term to give some idiosyncratic variance to each observation:\nn = 50_000 exposure = rng.integers(1, 1000, n) mu = 1 var = 0.1 risk_mult = rng.gamma(shape=mu**2 / var, scale=var / mu, size=n) base_freq = 0.1 # Expected number of claims per unit of exposure at risk = 1 sev_mu = 5.0 # Log-normal severity: mean/sd of the underlying normal (log scale) sev_sigma = 1.0 claim_counts = rng.poisson(base_freq * exposure * risk_mult) losses = np.array([rng.lognormal(sev_mu, sev_sigma, k).sum() for k in claim_counts]) Mathematically, our data generating process is this:\n$$ \\begin{align*} C \u0026\\sim \\text{Poisson}(\\lambda) \\newline X \u0026\\sim \\text{LogNormal}(\\mu, \\sigma^2) \\newline L \u0026= \\sum_{i=1}^{C} X \\end{align*} $$\nFollowing some basic results about compound Poisson random variables we have: $$ \\begin{align*} \\text{E}[L] \u0026= \\lambda \\exp \\left( \\mu + \\frac{\\sigma^2}{2} \\right) \\newline \\text{Var}(L) \u0026= \\lambda \\text{E}[X^2] = \\lambda \\exp(2 \\mu + 2 \\sigma^2) \\end{align*} $$\nplt.hist(risk_mult, bins=100) plt.title(\"Risk Multiplier Distribution\") plt.hist(losses, bins=100) plt.title(\"Total Loss Amount Distribution\") A very typical actuarial analysis will instead use pure premium instead of straight losses. Pure premium is defined as the total loss divided by the exposure:\npure_prem = losses / exposure plt.hist(pure_prem, bins=100) plt.title(\"Pure Premium Distribution\") Given that exposures are known constants, from basic probability rules we get:\n$$ \\begin{align*} \\text{Pure Premium} \u0026= \\frac{L}{\\text{Exposure}} \\newline \\text{E}[\\text{Pure Premium}] \u0026= \\frac{\\text{E}[L]}{\\text{Exposure}} \\newline \\text{Var}(\\text{Pure Premium}) \u0026= \\frac{\\text{Var}(L)}{\\text{Exposure}^2} \\end{align*} $$\nThe last equation there being the most critical: by dividing by exposure we make the variance of pure premium ratios depend non-linearly on the exposure values. From the above equation for the variance of total losses, we see, because $\\lambda$ is proportional to exposure, that we expect variance to increase as exposure increases, which we can see easily:\nplt.scatter(exposure, losses, s=0.75) plt.title(\"Loss vs Exposure\") plt.xlabel(\"Exposure\") plt.ylabel(\"Total Loss\") If we instead plot pure premium versus exposure, you can see how this relationship inverts (taking log values so large and small values become more comparable):\nplt.scatter(exposure, np.log(1 + pure_prem), s=0.75) plt.title(\"Pure Premium vs Exposure\") plt.xlabel(\"Exposure\") plt.ylabel(\"Pure Premium (log)\") Now, small policies have the widest spread in pure premium values. This can bite: I have made the mistake of clipping these ratios at some quantile value instead of losses to handle outliers. This creates a structural bias because small policies are most likely to have extreme pure premium values. Advice: don’t do this.\nNow, if we want to model losses we want to embed this prior knowledge about exposures into the model. There are two ways of doing this. First, we model losses directly and insert exposure as an offset. Second, we can model pure premium instead, where we must then insert exposure as a weight.\nOffset Method The first method is introducing exposure as an offset. If we a priori assume that claims are proportional to exposure, and we use a log-link, then we can add a constant term to our linear predictor (the bit inside the link function) that is the natural log of exposure. Here, we assume there are no exogenous predictors so we have simply:\n$$ \\begin{align*} \\mu \u0026= \\exp(\\alpha + \\ln(\\text{Exposure})) \\newline \u0026= \\exp(\\alpha) * \\text{Exposure} \\end{align*} $$\nThis way, the “modeled” part of losses is just a multiplier on exposure, in this case this will be a constant parameter. Using the Poisson likelihood we can fit this:\nalpha = cp.Variable() eta = alpha + np.log(exposure) log_likelihood = claim_counts @ eta - cp.sum(cp.exp(eta)) prob = cp.Problem(cp.Maximize(log_likelihood)) prob.solve() print(f\"Intercept (alpha): {np.exp(alpha.value):.4f}\") Intercept (alpha): 0.1002 And we recover the base frequency value we set at the start. Note that the average risk multiplier given by the Gamma distribution is 1, so it cancels out in aggregate.\nWeight Method The other way to achieve this is by modeling frequency instead, which is claim counts divided by exposure. We then model these ratios with a Poisson likelihood with a sample weight equal to the exposure.\nEven though the Poisson distribution is only supported on integers, this is a quasi-likelihood approach. As long as the mean function is correctly specified, this will still give consistent mean estimates. Because frequency is just a rescaling of claim counts, the mean function is unaffected so this works. Note that there are extra details about the over-dispersion aspect of the model. Because the risk multipliers are Gamma-distributed, we introduce more variance into the resulting claim counts than the Poisson distribution would generally indicate. If what we care about is estimating the mean frequency, this does not matter because it doesn’t influence the mean function. However, if we want to get standard errors and other variance-related estimates correct, we would need to estimate a dispersion parameter to adjust for this, but I will ignore that here for simplicity.\nWe can solve the same kind of problem as in the offset case, but this time exposure comes in as a weight:\nfrequency = claim_counts / exposure alpha_freq = cp.Variable() # intercept-only: constant frequency across all policies weighted_log_likelihood = exposure @ (frequency * alpha_freq - cp.exp(alpha_freq)) prob_freq = cp.Problem(cp.Maximize(weighted_log_likelihood)) prob_freq.solve() print(f\"Fitted constant frequency exp(b0): {np.exp(alpha_freq.value):.4f}\") Fitted constant frequency exp(b0): 0.1002 And we again recover the same base frequency value.\nFrom the Poisson log-likelihood we can derive a nice result because of the simplicity of the model here. First, we can show that $\\alpha$ must be equal to a weighted average of our observed frequencies (claim count divided by exposure, denoted $k$):\nThe Poisson log-likelihood is: $\\ell = k \\ln(\\lambda) - \\lambda - \\ln(k!)$ Then we can show:\n$$ \\begin{align*} \u0026\\text{Assume:} \\quad \\lambda = \\exp(\\alpha) \\newline \u0026\\text{Then:} \\quad k \\ln(\\lambda) - \\lambda = k \\alpha - \\exp(\\alpha) \\newline \u0026\\text{So:} \\quad \\ell(\\alpha) = \\sum_i w_i (k_i \\alpha - \\exp(\\alpha)) \\end{align*} $$\nFrom the log-likelihood, the solution must obey the first order condition: $$ \\begin{align*} \\frac{\\partial \\ell}{\\partial \\alpha} = 0 \\quad \u0026\\Rightarrow \\quad \\sum_i w_i (k_i - \\exp(\\alpha)) = 0 \\newline \u0026\\Rightarrow \\exp(\\alpha) = \\frac{\\sum_i w_i k_i}{\\sum_i w_i} \\end{align*} $$\nIf we assume that weights are all 1, the unweighted case, we have: $$ \\exp(\\alpha) = \\frac{1}{n} \\sum_i k_i $$ which is just the sample average of frequency values. However, if we use weights equal to exposure, $E_i$, and knowing that frequency $k_i = \\frac{C_i}{E_i}$ we get: $$ \\exp(\\alpha) = \\frac{\\sum_i E_i \\frac{C_i}{E_i}}{\\sum_i E_i} = \\frac{\\sum_i C_i}{\\sum_i E_i} $$ which is the total observed frequency: total claims divided by total exposure. In this case, because we assume that base frequency, 0.1 claims per exposure, is constant, and the average risk multiplier is 1, the average frequency of each policy and the overall frequency are the same. This will not be true in a general case. This matches actuarial intuition: the frequency of a book of policies is not the average of each policy’s frequency, but the total claim count divided by the total exposure.\nEquivalence Conditions Note that this exact equivalence between the exposure-as-offset and exposure-as-weight here is only because the Poisson distribution has the mean-variance relationship it does, namely that the mean and variance are both equal to $\\lambda$. In other cases, technically any Tweedie distribution with power not equal to 1, this does not hold. For the below I will move to the pure premium case because that is usually more natural for the Tweedie distribution in applications.\nAssume that $\\eta_i = \\sum_j \\beta_j x_j$ is the linear predictor given a set of variables $x_j$, and that $\\mu_i = \\exp(\\eta_i)$, in other words assume a log-link. Then, from the likelihood of a generic exponential dispersion distribution you can show that the score function (derivative of the log-likelihood) for a given linear predictor parameter is: $$ \\frac{\\partial \\ell}{\\partial \\beta_j} = \\sum_i w_i \\frac{y_i - \\mu_i}{V(\\mu_i)} \\frac{\\partial \\mu_i}{\\partial \\eta_i} x_{ij} $$\nLet $m_i = \\exp(\\sum_j \\beta_j x_j)$ for convenience. There are then two cases, the loss outcome with exposure offset case, and the frequency outcome with exposure weight case. In the loss outcome case you have $\\eta_i = \\ln(E_i) + \\sum_j \\beta_j x_j$ so $\\mu_i = E_i m_i$, and note that $y_i = L_i$. In the frequency case you have $\\eta_i = \\sum_j \\beta_j x_j$ so $\\mu_i = m_i$, and $y_i = \\frac{L_i}{E_i}$\nThus, for the offset case, where all $w_i = 1$: $$ \\frac{\\partial \\ell}{\\partial \\beta_j} = \\sum_i \\frac{L_i - E_i m_i}{V(E_i m_i)} E_i m_i x_{ij} $$\nIf we assume the general Tweedie variance function: $V(\\mu) = \\mu^p$ then we get: $$ = \\sum_i \\frac{L_i - E_i m_i}{E_i^p V(m_i)} E_i m_i x_{ij} = \\sum_i \\frac{E_i^2}{E_i^p} \\frac{\\frac{L_i}{E_i} - m_i}{V(m_i)} m_i x_{ij} $$\nYou can already see that we’ve rearranged this to get frequency in the numerator, so starting again for the frequency case where we have non-one weights: $$ \\frac{\\partial \\ell}{\\partial \\beta_j} = \\sum_i w_i \\frac{\\frac{L_i}{E_i} - m_i}{V(m_i)} m_i x_{ij} $$\nSo, for the score functions to be equal, and thus to arrive at the same estimated coefficients, we need: $$ w_i = \\frac{E_i^2}{E_i^p} = E_i^{2-p} $$\nIn the Poisson case we have $V(\\mu) = \\mu$ and thus $p=1$, which recovers the case above where the weights are simply equal to the exposures. However, in every other case, to achieve equivalence you need to set the weights to be a power transformation of the exposures.\nThis has important implications for cases where you are using non-Poisson distributions. Especially in the common case where you are modeling pure premium instead of frequencies. Then, your objective is total loss divided by exposure. The Tweedie distribution is typically used here with $1 \\lt p \\lt 2$. In this case, modeling losses and setting exposure as an offset is making a different claim than modeling pure premium and setting exposure as a weight (at least without modifying the exposure values according to the above equation).\nIn the offset case, you are making a claim about how losses scale with exposure, namely that they do so linearly. In the weight case you are only saying that pure premium ratios have variance that is inversely proportional to exposure. If you believe that exposures are non-linearly related to losses, then using exposures as weights still makes sense because it is merely adjusting for non-constant variance, which is induced purely by taking the ratio to begin with. Using exposure as an offset, however, is embedding that linearity assumption into the model itself, which may or may not make sense based on your assumptions.\nConclusion Dealing with exposures in insurance modeling problems is a unique issue that I had never thought through enough, and, as usual, working through the math makes things much clearer. Essentially it comes down to the fact that you need to stick exposure somewhere, and you can do it through an offset or by modeling a ratio directly. In the latter case you need to use sample weights both for efficiency’s sake and to recover the offset solution. The simple Poisson model on frequency makes this equivalence quite nice. In the case I’ve constructed here where there are no exogenous predictors, the frequency model turns into an intercept-only one and you can clearly see how the unweighted and weighted solutions differ, with the weighted version simplifying into the total observed frequency, which is the typical actuarial solution.\nOne big note is how you have to transform the exposure in the sample weighted case if you’re using a Tweedie distribution. In order to have it match the offset solution, and in fact to make it the most efficient, you need to put exposure to the power of $2-p$. When doing weighted regressions you need the weights to be inversely proportional to the variance of each observation, and in this case if you miss that non-linear transformation that won’t hold.\n",
+  "wordCount" : "1998",
+  "inLanguage": "en",
+  "datePublished": "2026-07-11T00:00:00Z",
+  "dateModified": "2026-07-11T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "Erik Dains"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://optionallybayes.com/posts/insurance_exposures/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Optionally Bayes",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://optionallybayes.com/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://optionallybayes.com/" accesskey="h" title="Optionally Bayes (Alt + H)">Optionally Bayes</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://optionallybayes.com/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://optionallybayes.com/tags/" title="Tags">
+                    <span>Tags</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://optionallybayes.com/archives/" title="Archive">
+                    <span>Archive</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://optionallybayes.com/search/" title="Search (Alt &#43; /)" accesskey=/>
+                    <span>Search</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Handling Exposures in Insurance Modeling
+    </h1>
+    <div class="post-meta"><span title='2026-07-11 00:00:00 +0000 UTC'>July 11, 2026</span>&nbsp;·&nbsp;<span>Erik Dains</span>
+
+</div>
+  </header> 
+  <div class="post-content"><p>In this post I want to go through a simplified simulation and some mathematics revolving around handling exposures in insurance data, particularly in the GLM case because it makes things easier.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> sklearn.linear_model <span style="color:#f92672">import</span> GammaRegressor
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#66d9ef">as</span> plt
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> cvxpy <span style="color:#66d9ef">as</span> cp
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>rng <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>default_rng()
+</span></span></code></pre></div><p>First, the data generating process. Here we assume a Poisson distribution for claim counts and an independent Log-Normal distribution for claim amounts. We assume that the average number of claims is proportional to exposure and we add a random risk multiplier term to give some idiosyncratic variance to each observation:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>n <span style="color:#f92672">=</span> <span style="color:#ae81ff">50_000</span>
+</span></span><span style="display:flex;"><span>exposure <span style="color:#f92672">=</span> rng<span style="color:#f92672">.</span>integers(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1000</span>, n)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>mu <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>var <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.1</span>
+</span></span><span style="display:flex;"><span>risk_mult <span style="color:#f92672">=</span> rng<span style="color:#f92672">.</span>gamma(shape<span style="color:#f92672">=</span>mu<span style="color:#f92672">**</span><span style="color:#ae81ff">2</span> <span style="color:#f92672">/</span> var, scale<span style="color:#f92672">=</span>var <span style="color:#f92672">/</span> mu, size<span style="color:#f92672">=</span>n)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>base_freq <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.1</span>  <span style="color:#75715e"># Expected number of claims per unit of exposure at risk = 1</span>
+</span></span><span style="display:flex;"><span>sev_mu <span style="color:#f92672">=</span> <span style="color:#ae81ff">5.0</span>  <span style="color:#75715e"># Log-normal severity: mean/sd of the underlying normal (log scale)</span>
+</span></span><span style="display:flex;"><span>sev_sigma <span style="color:#f92672">=</span> <span style="color:#ae81ff">1.0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>claim_counts <span style="color:#f92672">=</span> rng<span style="color:#f92672">.</span>poisson(base_freq <span style="color:#f92672">*</span> exposure <span style="color:#f92672">*</span> risk_mult)
+</span></span><span style="display:flex;"><span>losses <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array([rng<span style="color:#f92672">.</span>lognormal(sev_mu, sev_sigma, k)<span style="color:#f92672">.</span>sum() <span style="color:#66d9ef">for</span> k <span style="color:#f92672">in</span> claim_counts])
+</span></span></code></pre></div><p>Mathematically, our data generating process is this:</p>
+<p>$$
+\begin{align*}
+C &amp;\sim \text{Poisson}(\lambda) \newline
+X &amp;\sim \text{LogNormal}(\mu, \sigma^2) \newline
+L &amp;= \sum_{i=1}^{C} X
+\end{align*}
+$$</p>
+<p>Following some basic results about compound Poisson random variables we have:
+$$
+\begin{align*}
+\text{E}[L] &amp;= \lambda \exp \left( \mu + \frac{\sigma^2}{2} \right) \newline
+\text{Var}(L) &amp;= \lambda \text{E}[X^2] = \lambda \exp(2 \mu + 2 \sigma^2)
+\end{align*}
+$$</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>hist(risk_mult, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">100</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Risk Multiplier Distribution&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./rv_div_variance_5_1.png#center"/> 
+</figure>
+
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>hist(losses, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">100</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Total Loss Amount Distribution&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./rv_div_variance_6_1.png#center"/> 
+</figure>
+
+<p>A very typical actuarial analysis will instead use pure premium instead of straight losses. Pure premium is defined as the total loss divided by the exposure:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>pure_prem <span style="color:#f92672">=</span> losses <span style="color:#f92672">/</span> exposure
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>hist(pure_prem, bins<span style="color:#f92672">=</span><span style="color:#ae81ff">100</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Pure Premium Distribution&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./rv_div_variance_8_1.png#center"/> 
+</figure>
+
+<p>Given that exposures are known constants, from basic probability rules we get:</p>
+<p>$$
+\begin{align*}
+\text{Pure Premium} &amp;= \frac{L}{\text{Exposure}} \newline
+\text{E}[\text{Pure Premium}] &amp;= \frac{\text{E}[L]}{\text{Exposure}} \newline
+\text{Var}(\text{Pure Premium}) &amp;= \frac{\text{Var}(L)}{\text{Exposure}^2}
+\end{align*}
+$$</p>
+<p>The last equation there being the most critical: by dividing by exposure we make the variance of pure premium ratios depend non-linearly on the exposure values. From the above equation for the variance of total losses, we see, because $\lambda$ is proportional to exposure, that we expect variance to increase as exposure increases, which we can see easily:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>scatter(exposure, losses, s<span style="color:#f92672">=</span><span style="color:#ae81ff">0.75</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Loss vs Exposure&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Exposure&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Total Loss&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./rv_div_variance_10_1.png#center"/> 
+</figure>
+
+<p>If we instead plot <em>pure premium</em> versus exposure, you can see how this relationship inverts (taking log values so large and small values become more comparable):</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>scatter(exposure, np<span style="color:#f92672">.</span>log(<span style="color:#ae81ff">1</span> <span style="color:#f92672">+</span> pure_prem), s<span style="color:#f92672">=</span><span style="color:#ae81ff">0.75</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>title(<span style="color:#e6db74">&#34;Pure Premium vs Exposure&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>xlabel(<span style="color:#e6db74">&#34;Exposure&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#f92672">.</span>ylabel(<span style="color:#e6db74">&#34;Pure Premium (log)&#34;</span>)
+</span></span></code></pre></div><figure class="align-center ">
+    <img loading="lazy" src="./rv_div_variance_12_1.png#center"/> 
+</figure>
+
+<p>Now, small policies have the widest spread in pure premium values. This can bite: I have made the mistake of clipping these ratios at some quantile value instead of losses to handle outliers. This creates a structural bias because small policies are most likely to have extreme pure premium values. Advice: don&rsquo;t do this.</p>
+<p>Now, if we want to model losses we want to embed this prior knowledge about exposures into the model. There are two ways of doing this. First, we model losses directly and insert exposure as an <em>offset</em>. Second, we can model pure premium instead, where we must then insert exposure as a <em>weight</em>.</p>
+<h2 id="offset-method">Offset Method<a hidden class="anchor" aria-hidden="true" href="#offset-method">#</a></h2>
+<p>The first method is introducing exposure as an offset. If we a priori assume that claims are proportional to exposure, and we use a log-link, then we can add a constant term to our linear predictor (the bit inside the link function) that is the natural log of exposure. Here, we assume there are no exogenous predictors so we have simply:</p>
+<p>$$
+\begin{align*}
+\mu &amp;= \exp(\alpha + \ln(\text{Exposure})) \newline
+&amp;= \exp(\alpha) * \text{Exposure}
+\end{align*}
+$$</p>
+<p>This way, the &ldquo;modeled&rdquo; part of losses is just a multiplier on exposure, in this case this will be a constant parameter. Using the Poisson likelihood we can fit this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>alpha <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Variable()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>eta <span style="color:#f92672">=</span> alpha <span style="color:#f92672">+</span> np<span style="color:#f92672">.</span>log(exposure)
+</span></span><span style="display:flex;"><span>log_likelihood <span style="color:#f92672">=</span> claim_counts <span style="color:#f92672">@</span> eta <span style="color:#f92672">-</span> cp<span style="color:#f92672">.</span>sum(cp<span style="color:#f92672">.</span>exp(eta))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>prob <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Problem(cp<span style="color:#f92672">.</span>Maximize(log_likelihood))
+</span></span><span style="display:flex;"><span>prob<span style="color:#f92672">.</span>solve()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Intercept (alpha): </span><span style="color:#e6db74">{</span>np<span style="color:#f92672">.</span>exp(alpha<span style="color:#f92672">.</span>value)<span style="color:#e6db74">:</span><span style="color:#e6db74">.4f</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span></code></pre></div><pre><code>Intercept (alpha): 0.1002
+</code></pre>
+<p>And we recover the base frequency value we set at the start. Note that the average risk multiplier given by the Gamma distribution is 1, so it cancels out in aggregate.</p>
+<h2 id="weight-method">Weight Method<a hidden class="anchor" aria-hidden="true" href="#weight-method">#</a></h2>
+<p>The other way to achieve this is by modeling frequency instead, which is claim counts divided by exposure. We then model these ratios with a Poisson likelihood with a sample weight equal to the exposure.</p>
+<p>Even though the Poisson distribution is only supported on integers, this is a quasi-likelihood approach. As long as the mean function is correctly specified, this will still give consistent mean estimates. Because frequency is just a rescaling of claim counts, the mean function is unaffected so this works. Note that there are extra details about the over-dispersion aspect of the model. Because the risk multipliers are Gamma-distributed, we introduce more variance into the resulting claim counts than the Poisson distribution would generally indicate. If what we care about is estimating the mean frequency, this does not matter because it doesn&rsquo;t influence the mean function. However, if we want to get standard errors and other variance-related estimates correct, we would need to estimate a dispersion parameter to adjust for this, but I will ignore that here for simplicity.</p>
+<p>We can solve the same kind of problem as in the offset case, but this time exposure comes in as a weight:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>frequency <span style="color:#f92672">=</span> claim_counts <span style="color:#f92672">/</span> exposure
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>alpha_freq <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Variable()  <span style="color:#75715e"># intercept-only: constant frequency across all policies</span>
+</span></span><span style="display:flex;"><span>weighted_log_likelihood <span style="color:#f92672">=</span> exposure <span style="color:#f92672">@</span> (frequency <span style="color:#f92672">*</span> alpha_freq <span style="color:#f92672">-</span> cp<span style="color:#f92672">.</span>exp(alpha_freq))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>prob_freq <span style="color:#f92672">=</span> cp<span style="color:#f92672">.</span>Problem(cp<span style="color:#f92672">.</span>Maximize(weighted_log_likelihood))
+</span></span><span style="display:flex;"><span>prob_freq<span style="color:#f92672">.</span>solve()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;Fitted constant frequency exp(b0): </span><span style="color:#e6db74">{</span>np<span style="color:#f92672">.</span>exp(alpha_freq<span style="color:#f92672">.</span>value)<span style="color:#e6db74">:</span><span style="color:#e6db74">.4f</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+</span></span></code></pre></div><pre><code>Fitted constant frequency exp(b0): 0.1002
+</code></pre>
+<p>And we again recover the same base frequency value.</p>
+<p>From the Poisson log-likelihood we can derive a nice result because of the simplicity of the model here. First, we can show that $\alpha$ must be equal to a weighted average of our observed frequencies (claim count divided by exposure, denoted $k$):</p>
+<p>The Poisson log-likelihood is: $\ell = k \ln(\lambda) - \lambda - \ln(k!)$ Then we can show:</p>
+<p>$$
+\begin{align*}
+&amp;\text{Assume:} \quad \lambda = \exp(\alpha) \newline
+&amp;\text{Then:} \quad k \ln(\lambda) - \lambda = k \alpha - \exp(\alpha) \newline
+&amp;\text{So:} \quad \ell(\alpha) = \sum_i w_i (k_i \alpha - \exp(\alpha))
+\end{align*}
+$$</p>
+<p>From the log-likelihood, the solution must obey the first order condition:
+$$
+\begin{align*}
+\frac{\partial \ell}{\partial \alpha} = 0 \quad &amp;\Rightarrow \quad \sum_i w_i (k_i - \exp(\alpha)) = 0 \newline
+&amp;\Rightarrow \exp(\alpha) = \frac{\sum_i w_i k_i}{\sum_i w_i}
+\end{align*}
+$$</p>
+<p>If we assume that weights are all 1, the unweighted case, we have:
+$$
+\exp(\alpha) = \frac{1}{n} \sum_i k_i
+$$
+which is just the sample average of frequency values. However, if we use weights equal to exposure, $E_i$, and knowing that frequency $k_i = \frac{C_i}{E_i}$ we get:
+$$
+\exp(\alpha) = \frac{\sum_i E_i \frac{C_i}{E_i}}{\sum_i E_i} = \frac{\sum_i C_i}{\sum_i E_i}
+$$
+which is the total observed frequency: total claims divided by total exposure. In this case, because we assume that base frequency, 0.1 claims per exposure, is constant, and the average risk multiplier is 1, the average frequency of each policy and the overall frequency are the same. This will not be true in a general case. This matches actuarial intuition: the frequency of a book of policies is not the average of each policy&rsquo;s frequency, but the total claim count divided by the total exposure.</p>
+<h2 id="equivalence-conditions">Equivalence Conditions<a hidden class="anchor" aria-hidden="true" href="#equivalence-conditions">#</a></h2>
+<p>Note that this exact equivalence between the exposure-as-offset and exposure-as-weight here is only because the Poisson distribution has the mean-variance relationship it does, namely that the mean and variance are both equal to $\lambda$. In other cases, technically any Tweedie distribution with power not equal to 1, this does not hold. For the below I will move to the pure premium case because that is usually more natural for the Tweedie distribution in applications.</p>
+<p>Assume that $\eta_i = \sum_j \beta_j x_j$ is the linear predictor given a set of variables $x_j$, and that $\mu_i = \exp(\eta_i)$, in other words assume a log-link. Then, from the likelihood of a generic exponential dispersion distribution you can show that the score function (derivative of the log-likelihood) for a given linear predictor parameter is:
+$$
+\frac{\partial \ell}{\partial \beta_j} = \sum_i w_i \frac{y_i - \mu_i}{V(\mu_i)} \frac{\partial \mu_i}{\partial \eta_i} x_{ij}
+$$</p>
+<p>Let $m_i = \exp(\sum_j \beta_j x_j)$ for convenience. There are then two cases, the loss outcome with exposure offset case, and the frequency outcome with exposure weight case. In the loss outcome case you have $\eta_i = \ln(E_i) + \sum_j \beta_j x_j$ so $\mu_i = E_i m_i$, and note that $y_i = L_i$. In the frequency case you have $\eta_i = \sum_j \beta_j x_j$ so $\mu_i = m_i$, and $y_i = \frac{L_i}{E_i}$</p>
+<p>Thus, for the offset case, where all $w_i = 1$:
+$$
+\frac{\partial \ell}{\partial \beta_j} = \sum_i \frac{L_i - E_i m_i}{V(E_i m_i)} E_i m_i x_{ij}
+$$</p>
+<p>If we assume the general Tweedie variance function: $V(\mu) = \mu^p$ then we get:
+$$
+= \sum_i \frac{L_i - E_i m_i}{E_i^p V(m_i)} E_i m_i x_{ij} = \sum_i \frac{E_i^2}{E_i^p} \frac{\frac{L_i}{E_i} - m_i}{V(m_i)} m_i x_{ij}
+$$</p>
+<p>You can already see that we&rsquo;ve rearranged this to get frequency in the numerator, so starting again for the frequency case where we have non-one weights:
+$$
+\frac{\partial \ell}{\partial \beta_j} = \sum_i w_i \frac{\frac{L_i}{E_i} - m_i}{V(m_i)} m_i x_{ij}
+$$</p>
+<p>So, for the score functions to be equal, and thus to arrive at the same estimated coefficients, we need:
+$$
+w_i = \frac{E_i^2}{E_i^p} = E_i^{2-p}
+$$</p>
+<p>In the Poisson case we have $V(\mu) = \mu$ and thus $p=1$, which recovers the case above where the weights are simply equal to the exposures. However, in every other case, to achieve equivalence you need to set the weights to be a power transformation of the exposures.</p>
+<p>This has important implications for cases where you are using non-Poisson distributions. Especially in the common case where you are modeling pure premium instead of frequencies. Then, your objective is total loss divided by exposure. The Tweedie distribution is typically used here with $1 \lt p \lt 2$. In this case, modeling losses and setting exposure as an offset is making a different claim than modeling pure premium and setting exposure as a weight (at least without modifying the exposure values according to the above equation).</p>
+<p>In the offset case, you are making a claim about how losses scale with exposure, namely that they do so linearly. In the weight case you are only saying that pure premium ratios have variance that is inversely proportional to exposure. If you believe that exposures are non-linearly related to losses, then using exposures as weights still makes sense because it is merely adjusting for non-constant variance, which is induced purely by taking the ratio to begin with. Using exposure as an offset, however, is embedding that linearity assumption into the model itself, which may or may not make sense based on your assumptions.</p>
+<h1 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h1>
+<p>Dealing with exposures in insurance modeling problems is a unique issue that I had never thought through enough, and, as usual, working through the math makes things much clearer. Essentially it comes down to the fact that you need to stick exposure somewhere, and you can do it through an offset or by modeling a ratio directly. In the latter case you need to use sample weights both for efficiency&rsquo;s sake and to recover the offset solution. The simple Poisson model on frequency makes this equivalence quite nice. In the case I&rsquo;ve constructed here where there are no exogenous predictors, the frequency model turns into an intercept-only one and you can clearly see how the unweighted and weighted solutions differ, with the weighted version simplifying into the total observed frequency, which is the typical actuarial solution.</p>
+<p>One big note is how you have to transform the exposure in the sample weighted case if you&rsquo;re using a Tweedie distribution. In order to have it match the offset solution, and in fact to make it the most efficient, you need to put exposure to the power of $2-p$. When doing weighted regressions you need the weights to be inversely proportional to the variance of each observation, and in this case if you miss that non-linear transformation that won&rsquo;t hold.</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://optionallybayes.com/tags/python/">Python</a></li>
+      <li><a href="http://optionallybayes.com/tags/insurance/">Insurance</a></li>
+      <li><a href="http://optionallybayes.com/tags/exposures/">Exposures</a></li>
+      <li><a href="http://optionallybayes.com/tags/glm/">Glm</a></li>
+      <li><a href="http://optionallybayes.com/tags/weights/">Weights</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2026 <a href="http://optionallybayes.com/">Optionally Bayes</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+</body>
+
+</html>
