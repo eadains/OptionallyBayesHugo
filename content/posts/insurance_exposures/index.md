@@ -248,6 +248,50 @@ This has important implications for cases where you are using non-Poisson distri
 
 In the offset case, you are making a claim about how losses scale with exposure, namely that they do so linearly. In the weight case you are only saying that pure premium ratios have variance that is inversely proportional to exposure. If you believe that exposures are non-linearly related to losses, then using exposures as weights still makes sense because it is merely adjusting for non-constant variance, which is induced purely by taking the ratio to begin with. Using exposure as an offset, however, is embedding that linearity assumption into the model itself, which may or may not make sense based on your assumptions.
 
+---
+
+Note also that this result holds for arbitrary non-linear models as well. The density of an exponential dispersion model is:
+$$
+f(y; \theta, \phi) = \exp \left( \frac{y \theta - b(\theta)}{a(\phi)} + c(y, \phi)) \right)
+$$
+
+You can show that $\mu = b'(\theta)$ and that the variance function is $V(\mu) = b''(\theta)$ (the full variance being $\text{Var}(Y) = a(\phi) b''(\theta)$)
+
+This time instead of a linear predictor we have just $\mu = g(x; \beta)$, which we take to be some arbitrary differentiable function of the data and some parameter $\beta$. Then to get the score function we take the derivative of the log of the density (likelihood $\ell$, abusing some notation):
+$$
+\frac{\partial \ell}{\partial \beta} = \frac{\partial \ell}{\partial \theta} \frac{\partial \theta}{\partial \mu} \frac{\partial \mu}{\partial \beta}
+$$
+by the chain rule, noting that $\theta$ is implicitly a function of $\mu$ by the above identity.
+
+The first piece is:
+$$
+\frac{\partial \ell}{\partial \theta} = \frac{y - b'(\theta)}{a(\phi)} = \frac{y - \mu}{a(\phi)} \newline
+$$
+
+The second piece, given that $b'$ is strictly increasing because $V(\mu) = b''(\theta) > 0$ (it's a variance so it's always positive), then we know it is invertible. Then by the inverse function rule we get:
+$$
+\left[ f^{-1} \right]' = \frac{1}{f'(f^{-1})} \quad \Rightarrow \quad \frac{\partial \theta}{\partial \mu} = \frac{1}{b''((b')^{-1}(\mu))} = \frac{1}{b''(\theta)} = \frac{1}{V(\mu)}
+$$
+by letting $f=b'$ and noting that $\theta = (b')^{-1}(\mu) = f^{-1}(\mu)$
+
+Putting them together: in an exponential dispersion model the prior weight enters precisely through $a(\phi) = \phi / w$, so the score carries a factor of $\frac{w}{\phi}$. Dropping the constant $\phi$, which isn't a function of $\beta$ and therefore will not affect the location of the root, leaves the weight out front:
+$$
+\frac{\partial \ell}{\partial \beta} = w \frac{y - \mu}{V(\mu)} \frac{\partial \mu}{\partial \beta}
+$$
+This is the same form as the score equation above, but in the GLM case $\frac{\partial \mu}{\partial \beta}$ can be easily evaluated.
+
+From here you can again work out the two cases. Starting with the offset case:
+$$
+\mu = E g(x; \beta) \quad y = L \quad w=1
+$$
+$$
+\begin{align*}
+\frac{\partial \ell}{\partial \beta} &= \frac{L - E g(x; \beta)}{E^p V(g(x; \beta))} \frac{\partial (E g(x; \beta))}{\partial \beta} \newline
+&= \frac{E^2}{E^p} \frac{\frac{L}{E} - g(x; \beta)}{V(g(x; \beta))} \frac{\partial g(x; \beta)}{\partial \beta}
+\end{align*}
+$$
+Relying on the fact that because exposure is a constant it factors out of the derivative regardless of the form of $g$. This recovers the $E^{2-p}$ from before, and it's easy to see, using exactly the argument above, that the weights in the ratio case need to be equal to that.
+
 # Conclusion
 
 Dealing with exposures in insurance modeling problems is a unique issue that I had never thought through enough, and, as usual, working through the math makes things much clearer. Essentially it comes down to the fact that you need to stick exposure somewhere, and you can do it through an offset or by modeling a ratio directly. In the latter case you need to use sample weights both for efficiency's sake and to recover the offset solution. The simple Poisson model on frequency makes this equivalence quite nice. In the case I've constructed here where there are no exogenous predictors, the frequency model turns into an intercept-only one and you can clearly see how the unweighted and weighted solutions differ, with the weighted version simplifying into the total observed frequency, which is the typical actuarial solution.
